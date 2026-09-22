@@ -1,0 +1,226 @@
+/*
+  Site-wide styles. Palette and rules follow the "Visual design direction"
+  section of CLAUDE.md: black used structurally, white as the content
+  surface, red reserved for meaning (actions, status, errors) rather than
+  decoration.
+*/
+
+:root {
+  --color-black: #111111;
+  --color-white: #ffffff;
+  --color-red: #c8102e;
+  --color-red-pale: #fbe9ec;
+  --color-gray-line: #e2e2e2;
+  --color-gray-text: #4a4a4a;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --radius: 4px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-black);
+  background: var(--color-white);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-red);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* --- Header / footer (structural black bars) ------------------------- */
+
+.site-header,
+.site-footer {
+  background: var(--color-black);
+  color: var(--color-white);
+}
+
+.site-header__inner,
+.site-footer__inner,
+.site-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.site-header__brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.site-nav a {
+  color: var(--color-white);
+  margin-left: 1.5rem;
+  font-weight: 500;
+}
+
+.site-footer__inner {
+  font-size: 0.85rem;
+  color: #cccccc;
+}
+
+/* --- Main content (white surface) ------------------------------------ */
+
+.site-main {
+  min-height: 60vh;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.page-hero {
+  margin-bottom: 2rem;
+}
+
+.page-hero h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-hero p {
+  color: var(--color-gray-text);
+  max-width: 60ch;
+}
+
+/* --- Forms ------------------------------------------------------------ */
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 2rem;
+}
+
+legend {
+  width: 100%;
+  font-weight: 700;
+  font-size: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-gray-line);
+}
+
+.form-field {
+  margin-bottom: 1.25rem;
+}
+
+.form-field label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+.required {
+  color: var(--color-red);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-gray-line);
+  border-radius: var(--radius);
+  font: inherit;
+  color: var(--color-black);
+  background: var(--color-white);
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--color-red);
+  box-shadow: 0 0 0 3px var(--color-red-pale);
+}
+
+.form-field__help {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-gray-text);
+}
+
+.form-field--error input,
+.form-field--error select,
+.form-field--error textarea {
+  border-color: var(--color-red);
+  background: var(--color-red-pale);
+}
+
+.form-field__error {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-red);
+  font-weight: 600;
+}
+
+.form-errors {
+  background: var(--color-red-pale);
+  border: 1px solid var(--color-red);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-red);
+}
+
+/* --- Buttons ------------------------------------------------------------ */
+
+.btn {
+  display: inline-block;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+.btn--primary:hover {
+  background: #a50d26;
+  text-decoration: none;
+}
+
+/* --- Flash messages ------------------------------------------------------ */
+
+.messages {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.message--success {
+  background: var(--color-red-pale);
+  color: var(--color-red);
+  border: 1px solid var(--color-red);
+}

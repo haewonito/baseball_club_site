@@ -1,0 +1,13 @@
+{# Renders one bound form field. Usage: {% include "partials/_form_field.html" with field=form.some_field %} #}
+<div class="form-field{% if field.errors %} form-field--error{% endif %}">
+  <label for="{{ field.id_for_label }}">
+    {{ field.label }}{% if field.field.required %} <span class="required" aria-hidden="true">*</span>{% endif %}
+  </label>
+  {{ field }}
+  {% if field.help_text %}
+    <p class="form-field__help">{{ field.help_text }}</p>
+  {% endif %}
+  {% for error in field.errors %}
+    <p class="form-field__error" role="alert">{{ error }}</p>
+  {% endfor %}
+</div>

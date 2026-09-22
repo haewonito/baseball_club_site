@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Try-Out Sign-Up · Baseball Club{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Try-Out Sign-Up</h1>
+    <p>
+      Fill out the form below to register your player for an upcoming try-out.
+      A coach or admin will follow up by phone or email with the date, time,
+      and location.
+    </p>
+  </section>
+
+  <section class="form-section">
+    <form method="post" class="signup-form" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <fieldset>
+        <legend>Player</legend>
+        {% include "partials/_form_field.html" with field=form.player_name %}
+        {% include "partials/_form_field.html" with field=form.date_of_birth %}
+        {% include "partials/_form_field.html" with field=form.positions %}
+        {% include "partials/_form_field.html" with field=form.years_experience %}
+        {% include "partials/_form_field.html" with field=form.previous_team %}
+        {% include "partials/_form_field.html" with field=form.notes %}
+      </fieldset>
+
+      <fieldset>
+        <legend>Parent / guardian</legend>
+        {% include "partials/_form_field.html" with field=form.parent_name %}
+        {% include "partials/_form_field.html" with field=form.parent_phone %}
+        {% include "partials/_form_field.html" with field=form.parent_email %}
+      </fieldset>
+
+      <button type="submit" class="btn btn--primary">Submit sign-up</button>
+    </form>
+  </section>
+{% endblock %}

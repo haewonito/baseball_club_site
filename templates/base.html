@@ -1,0 +1,37 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Baseball Club{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header__inner">
+      {# TODO: link brand to the home page once it exists (see CLAUDE.md site map) #}
+      <span class="site-header__brand">Baseball Club</span>
+      <nav class="site-nav">
+        <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main">
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="message message--{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>&copy; {% now "Y" %} Baseball Club</p>
+    </div>
+  </footer>
+</body>
+</html>
