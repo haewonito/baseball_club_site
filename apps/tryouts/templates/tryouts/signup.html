@@ -26,7 +26,10 @@
 
       <fieldset>
         <legend>Player</legend>
-        {% include "partials/_form_field.html" with field=form.player_name %}
+        <div class="form-row">
+          {% include "partials/_form_field.html" with field=form.player_first_name %}
+          {% include "partials/_form_field.html" with field=form.player_last_name %}
+        </div>
         {% include "partials/_form_field.html" with field=form.date_of_birth %}
         {% include "partials/_form_field.html" with field=form.positions %}
         {% include "partials/_form_field.html" with field=form.years_experience %}
@@ -36,7 +39,10 @@
 
       <fieldset>
         <legend>Parent / guardian</legend>
-        {% include "partials/_form_field.html" with field=form.parent_name %}
+        <div class="form-row">
+          {% include "partials/_form_field.html" with field=form.parent_first_name %}
+          {% include "partials/_form_field.html" with field=form.parent_last_name %}
+        </div>
         {% include "partials/_form_field.html" with field=form.parent_phone %}
         {% include "partials/_form_field.html" with field=form.parent_email %}
       </fieldset>

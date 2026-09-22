@@ -13,22 +13,27 @@ class TryoutSignupForm(forms.ModelForm):
     class Meta:
         model = TryoutSignup
         fields = [
-            "player_name",
+            "player_first_name",
+            "player_last_name",
             "date_of_birth",
             "positions",
             "years_experience",
             "previous_team",
             "notes",
-            "parent_name",
+            "parent_first_name",
+            "parent_last_name",
             "parent_phone",
             "parent_email",
         ]
         labels = {
+            "player_first_name": "First name",
+            "player_last_name": "Last name",
             "positions": "Position(s)",
             "years_experience": "Years of experience",
             "previous_team": "Previous team (if any)",
             "notes": "Anything else we should know?",
-            "parent_name": "Parent / guardian name",
+            "parent_first_name": "First name",
+            "parent_last_name": "Last name",
             "parent_phone": "Phone number",
             "parent_email": "Email address",
         }

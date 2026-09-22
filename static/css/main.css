@@ -122,6 +122,24 @@ legend {
   margin-bottom: 1.25rem;
 }
 
+/* Pairs of fields (e.g. first name / last name) shown side by side. */
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-field {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
 .form-field label {
   display: block;
   font-weight: 600;

@@ -6,16 +6,22 @@ from .models import TryoutSignup, TryoutStatusChange, TryoutYearSettings
 @admin.register(TryoutSignup)
 class TryoutSignupAdmin(admin.ModelAdmin):
     list_display = (
-        "player_name",
+        "player_full_name",
         "positions",
-        "parent_name",
+        "parent_full_name",
         "parent_phone",
         "submitted_at",
         "tryout_year",
         "status",
     )
     list_filter = ("tryout_year", "status")
-    search_fields = ("player_name", "parent_name", "parent_email")
+    search_fields = (
+        "player_first_name",
+        "player_last_name",
+        "parent_first_name",
+        "parent_last_name",
+        "parent_email",
+    )
     ordering = ["-submitted_at"]
     readonly_fields = ("submitted_at", "tryout_year")
     # Coaches get view-only access to this same list via a custom

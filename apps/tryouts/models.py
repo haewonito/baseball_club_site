@@ -52,14 +52,16 @@ class TryoutStatus(models.TextChoices):
 class TryoutSignup(models.Model):
     """Public, no-login submission from a prospective family."""
 
-    player_name = models.CharField(max_length=150)
+    player_first_name = models.CharField(max_length=100)
+    player_last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(null=True, blank=True)
     positions = models.CharField(max_length=100, blank=True)  # free text, e.g. "SS, 2B"
     years_experience = models.PositiveSmallIntegerField(null=True, blank=True)
     previous_team = models.CharField(max_length=150, blank=True)
     notes = models.TextField(blank=True)
 
-    parent_name = models.CharField(max_length=150)
+    parent_first_name = models.CharField(max_length=100)
+    parent_last_name = models.CharField(max_length=100)
     parent_phone = models.CharField(max_length=30)
     parent_email = models.EmailField()
 
@@ -80,8 +82,16 @@ class TryoutSignup(models.Model):
             self.tryout_year = compute_tryout_year(submitted_date)
         super().save(*args, **kwargs)
 
+    @property
+    def player_full_name(self):
+        return f"{self.player_first_name} {self.player_last_name}"
+
+    @property
+    def parent_full_name(self):
+        return f"{self.parent_first_name} {self.parent_last_name}"
+
     def __str__(self):
-        return f"{self.player_name} ({self.tryout_year})"
+        return f"{self.player_full_name} ({self.tryout_year})"
 
 
 class TryoutStatusChange(models.Model):

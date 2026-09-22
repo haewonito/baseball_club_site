@@ -154,6 +154,13 @@ Everything else in the site map is still unbuilt.
 Five apps under `apps/` (note the package prefix: `INSTALLED_APPS` uses `apps.accounts`, etc., and
 each `AppConfig.name` matches).
 
+**Person names are always stored as separate first/last name fields, never a single full-name
+field** — `accounts.User` (via `AbstractUser`), `accounts.Player`, and `tryouts.TryoutSignup`
+(`player_first_name`/`player_last_name`, `parent_first_name`/`parent_last_name`) all follow this.
+Keep it consistent if a new model gains a person-name field. Where a display string is convenient,
+add a `*_full_name` property that joins them (see `TryoutSignup.player_full_name`) rather than
+storing the joined form.
+
 **accounts** — `AUTH_USER_MODEL = "accounts.User"`. Roles are deliberately many-to-many rather than a
 field: `User.roles` → `UserRole`, where `UserRole.role` is **unique**, so `UserRole` rows are shared
 singletons (one "admin" row that many users point at), not per-user grants. This exists because the
