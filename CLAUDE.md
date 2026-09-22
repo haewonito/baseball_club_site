@@ -222,7 +222,8 @@ per-player ledger rows is an open decision.
   while some leave. Admin wants a dedicated screen: a checklist of current players (checkbox per
   player, default-checked) to mark who's moving up, then bulk-reassign those players'
   `Player.team` to next season's team in one action, rather than editing each `Player` row by hand.
-  Open questions when this gets built: how "next team" is determined (division-ordering convention
-  doesn't exist yet -- `Team.division` is free text like `"12U"`), whether it creates new `Team` rows
-  for the new season or expects them pre-created, and what happens to a player's `PlayerPosition`
-  rows and open `Fee`s on promotion (carry over vs. reset).
+  Fees do **not** carry over on promotion -- they're normally paid months before the new season
+  starts, so promotion doesn't need to touch `Fee`/`Payment` at all. Still open when this gets built:
+  how "next team" is determined (division-ordering convention doesn't exist yet -- `Team.division`
+  is free text like `"12U"`), whether it creates new `Team` rows for the new season or expects them
+  pre-created, and whether a player's `PlayerPosition` rows should carry over or reset.
