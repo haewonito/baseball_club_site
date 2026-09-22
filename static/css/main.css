@@ -151,7 +151,7 @@ legend {
   color: var(--color-red);
 }
 
-.form-field input,
+.form-field input:not([type="checkbox"]):not([type="radio"]),
 .form-field select,
 .form-field textarea {
   width: 100%;
@@ -169,6 +169,33 @@ legend {
   outline: none;
   border-color: var(--color-red);
   box-shadow: 0 0 0 3px var(--color-red-pale);
+}
+
+/*
+  Django's CheckboxSelectMultiple (used for the "Position(s)" field) renders
+  as #id_<field> containing one <div><label><input>text</label></div> per
+  choice. Lay those out as a compact grid instead of a long vertical list.
+*/
+#id_positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+#id_positions label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 400;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#id_positions input[type="checkbox"] {
+  accent-color: var(--color-red);
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .form-field__help {

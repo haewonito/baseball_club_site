@@ -3,6 +3,34 @@
 Running log of changes made to this repo, newest first. Short description + files touched per entry.
 Not a replacement for git history — this is meant to be skimmable without running `git log`.
 
+## 2026-09-22 — Positions locked to one canonical, code-based list
+
+`teams.Position` and the tryout form's free-text `positions` field were two separate, inconsistent
+position vocabularies (and the free-text one had real data like `'short stop, catcher, pitcher'`).
+Unified both under one `Position` enum (`LP`/`RP`/`C`/`B1`/`B2`/`B3`/`SS`/`LF`/`CF`/`RF`), and turned
+the sign-up form's position field into a proper normalized multi-select (checkbox group) backed by a
+new join table, instead of free text.
+
+Files:
+- `apps/teams/models.py` — `Position` choices replaced with the canonical list (pitcher split
+  LP/RP, outfield split LF/CF/RF, base codes changed 1B/2B/3B → B1/B2/B3).
+- `apps/teams/migrations/0002_canonical_position_list.py` — new. Choices-only change; `PlayerPosition`
+  had 0 existing rows so no data migration needed.
+- `apps/tryouts/models.py` — removed the free-text `positions` field; added `TryoutSignupPosition`
+  (FK to `TryoutSignup` + `position` choice field referencing `teams.Position`) and a
+  `positions_display` property.
+- `apps/tryouts/migrations/0003_split_positions.py` — new. Backfills existing free text via a
+  best-effort alias map (handles things like `"short stop"` → `SS`); anything ambiguous (bare
+  `"pitcher"`/`"outfield"`, no way to infer handedness/side) is left unmapped with a printed note for
+  manual follow-up in the admin. Reversible — verified full forward/reverse/forward round trip.
+- `apps/tryouts/forms.py` — `positions` is now a `MultipleChoiceField` + `CheckboxSelectMultiple`
+  over `Position.choices`, saved into `TryoutSignupPosition` rows via an overridden `save()`.
+- `apps/tryouts/admin.py` — added a `TryoutSignupPositionInline`; `list_display`/`search_fields`
+  updated to the new fields.
+- `static/css/main.css` — excluded checkboxes/radios from the blanket input styling; added a compact
+  grid layout for the position checkbox group.
+- `CLAUDE.md` — documented the one-canonical-position-list convention.
+
 ## 2026-09-22 — Split TryoutSignup names into first/last
 
 `TryoutSignup.player_name` and `.parent_name` were single full-name fields — inconsistent with

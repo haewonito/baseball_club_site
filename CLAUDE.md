@@ -161,6 +161,12 @@ Keep it consistent if a new model gains a person-name field. Where a display str
 add a `*_full_name` property that joins them (see `TryoutSignup.player_full_name`) rather than
 storing the joined form.
 
+**Baseball positions are a single canonical, code-based enum, never free text** —
+`apps.teams.models.Position` (`LP`/`RP`/`C`/`B1`/`B2`/`B3`/`SS`/`LF`/`CF`/`RF`) is the one list used
+everywhere a position is recorded: `teams.PlayerPosition` (roster) and `tryouts.TryoutSignupPosition`
+(sign-up form) both FK/reference it. Never add a plain `CharField`/free-text field for a position —
+use a join-table row against `Position` instead, the way both of those do.
+
 **accounts** — `AUTH_USER_MODEL = "accounts.User"`. Roles are deliberately many-to-many rather than a
 field: `User.roles` → `UserRole`, where `UserRole.role` is **unique**, so `UserRole` rows are shared
 singletons (one "admin" row that many users point at), not per-user grants. This exists because the

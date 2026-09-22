@@ -57,13 +57,22 @@ class CoachProfile(models.Model):
 
 
 class Position(models.TextChoices):
-    PITCHER = "P", "Pitcher"
+    """
+    The one canonical list of positions for the whole site -- used here for
+    roster assignments and by apps.tryouts for sign-up position selection,
+    so a position is never spelled/named two different ways in two places.
+    """
+
+    LEFT_PITCHER = "LP", "Left-handed pitcher"
+    RIGHT_PITCHER = "RP", "Right-handed pitcher"
     CATCHER = "C", "Catcher"
-    FIRST = "1B", "First base"
-    SECOND = "2B", "Second base"
-    THIRD = "3B", "Third base"
+    FIRST_BASE = "B1", "First baseman"
+    SECOND_BASE = "B2", "Second baseman"
+    THIRD_BASE = "B3", "Third baseman"
     SHORTSTOP = "SS", "Shortstop"
-    OUTFIELD = "OF", "Outfield"
+    LEFT_FIELD = "LF", "Left fielder"
+    CENTER_FIELD = "CF", "Center fielder"
+    RIGHT_FIELD = "RF", "Right fielder"
 
 
 class PlayerPosition(models.Model):

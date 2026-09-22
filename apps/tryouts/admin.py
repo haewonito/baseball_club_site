@@ -1,13 +1,23 @@
 from django.contrib import admin
 
-from .models import TryoutSignup, TryoutStatusChange, TryoutYearSettings
+from .models import (
+    TryoutSignup,
+    TryoutSignupPosition,
+    TryoutStatusChange,
+    TryoutYearSettings,
+)
+
+
+class TryoutSignupPositionInline(admin.TabularInline):
+    model = TryoutSignupPosition
+    extra = 1
 
 
 @admin.register(TryoutSignup)
 class TryoutSignupAdmin(admin.ModelAdmin):
     list_display = (
         "player_full_name",
-        "positions",
+        "positions_display",
         "parent_full_name",
         "parent_phone",
         "submitted_at",
@@ -24,6 +34,7 @@ class TryoutSignupAdmin(admin.ModelAdmin):
     )
     ordering = ["-submitted_at"]
     readonly_fields = ("submitted_at", "tryout_year")
+    inlines = [TryoutSignupPositionInline]
     # Coaches get view-only access to this same list via a custom
     # permission check in a coach-facing view, not through this
     # admin-site registration.
