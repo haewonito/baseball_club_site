@@ -17,6 +17,13 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{host}"
+    for host in ALLOWED_HOSTS
+    if host not in ("localhost", "127.0.0.1")
+]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -84,7 +91,9 @@ DATABASES = {
 # --- Auth / passwords -------------------------------------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -113,7 +122,9 @@ if USE_R2:
     AWS_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = config("R2_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = config("R2_BUCKET_NAME")
-    AWS_S3_ENDPOINT_URL = config("R2_ENDPOINT_URL")  # e.g. https://<account_id>.r2.cloudflarestorage.com
+    AWS_S3_ENDPOINT_URL = config(
+        "R2_ENDPOINT_URL"
+    )  # e.g. https://<account_id>.r2.cloudflarestorage.com
     AWS_S3_ADDRESSING_STYLE = "virtual"
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
