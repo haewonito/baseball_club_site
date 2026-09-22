@@ -215,3 +215,14 @@ per-player ledger rows is an open decision.
 - No GameChanger ICS sync. If a subscribable feed is confirmed, `Event` gains a `source` field
   (manual vs. synced) and the coach/admin edit UI narrows to an override layer for cancellations.
 - No views/templates/tests at all yet — see Site map above for the target structure.
+
+## Future ideas (nice-to-have, not scheduled)
+
+- **Season roll-up / team promotion tool.** Each year most kids move up a division (10U → 11U, etc.)
+  while some leave. Admin wants a dedicated screen: a checklist of current players (checkbox per
+  player, default-checked) to mark who's moving up, then bulk-reassign those players'
+  `Player.team` to next season's team in one action, rather than editing each `Player` row by hand.
+  Open questions when this gets built: how "next team" is determined (division-ordering convention
+  doesn't exist yet -- `Team.division` is free text like `"12U"`), whether it creates new `Team` rows
+  for the new season or expects them pre-created, and what happens to a player's `PlayerPosition`
+  rows and open `Fee`s on promotion (carry over vs. reset).
