@@ -28,6 +28,9 @@ cp .env.example .env
 
 python manage.py migrate
 python manage.py createsuperuser
+
+my 201email.
+
 python manage.py runserver
 ```
 
