@@ -69,6 +69,22 @@ class Migration(migrations.Migration):
             field=models.CharField(max_length=100, default=""),
             preserve_default=False,
         ),
+        # Relax the old fields to nullable *before* removing them, and only
+        # tighten them back to NOT NULL *after* RunPython's reverse has
+        # repopulated them, below. Otherwise reversing this migration on a
+        # non-empty table fails: RemoveField's reverse (AddField) would try
+        # to recreate a NOT NULL column with no data to fill it, and
+        # Postgres rejects that.
+        migrations.AlterField(
+            model_name="tryoutsignup",
+            name="player_name",
+            field=models.CharField(max_length=150, blank=True, null=True),
+        ),
+        migrations.AlterField(
+            model_name="tryoutsignup",
+            name="parent_name",
+            field=models.CharField(max_length=150, blank=True, null=True),
+        ),
         migrations.RunPython(split_full_names, reverse_code=merge_full_names),
         migrations.RemoveField(
             model_name="tryoutsignup",
