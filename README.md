@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 cp .env.example .env
 # edit .env: set SECRET_KEY to a real random string
-
+# adding something just to trigger redeploy todo delete
 python manage.py migrate
 python manage.py createsuperuser
 
