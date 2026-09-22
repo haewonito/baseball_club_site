@@ -227,3 +227,31 @@ per-player ledger rows is an open decision.
   how "next team" is determined (division-ordering convention doesn't exist yet -- `Team.division`
   is free text like `"12U"`), whether it creates new `Team` rows for the new season or expects them
   pre-created, and whether a player's `PlayerPosition` rows should carry over or reset.
+
+- **Post-tryout decision → roster workflow.** Right now nothing happens after a signup reaches
+  `status=attended`. Proposed flow:
+  1. **Coach decides**, per signup: add `TryoutSignup.coach_decision` (`undecided` default →
+     `invite` / `maybe` / `not_selected`), with an audit trail model `TryoutDecisionChange` mirroring
+     the existing `TryoutStatusChange` pattern. This is a separate axis from `status` (which just
+     tracks contact/attendance logistics). `maybe` is internal-only -- never shown to the family;
+     a coach must resolve it to `invite` or `not_selected` before it's ever revealed.
+  2. **Batch reveal, not per-player auto-send.** Add a `decisions_finalized` flag per tryout
+     year, so an admin locks in all decisions for that group before any family sees anything --
+     avoids one family hearing back while another is still waiting.
+  3. **Family responds without logging in.** Reuse `ParentInvite`'s pattern (UUID token, expiring,
+     single-use) for a new public page `/try-outs/respond/<token>/` with Accept/Decline. Add
+     `TryoutSignup.family_response` (`pending` → `accepted`/`declined`). On accept, let them set a
+     password in the same flow, so responding and creating their login happen in one visit.
+  4. **Promote to roster** (accepted signups only): an admin/coach action that creates the `Player`
+     from `player_first_name`/`player_last_name`/`date_of_birth` (no re-entry), copies each
+     `TryoutSignupPosition` row straight into `PlayerPosition` (same canonical `Position` list, so
+     this is a direct copy), assigns the chosen `Team`, and creates/links the parent's `User` +
+     `ParentPlayerLink`.
+
+  **Email sending is deliberately deferred and does NOT block building the rest of this** --
+  `config/settings.py` has no `EMAIL_BACKEND`/SMTP configured yet, and this feature (plus
+  `ParentInvite`'s claim flow) is what will eventually need it. Until that infra exists, step 2's
+  "reveal" just displays each response link (e.g. a copy-link button) once `decisions_finalized` is
+  set, and the admin sends it manually (text, personal email, phone call) -- same token/schema, no
+  rework needed. Adding automated email later is purely additive: a "send" action that emails the
+  already-existing link, on top of the manual flow rather than replacing it.
