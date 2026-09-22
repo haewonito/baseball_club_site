@@ -3,6 +3,17 @@
 Running log of changes made to this repo, newest first. Short description + files touched per entry.
 Not a replacement for git history — this is meant to be skimmable without running `git log`.
 
+## 2026-09-22 — Player positions surfaced in the admin
+
+`teams.PlayerPosition` (the player↔position join table, already on the canonical `Position` list as
+of the previous entry) existed but was only reachable as its own separate top-level admin page —
+not visible when editing a Player. Added it as an inline on the Player admin page instead, same
+pattern as the `TryoutSignupPosition` inline. No schema change (the model already existed).
+
+Files:
+- `apps/accounts/admin.py` — added `PlayerPositionInline` to `PlayerAdmin`; added a
+  `positions_display` column to the Player list view.
+
 ## 2026-09-22 — Positions locked to one canonical, code-based list
 
 `teams.Position` and the tryout form's free-text `positions` field were two separate, inconsistent
