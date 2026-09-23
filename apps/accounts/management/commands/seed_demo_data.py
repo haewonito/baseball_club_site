@@ -55,9 +55,9 @@ COACHES = [
         ],
     ),
     (
-        "Dana",
-        "Reyes",
-        "dana.reyes@example.com",
+        "Travis",
+        "Roth",
+        "travis.roth@example.com",
         [Role.COACH],
         [("Choice Select 10U", TeamCoachRole.ASSISTANT)],
     ),
