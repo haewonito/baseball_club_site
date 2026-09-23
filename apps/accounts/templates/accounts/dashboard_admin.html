@@ -7,5 +7,10 @@
     <h1>Admin Dashboard</h1>
     <p>Signed in as {{ user }}.</p>
   </section>
-  <p>Try-out sign-ups, fees &amp; payments, team management, and site content will live here.</p>
+
+  <div class="dashboard-links">
+    <a class="btn" href="{% url 'accounts:admin_tryouts_list' %}">Try-Out Sign-Ups</a>
+  </div>
+
+  <p>Fees &amp; payments, team management, schedule management, users &amp; linking, coach bios, and site content will live here.</p>
 {% endblock %}

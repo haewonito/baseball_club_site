@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -8,7 +9,7 @@ from django.views.decorators.http import require_POST
 from apps.fees.models import Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import Team, TeamCoach
-from apps.tryouts.models import TryoutSignup
+from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 
 from .forms import PlayerRosterForm, PracticeEventForm
 from .models import ParentPlayerLink, Player
@@ -42,6 +43,78 @@ def dashboard_admin(request):
     if not request.user.is_admin:
         raise PermissionDenied
     return render(request, "accounts/dashboard_admin.html")
+
+
+@login_required
+def admin_tryouts_list(request):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    signups = TryoutSignup.objects.prefetch_related("positions").order_by("-submitted_at")
+    years = list(
+        TryoutSignup.objects.order_by("-tryout_year").values_list("tryout_year", flat=True).distinct()
+    )
+    selected_year = request.GET.get("year", "")
+    if selected_year:
+        signups = signups.filter(tryout_year=selected_year)
+
+    return render(
+        request,
+        "accounts/admin_tryouts_list.html",
+        {
+            "signups": signups,
+            "years": years,
+            "selected_year": selected_year,
+            "status_choices": TryoutStatus.choices,
+        },
+    )
+
+
+@login_required
+def admin_tryout_detail(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    signup = get_object_or_404(TryoutSignup.objects.prefetch_related("positions"), pk=pk)
+    status_changes = signup.status_changes.select_related("changed_by").order_by("-changed_at")
+
+    return render(
+        request,
+        "accounts/admin_tryout_detail.html",
+        {
+            "signup": signup,
+            "status_choices": TryoutStatus.choices,
+            "status_changes": status_changes,
+        },
+    )
+
+
+@login_required
+@require_POST
+def admin_tryout_status_change(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    signup = get_object_or_404(TryoutSignup, pk=pk)
+    new_status = request.POST.get("status", "")
+    if new_status not in dict(TryoutStatus.choices):
+        return HttpResponseBadRequest("Invalid status")
+
+    if new_status != signup.status:
+        TryoutStatusChange.objects.create(
+            signup=signup,
+            old_status=signup.status,
+            new_status=new_status,
+            changed_by=request.user,
+        )
+        signup.status = new_status
+        signup.save(update_fields=["status"])
+
+    return render(
+        request,
+        "partials/_tryout_status_select.html",
+        {"signup": signup, "status_choices": TryoutStatus.choices},
+    )
 
 
 def _get_coach_team_or_404(user, team_id):

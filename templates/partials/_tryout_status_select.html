@@ -1,0 +1,16 @@
+{# Usage: {% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %} -- also the htmx swap target/response fragment for the status-change POST. #}
+<span class="status-cell" id="status-cell-{{ signup.pk }}">
+  <select
+    name="status"
+    class="status-select"
+    hx-post="{% url 'accounts:admin_tryout_status_change' signup.pk %}"
+    hx-trigger="change"
+    hx-confirm="Change this sign-up's status? This will be recorded in the audit history."
+    hx-target="#status-cell-{{ signup.pk }}"
+    hx-swap="outerHTML"
+  >
+    {% for value, label in status_choices %}
+      <option value="{{ value }}" {% if value == signup.status %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</span>

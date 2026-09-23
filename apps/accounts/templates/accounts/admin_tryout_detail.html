@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ signup.player_full_name }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ signup.player_full_name }}</h1>
+    <p>Try-out year {{ signup.tryout_year }} &middot; Submitted {{ signup.submitted_at|date:"M j, Y g:i A" }}</p>
+  </section>
+
+  <section class="team-section">
+    <h2>Status</h2>
+    {% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}
+  </section>
+
+  <section class="team-section">
+    <h2>Player</h2>
+    <p>Date of birth: {{ signup.date_of_birth|default:"—" }}</p>
+    <p>Positions: {{ signup.positions_display|default:"—" }}</p>
+    <p>Years of experience: {{ signup.years_experience|default:"—" }}</p>
+    <p>Previous team: {{ signup.previous_team|default:"—" }}</p>
+    {% if signup.notes %}<p>Notes: {{ signup.notes }}</p>{% endif %}
+  </section>
+
+  <section class="team-section">
+    <h2>Parent</h2>
+    <p>{{ signup.parent_full_name }}</p>
+    <p>{{ signup.parent_phone }} &middot; {{ signup.parent_email }}</p>
+  </section>
+
+  {% if signup.admin_notes %}
+    <section class="team-section">
+      <h2>Admin Notes</h2>
+      <p>{{ signup.admin_notes }}</p>
+    </section>
+  {% endif %}
+
+  <section class="team-section">
+    <h2>Status History</h2>
+    {% if status_changes %}
+      <ul class="coach-list">
+        {% for change in status_changes %}
+          <li>
+            {{ change.changed_at|date:"M j, Y g:i A" }} &mdash;
+            {{ change.get_old_status_display }} &rarr; {{ change.get_new_status_display }}
+            by {{ change.changed_by|default:"—" }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No status changes yet.</p>
+    {% endif %}
+  </section>
+
+  <p><a href="{% url 'accounts:admin_tryouts_list' %}">&larr; Back to list</a></p>
+{% endblock %}

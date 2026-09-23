@@ -10,6 +10,13 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("dashboard/", views.dashboard_redirect, name="dashboard"),
     path("dashboard/admin/", views.dashboard_admin, name="dashboard_admin"),
+    path("dashboard/admin/tryouts/", views.admin_tryouts_list, name="admin_tryouts_list"),
+    path("dashboard/admin/tryouts/<int:pk>/", views.admin_tryout_detail, name="admin_tryout_detail"),
+    path(
+        "dashboard/admin/tryouts/<int:pk>/status/",
+        views.admin_tryout_status_change,
+        name="admin_tryout_status_change",
+    ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
     path("dashboard/coach/teams/<int:team_id>/roster/", views.coach_roster, name="coach_roster"),

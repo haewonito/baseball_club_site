@@ -565,3 +565,20 @@ legend {
   font-size: 0.85rem;
   align-self: flex-start;
 }
+
+/* --- Admin: try-out status select ---------------------------------------- */
+
+.status-select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-gray-line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: var(--color-red);
+}
