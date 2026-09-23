@@ -24,7 +24,7 @@ DEMO_PASSWORD = "demopass123"
 
 # Fun, not real -- see seed_photos/README (none of these are photos of the
 # actual named coaches). Keyed by the local part of each coach's email with
-# "." replaced by "_", e.g. marcus.owens@example.com -> marcus_owens.jpg.
+# "." replaced by "_", e.g. ryan.rickard@example.com -> ryan_rickard.jpg.
 SEED_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_photos"
 
 TEAMS = [
@@ -45,11 +45,14 @@ TEAMS = [
 # (first, last, email, roles, coach assignments as list of (team_name, TeamCoachRole))
 COACHES = [
     (
-        "Marcus",
-        "Owens",
-        "marcus.owens@example.com",
+        "Ryan",
+        "Rickard",
+        "ryan.rickard@example.com",
         [Role.ADMIN, Role.COACH],
-        [("Choice Select 10U", TeamCoachRole.HEAD)],
+        [
+            ("Choice Select 10U", TeamCoachRole.ASSISTANT),
+            ("Choice Select 12U", TeamCoachRole.HEAD),
+        ],
     ),
     (
         "Dana",
@@ -59,20 +62,20 @@ COACHES = [
         [("Choice Select 10U", TeamCoachRole.ASSISTANT)],
     ),
     (
-        "Trevor",
-        "Kim",
-        "trevor.kim@example.com",
+        "Sean",
+        "Morris",
+        "sean.morris@example.com",
         [Role.COACH],
-        [("Choice Select 12U", TeamCoachRole.HEAD)],
+        [("Choice Select 12U", TeamCoachRole.ASSISTANT)],
     ),
     (
-        "Priya",
-        "Nair",
-        "priya.nair@example.com",
+        "Tom",
+        "Nguyen",
+        "tom.nguyen@example.com",
         [Role.COACH],
         [
-            ("Choice Select 10U", TeamCoachRole.ASSISTANT),
-            ("Choice Select 12U", TeamCoachRole.ASSISTANT),
+            ("Choice Select 10U", TeamCoachRole.HEAD),
+            ("Choice Select 12U", TeamCoachRole.HEAD),
         ],
     ),
 ]
@@ -191,7 +194,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\nDemo data seeded."))
         self.stdout.write(f"All seeded users share the password: {self.password}")
         self.stdout.write(
-            f"Admin+head coach (dual role): {self.coaches['marcus.owens@example.com'].email}"
+            f"Admin+head coach (dual role): {self.coaches['ryan.rickard@example.com'].email}"
         )
         self.stdout.write(f"Admin-only: {self.admin.email}")
 
@@ -241,6 +244,14 @@ class Command(BaseCommand):
         photo_path = SEED_PHOTOS_DIR / filename
         if not photo_path.exists():
             return
+        # `flush` wipes the DB but not the media/ dir, so a same-named file
+        # from an earlier seed run may still be on disk -- delete it first
+        # so storage reuses the deterministic filename instead of appending
+        # a random suffix to avoid clobbering what it thinks is a different
+        # file.
+        target = f"coach_photos/{filename}"
+        if profile.photo.storage.exists(target):
+            profile.photo.storage.delete(target)
         with open(photo_path, "rb") as f:
             profile.photo.save(filename, File(f), save=True)
 
@@ -291,7 +302,7 @@ class Command(BaseCommand):
 
     def _seed_parents(self):
         name_cycle = iter(PARENT_FIRST_NAMES * 2)
-        admin_user = self.coaches["marcus.owens@example.com"]
+        admin_user = self.coaches["ryan.rickard@example.com"]
 
         for i, ((first, last), player) in enumerate(self.players.items()):
             parent_first = next(name_cycle)
@@ -334,7 +345,7 @@ class Command(BaseCommand):
     # -- fees -----------------------------------------------------------------
 
     def _seed_fees(self):
-        admin_user = self.coaches["marcus.owens@example.com"]
+        admin_user = self.coaches["ryan.rickard@example.com"]
         for i, ((first, last), player) in enumerate(self.players.items()):
             fee, _ = Fee.objects.get_or_create(
                 player=player,
@@ -371,7 +382,7 @@ class Command(BaseCommand):
     # -- schedule ---------------------------------------------------------------
 
     def _seed_schedule(self):
-        admin_user = self.coaches["marcus.owens@example.com"]
+        admin_user = self.coaches["ryan.rickard@example.com"]
         today = timezone.localdate()
         next_tuesday = today + datetime.timedelta(days=(1 - today.weekday()) % 7 or 7)
 
@@ -417,7 +428,7 @@ class Command(BaseCommand):
     # -- tryouts ------------------------------------------------------------------
 
     def _seed_tryouts(self):
-        admin_user = self.coaches["marcus.owens@example.com"]
+        admin_user = self.coaches["ryan.rickard@example.com"]
         for i, (first, last, birth_year, positions, status) in enumerate(
             TRYOUT_SIGNUPS
         ):
