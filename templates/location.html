@@ -11,7 +11,7 @@
 
   <section class="team-section">
     <h2>Address</h2>
-    <p>1500 W Mulberry St<br>Fort Collins, CO 80521</p>
+    <p>{{ address }}</p>
   </section>
 
   <section class="team-section">
@@ -26,7 +26,7 @@
     <h2>Map</h2>
     <div class="map-embed">
       <iframe
-        src="https://maps.google.com/maps?q=1500+W+Mulberry+St,+Fort+Collins,+CO+80521&output=embed"
+        src="https://maps.google.com/maps?q={{ address|urlencode }}&output=embed"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"
         allowfullscreen

@@ -5,6 +5,11 @@ from django.utils import timezone
 
 from apps.tryouts.models import TryoutYearSettings
 
+# TODO: placeholder -- replace with the club's real home field. Single
+# source of truth for the location page: feeds both the displayed address
+# and the embedded map query, so it only needs updating in one place.
+HOME_FIELD_ADDRESS = "1500 W Mulberry St, Fort Collins, CO 80521"
+
 
 def home(request):
     next_tryout_date = TryoutYearSettings.get_next_tryout_date()
@@ -24,4 +29,4 @@ def home(request):
 
 
 def location(request):
-    return render(request, "location.html")
+    return render(request, "location.html", {"address": HOME_FIELD_ADDRESS})
