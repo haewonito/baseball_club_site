@@ -5,13 +5,22 @@ from django.db import models
 class Team(models.Model):
     name = models.CharField(max_length=100)  # e.g. "12U Bulldogs"
     division = models.CharField(max_length=50)  # e.g. "12U"
+    # The spring/summer year the season plays out in -- e.g. 2027 for a team
+    # assembled from fall-2026 tryouts (see compute_tryout_year's cutoff
+    # logic in apps.tryouts.models, which uses this same convention).
     season_year = models.PositiveIntegerField()
 
     class Meta:
         ordering = ["-season_year", "division"]
 
+    @property
+    def season_label(self):
+        """e.g. season_year=2027 -> "2026-2027" -- distinguishes this season
+        from the one before/after it more intuitively than a bare year."""
+        return f"{self.season_year - 1}-{self.season_year}"
+
     def __str__(self):
-        return f"{self.name} ({self.season_year})"
+        return f"{self.name} ({self.season_label})"
 
 
 class TeamCoachRole(models.TextChoices):

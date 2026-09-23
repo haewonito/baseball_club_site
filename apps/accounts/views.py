@@ -67,9 +67,12 @@ def admin_tryouts_list(request):
         raise PermissionDenied
 
     signups = TryoutSignup.objects.prefetch_related("positions").order_by("-submitted_at")
-    years = list(
-        TryoutSignup.objects.order_by("-tryout_year").values_list("tryout_year", flat=True).distinct()
-    )
+    years = [
+        (year, f"{year - 1}-{year}")
+        for year in TryoutSignup.objects.order_by("-tryout_year")
+        .values_list("tryout_year", flat=True)
+        .distinct()
+    ]
     selected_year = request.GET.get("year", "")
     if selected_year:
         signups = signups.filter(tryout_year=selected_year)

@@ -9,11 +9,11 @@
 
   <form class="filter-form" method="get">
     <div class="form-field">
-      <label for="id_year">Year</label>
+      <label for="id_year">Season</label>
       <select id="id_year" name="year" onchange="this.form.submit()">
-        <option value="">All years</option>
-        {% for y in years %}
-          <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+        <option value="">All seasons</option>
+        {% for year, label in years %}
+          <option value="{{ year }}" {% if selected_year == year|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
@@ -28,7 +28,7 @@
           <th>Parent</th>
           <th>Phone</th>
           <th>Submitted</th>
-          <th>Year</th>
+          <th>Season</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -40,14 +40,14 @@
             <td>{{ signup.parent_full_name }}</td>
             <td>{{ signup.parent_phone }}</td>
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
-            <td>{{ signup.tryout_year }}</td>
+            <td>{{ signup.season_label }}</td>
             <td>{% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p>No try-out sign-ups{% if selected_year %} for {{ selected_year }}{% endif %}.</p>
+    <p>No try-out sign-ups{% if selected_year %} for that season{% endif %}.</p>
   {% endif %}
 
   <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>

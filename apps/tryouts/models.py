@@ -109,8 +109,14 @@ class TryoutSignup(models.Model):
     def positions_display(self):
         return ", ".join(p.get_position_display() for p in self.positions.all())
 
+    @property
+    def season_label(self):
+        """Same convention as Team.season_label -- tryout_year is already
+        the spring/summer year the resulting season plays out in."""
+        return f"{self.tryout_year - 1}-{self.tryout_year}"
+
     def __str__(self):
-        return f"{self.player_full_name} ({self.tryout_year})"
+        return f"{self.player_full_name} ({self.season_label})"
 
 
 class TryoutSignupPosition(models.Model):

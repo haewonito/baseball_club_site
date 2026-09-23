@@ -5,7 +5,7 @@
 {% block content %}
   <section class="page-hero">
     <h1>{{ signup.player_full_name }}</h1>
-    <p>Try-out year {{ signup.tryout_year }} &middot; Submitted {{ signup.submitted_at|date:"M j, Y g:i A" }}</p>
+    <p>Try-out season {{ signup.season_label }} &middot; Submitted {{ signup.submitted_at|date:"M j, Y g:i A" }}</p>
   </section>
 
   <section class="team-section">

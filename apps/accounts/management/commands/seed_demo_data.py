@@ -31,13 +31,16 @@ TEAMS = [
     {
         "name": "Choice Select 10U",
         "division": "10U",
-        "season_year": 2026,
+        # 2027 -> displays as "2026-2027" (Team.season_label) -- the
+        # current season given tryouts' fall cutoff (see
+        # compute_tryout_year), not the season before it.
+        "season_year": 2027,
         "birth_year": 2016,
     },
     {
         "name": "Choice Select 12U",
         "division": "12U",
-        "season_year": 2026,
+        "season_year": 2027,
         "birth_year": 2014,
     },
 ]
@@ -443,7 +446,7 @@ class Command(BaseCommand):
                     "parent_last_name": last,
                     "parent_phone": "555-0100",
                     "parent_email": f"{parent_first.lower()}.{last.lower()}.tryout@example.com",
-                    "tryout_year": 2026,
+                    "tryout_year": 2027,
                     "status": status,
                 },
             )

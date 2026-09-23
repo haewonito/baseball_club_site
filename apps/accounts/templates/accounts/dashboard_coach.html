@@ -26,7 +26,7 @@
 
     <section class="team-section">
       <h2>{{ current_team.name }}</h2>
-      <p>{{ current_assignment.get_role_display }} &middot; {{ current_team.division }} &middot; {{ current_team.season_year }}</p>
+      <p>{{ current_assignment.get_role_display }} &middot; {{ current_team.division }} &middot; {{ current_team.season_label }}</p>
       <div class="dashboard-links">
         <a class="btn" href="{% url 'accounts:coach_roster' current_team.pk %}">Roster</a>
         <a class="btn" href="{% url 'accounts:coach_practices' current_team.pk %}">Practice Schedule</a>

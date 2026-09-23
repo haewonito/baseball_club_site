@@ -17,7 +17,7 @@
           <th>Parent</th>
           <th>Phone</th>
           <th>Submitted</th>
-          <th>Year</th>
+          <th>Season</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -29,7 +29,7 @@
             <td>{{ signup.parent_full_name }}</td>
             <td>{{ signup.parent_phone }}</td>
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
-            <td>{{ signup.tryout_year }}</td>
+            <td>{{ signup.season_label }}</td>
             <td>{{ signup.get_status_display }}</td>
           </tr>
         {% endfor %}
