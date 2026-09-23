@@ -92,6 +92,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Allow running even when settings.DEBUG is False (e.g. against a deployed database).",
         )
+        parser.add_argument(
+            "--password",
+            default=None,
+            help=(
+                "Password to set on every seeded user. Defaults to a fixed dev password -- "
+                "always pass a one-off random value here with --force, since the default is "
+                "public (it's in this file, in git)."
+            ),
+        )
 
     def handle(self, *args, **options):
         if not settings.DEBUG and not options["force"]:
@@ -99,6 +108,13 @@ class Command(BaseCommand):
                 "settings.DEBUG is False -- refusing to seed demo data (looks like a production "
                 "database). Pass --force if you really mean to."
             )
+        if options["force"] and not options["password"]:
+            raise CommandError(
+                "Refusing to seed a non-local database with the default password (it's public, "
+                "committed to git). Pass --password '<random one-off value>'."
+            )
+
+        self.password = options["password"] or DEMO_PASSWORD
 
         with transaction.atomic():
             self.roles = self._seed_roles()
@@ -112,7 +128,7 @@ class Command(BaseCommand):
             self._seed_tryouts()
 
         self.stdout.write(self.style.SUCCESS("\nDemo data seeded."))
-        self.stdout.write(f"All seeded users share the password: {DEMO_PASSWORD}")
+        self.stdout.write(f"All seeded users share the password: {self.password}")
         self.stdout.write(f"Admin+head coach (dual role): {self.coaches['marcus.owens@example.com'].email}")
         self.stdout.write(f"Admin-only: {self.admin.email}")
 
@@ -132,7 +148,7 @@ class Command(BaseCommand):
                 email=email,
                 defaults={"first_name": first, "last_name": last, "is_active": True},
             )
-            user.set_password(DEMO_PASSWORD)
+            user.set_password(self.password)
             user.first_name, user.last_name = first, last
             user.save()
             user.roles.set([self.roles[r] for r in role_list])
@@ -155,7 +171,7 @@ class Command(BaseCommand):
         user, _ = User.objects.get_or_create(
             email=email, defaults={"first_name": first, "last_name": last, "is_active": True}
         )
-        user.set_password(DEMO_PASSWORD)
+        user.set_password(self.password)
         user.first_name, user.last_name = first, last
         user.save()
         user.roles.set([self.roles[Role.ADMIN]])
@@ -202,7 +218,7 @@ class Command(BaseCommand):
             parent, _ = User.objects.get_or_create(
                 email=email, defaults={"first_name": parent_first, "last_name": last}
             )
-            parent.set_password(DEMO_PASSWORD)
+            parent.set_password(self.password)
             parent.first_name, parent.last_name = parent_first, last
             parent.save()
             parent.roles.set([self.roles[Role.PARENT]])
@@ -219,7 +235,7 @@ class Command(BaseCommand):
                 second_parent, _ = User.objects.get_or_create(
                     email=second_email, defaults={"first_name": second_first, "last_name": last}
                 )
-                second_parent.set_password(DEMO_PASSWORD)
+                second_parent.set_password(self.password)
                 second_parent.save()
                 second_parent.roles.set([self.roles[Role.PARENT]])
                 ParentPlayerLink.objects.get_or_create(
