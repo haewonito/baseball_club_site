@@ -17,6 +17,7 @@
         <a href="{% url 'teams:coaches' %}">Coaches</a>
         <a href="{% url 'schedule:list' %}">Schedule</a>
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
+        <a href="{% url 'location' %}">Location</a>
         {% if user.is_authenticated %}
           <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
           <form method="post" action="{% url 'accounts:logout' %}">

@@ -21,3 +21,7 @@ def home(request):
             "show_tryout_banner": show_tryout_banner,
         },
     )
+
+
+def location(request):
+    return render(request, "location.html")

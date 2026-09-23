@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Location &amp; Directions · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Location &amp; Directions</h1>
+    {# TODO: placeholder address/directions -- replace with the club's real home field #}
+    <p>Choice Select plays and practices at Riverside Sports Complex.</p>
+  </section>
+
+  <section class="team-section">
+    <h2>Address</h2>
+    <p>1500 W Mulberry St<br>Fort Collins, CO 80521</p>
+  </section>
+
+  <section class="team-section">
+    <h2>Directions</h2>
+    {# TODO: placeholder -- add real driving directions/parking info #}
+    <p>
+      Parking is available on site. See the map below for the exact location.
+    </p>
+  </section>
+
+  <section class="team-section">
+    <h2>Map</h2>
+    <div class="map-embed">
+      <iframe
+        src="https://maps.google.com/maps?q=1500+W+Mulberry+St,+Fort+Collins,+CO+80521&output=embed"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen
+        title="Map to Choice Select's home field"
+      ></iframe>
+    </div>
+  </section>
+{% endblock %}
