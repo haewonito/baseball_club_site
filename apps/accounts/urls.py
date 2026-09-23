@@ -81,5 +81,10 @@ urlpatterns = [
         views.parent_player_payments,
         name="parent_player_payments",
     ),
-    # invite claim views go here later
+    path(
+        "dashboard/parent/players/<int:player_id>/invite/",
+        views.parent_invite_player,
+        name="parent_invite_player",
+    ),
+    path("invite/<uuid:token>/", views.invite_claim, name="invite_claim"),
 ]

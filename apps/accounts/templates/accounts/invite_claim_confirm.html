@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Invite · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Link your account to {{ invite.player }}?</h1>
+    <p>Signed in as {{ user }}.</p>
+  </section>
+
+  <div class="form-errors">
+    <p>
+      You will be able to see {{ invite.player.first_name }}'s private information, including fee
+      and payment history.
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn--primary" type="submit">Confirm</button>
+  </form>
+{% endblock %}

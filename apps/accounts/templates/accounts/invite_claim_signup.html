@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Accept Invite · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>You've been invited to {{ invite.player }}'s account</h1>
+  </section>
+
+  <div class="form-errors">
+    <p>
+      You will be able to see {{ invite.player.first_name }}'s private information, including fee
+      and payment history.
+    </p>
+  </div>
+
+  <p>
+    Already have an account?
+    <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a>
+    first, then come back to this link.
+  </p>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.first_name %}
+      {% include "partials/_form_field.html" with field=form.last_name %}
+    </div>
+    {% include "partials/_form_field.html" with field=form.email %}
+    {% include "partials/_form_field.html" with field=form.password1 %}
+    {% include "partials/_form_field.html" with field=form.password2 %}
+    <button class="btn btn--primary" type="submit">Create Account &amp; Accept</button>
+  </form>
+{% endblock %}

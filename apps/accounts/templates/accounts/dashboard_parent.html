@@ -33,6 +33,7 @@
             {% endif %}
           </p>
           <a class="btn" href="{% url 'accounts:parent_player_payments' card.player.pk %}">View payment history</a>
+          <a class="btn" href="{% url 'accounts:parent_invite_player' card.player.pk %}">Invite a parent</a>
         </div>
       {% endfor %}
     </div>

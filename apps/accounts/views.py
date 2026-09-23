@@ -1,8 +1,10 @@
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -11,8 +13,15 @@ from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, Team, TeamCoach
 from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 
-from .forms import CoachProfileForm, FeeForm, PaymentForm, PlayerRosterForm, PracticeEventForm
-from .models import ParentPlayerLink, Player, Role, User
+from .forms import (
+    CoachProfileForm,
+    FeeForm,
+    InviteClaimSignupForm,
+    PaymentForm,
+    PlayerRosterForm,
+    PracticeEventForm,
+)
+from .models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
 
 FEE_STATUS_LABELS = {
     "paid": "Paid",
@@ -499,3 +508,81 @@ def parent_player_payments(request, player_id):
             "balance": total_due - running_total,
         },
     )
+
+
+@login_required
+def parent_invite_player(request, player_id):
+    if not request.user.is_parent:
+        raise PermissionDenied
+
+    link = get_object_or_404(
+        ParentPlayerLink.objects.select_related("player"),
+        parent=request.user,
+        player_id=player_id,
+        removed_at__isnull=True,
+    )
+    player = link.player
+
+    invite = (
+        ParentInvite.objects.filter(player=player, created_by=request.user, claimed_at__isnull=True)
+        .order_by("-created_at")
+        .first()
+    )
+    if invite and not invite.is_valid:
+        invite = None
+
+    if request.method == "POST" and not invite:
+        invite = ParentInvite.objects.create(player=player, created_by=request.user)
+
+    invite_url = None
+    if invite:
+        invite_url = request.build_absolute_uri(reverse("accounts:invite_claim", args=[invite.token]))
+
+    return render(
+        request,
+        "accounts/parent_invite.html",
+        {"player": player, "invite": invite, "invite_url": invite_url},
+    )
+
+
+def invite_claim(request, token):
+    """
+    Public -- no login required to view. Whoever holds this link can either
+    confirm with their existing account (if already logged in) or create a
+    new one on the spot; there's no pre-set invitee email on ParentInvite,
+    so this is the only way to tie a specific person to the claim.
+    """
+    invite = get_object_or_404(
+        ParentInvite.objects.select_related("player", "created_by"), token=token
+    )
+
+    if not invite.is_valid:
+        return render(request, "accounts/invite_invalid.html", {"invite": invite})
+
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            _complete_invite_claim(invite, request.user)
+            return redirect("accounts:dashboard")
+        return render(request, "accounts/invite_claim_confirm.html", {"invite": invite})
+
+    if request.method == "POST":
+        form = InviteClaimSignupForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            _complete_invite_claim(invite, user)
+            auth_login(request, user)
+            return redirect("accounts:dashboard")
+    else:
+        form = InviteClaimSignupForm()
+    return render(request, "accounts/invite_claim_signup.html", {"invite": invite, "form": form})
+
+
+def _complete_invite_claim(invite, user):
+    ParentPlayerLink.objects.get_or_create(
+        parent=user, player=invite.player, defaults={"created_by": invite.created_by}
+    )
+    invite.claimed_at = timezone.now()
+    invite.claimed_by = user
+    invite.save(update_fields=["claimed_at", "claimed_by"])
+    parent_role, _ = UserRole.objects.get_or_create(role=Role.PARENT)
+    user.roles.add(parent_role)

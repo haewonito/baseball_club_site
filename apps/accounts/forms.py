@@ -1,8 +1,12 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event
 from apps.teams.models import CoachProfile, PlayerPosition, Position, Team
+
+from .models import User
 
 from .models import Player
 
@@ -140,3 +144,47 @@ class CoachProfileForm(forms.ModelForm):
         widgets = {
             "bio_text": forms.Textarea(attrs={"rows": 6}),
         }
+
+
+class InviteClaimSignupForm(forms.Form):
+    """
+    Account creation for someone claiming a ParentInvite who doesn't
+    already have a login. Plain forms.Form (not a User ModelForm) since it
+    needs the password1/password2 pair and doesn't touch roles/is_active
+    directly -- those are set by the view after save().
+    """
+
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150)
+    email = forms.EmailField()
+    password1 = forms.CharField(widget=forms.PasswordInput, label="Password")
+    password2 = forms.CharField(widget=forms.PasswordInput, label="Confirm password")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError(
+                "An account with this email already exists -- log in instead."
+            )
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            self.add_error("password2", "Passwords don't match.")
+        elif password1:
+            try:
+                validate_password(password1)
+            except DjangoValidationError as exc:
+                self.add_error("password1", exc)
+        return cleaned_data
+
+    def save(self):
+        return User.objects.create_user(
+            email=self.cleaned_data["email"],
+            password=self.cleaned_data["password1"],
+            first_name=self.cleaned_data["first_name"],
+            last_name=self.cleaned_data["last_name"],
+        )

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Invite a Parent · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Invite a Parent</h1>
+    <p>For {{ player }}</p>
+  </section>
+
+  <div class="form-errors">
+    <p>
+      Whoever uses this link will be able to see {{ player.first_name }}'s private information,
+      including fee and payment history.
+    </p>
+  </div>
+
+  {% if invite %}
+    <div class="form-field">
+      <label for="id_invite_url">Share this link</label>
+      <input type="text" id="id_invite_url" readonly value="{{ invite_url }}" onclick="this.select()">
+    </div>
+    <p>Expires {{ invite.expires_at|date:"M j, Y" }}.</p>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <button class="btn btn--primary" type="submit">Generate Invite Link</button>
+    </form>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_parent' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Invite No Longer Valid · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>This invite link is no longer valid</h1>
+    <p>
+      {% if invite.claimed_at %}
+        It's already been used.
+      {% else %}
+        It has expired.
+      {% endif %}
+      Ask the person who sent it for a new one.
+    </p>
+  </section>
+{% endblock %}
