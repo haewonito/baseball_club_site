@@ -3,8 +3,8 @@
 {% block announcement %}
   {% if show_tryout_banner %}
     <div class="site-announcement">
-      <div class="site-announcement__inner">
-        Try-outs are scheduled for {{ next_tryout_date|date:"F j, Y" }}.
+      <div class="site-announcement__track">
+        <span class="site-announcement__text">Try-outs are scheduled for {{ next_tryout_date|date:"F j, Y" }}.</span>
       </div>
     </div>
   {% endif %}

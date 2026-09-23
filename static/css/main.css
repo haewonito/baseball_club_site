@@ -44,14 +44,37 @@ a:hover {
 .site-announcement {
   background: var(--color-gray-bg);
   border-bottom: 1px solid var(--color-gray-line);
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.site-announcement__inner {
-  max-width: 720px;
-  margin: 0 auto;
+.site-announcement__track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: site-announcement-scroll 18s linear infinite;
+}
+
+.site-announcement__text {
+  display: inline-block;
   padding: 0.65rem 1.5rem;
   font-size: 0.9rem;
   color: var(--color-black);
+}
+
+@keyframes site-announcement-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-announcement__track {
+    animation: none;
+    padding-left: 1.5rem;
+  }
 }
 
 /* --- Header / footer (structural black bars) ------------------------- */
