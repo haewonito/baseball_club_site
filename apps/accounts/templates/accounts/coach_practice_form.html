@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ heading }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ heading }}</h1>
+    <p>{{ team.name }}</p>
+  </section>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% include "partials/_form_field.html" with field=form.title %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.start_datetime %}
+      {% include "partials/_form_field.html" with field=form.end_datetime %}
+    </div>
+    {% include "partials/_form_field.html" with field=form.location_name %}
+    {% include "partials/_form_field.html" with field=form.location_address %}
+    {% include "partials/_form_field.html" with field=form.notes %}
+    {% include "partials/_form_field.html" with field=form.status %}
+    <button class="btn btn--primary" type="submit">Save</button>
+  </form>
+
+  <p><a href="{% url 'accounts:coach_practices' team.pk %}">&larr; Back to practice schedule</a></p>
+{% endblock %}

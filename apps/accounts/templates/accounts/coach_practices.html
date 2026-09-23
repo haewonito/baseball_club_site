@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} Practice Schedule · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ team.name }} &mdash; Practice Schedule</h1>
+    <a class="btn btn--primary" href="{% url 'accounts:coach_practice_add' team.pk %}">Add Practice</a>
+  </section>
+
+  {% if events %}
+    <ul class="schedule-list">
+      {% for event in events %}
+        <li class="schedule-item">
+          <div class="schedule-item__date">
+            <span class="schedule-item__day">{{ event.start_datetime|date:"D, M j" }}</span>
+            <span class="schedule-item__time">{{ event.start_datetime|date:"g:i A" }}</span>
+          </div>
+          <div class="schedule-item__details">
+            <div class="schedule-item__title">
+              {{ event.title|default:"Practice" }}
+              {% if event.status != "scheduled" %}
+                <span class="status-badge">{{ event.get_status_display }}</span>
+              {% endif %}
+            </div>
+            <div class="schedule-item__meta">{{ event.location_name }}</div>
+          </div>
+          <div class="schedule-item__actions">
+            <a href="{% url 'accounts:coach_practice_edit' team.pk event.pk %}">Edit</a>
+            <form method="post" action="{% url 'accounts:coach_practice_delete' team.pk event.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="link-button">Delete</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No practices scheduled yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_coach' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

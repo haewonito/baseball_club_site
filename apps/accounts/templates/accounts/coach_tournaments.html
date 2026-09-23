@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} Tournament Schedule · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ team.name }} &mdash; Tournament Schedule</h1>
+    <p>View-only.</p>
+  </section>
+
+  {% if events %}
+    <ul class="schedule-list">
+      {% for event in events %}
+        {% include "partials/_event_item.html" with event=event %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No tournaments scheduled yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_coach' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

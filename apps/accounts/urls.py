@@ -11,6 +11,48 @@ urlpatterns = [
     path("dashboard/", views.dashboard_redirect, name="dashboard"),
     path("dashboard/admin/", views.dashboard_admin, name="dashboard_admin"),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
+    path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
+    path("dashboard/coach/teams/<int:team_id>/roster/", views.coach_roster, name="coach_roster"),
+    path(
+        "dashboard/coach/teams/<int:team_id>/roster/add/",
+        views.coach_roster_add,
+        name="coach_roster_add",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/roster/players/<int:player_id>/edit/",
+        views.coach_roster_edit_player,
+        name="coach_roster_edit_player",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/roster/players/<int:player_id>/remove/",
+        views.coach_roster_remove_player,
+        name="coach_roster_remove_player",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/practices/",
+        views.coach_practices,
+        name="coach_practices",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/practices/add/",
+        views.coach_practice_add,
+        name="coach_practice_add",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/practices/<int:event_id>/edit/",
+        views.coach_practice_edit,
+        name="coach_practice_edit",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/practices/<int:event_id>/delete/",
+        views.coach_practice_delete,
+        name="coach_practice_delete",
+    ),
+    path(
+        "dashboard/coach/teams/<int:team_id>/tournaments/",
+        views.coach_tournaments,
+        name="coach_tournaments",
+    ),
     path("dashboard/parent/", views.dashboard_parent, name="dashboard_parent"),
     path(
         "dashboard/parent/players/<int:player_id>/payments/",

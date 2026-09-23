@@ -3,10 +3,15 @@ from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.fees.models import Payment
+from apps.schedule.models import Event, EventType
+from apps.teams.models import Team, TeamCoach
+from apps.tryouts.models import TryoutSignup
 
-from .models import ParentPlayerLink
+from .forms import PlayerRosterForm, PracticeEventForm
+from .models import ParentPlayerLink, Player
 
 
 class LoginView(BaseLoginView):
@@ -39,11 +44,178 @@ def dashboard_admin(request):
     return render(request, "accounts/dashboard_admin.html")
 
 
+def _get_coach_team_or_404(user, team_id):
+    return get_object_or_404(Team, pk=team_id, coach_assignments__coach=user)
+
+
 @login_required
 def dashboard_coach(request):
     if not request.user.is_coach:
         raise PermissionDenied
-    return render(request, "accounts/dashboard_coach.html")
+
+    assignments = list(
+        TeamCoach.objects.filter(coach=request.user).select_related("team").order_by("team__name")
+    )
+    current_assignment = None
+    if assignments:
+        team_id = request.GET.get("team")
+        current_assignment = next(
+            (a for a in assignments if str(a.team_id) == team_id), assignments[0]
+        )
+
+    return render(
+        request,
+        "accounts/dashboard_coach.html",
+        {
+            "assignments": assignments,
+            "current_assignment": current_assignment,
+            "current_team": current_assignment.team if current_assignment else None,
+        },
+    )
+
+
+@login_required
+def coach_roster(request, team_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    players = team.players.prefetch_related("positions").order_by("last_name", "first_name")
+    return render(request, "accounts/coach_roster.html", {"team": team, "players": players})
+
+
+@login_required
+def coach_roster_add(request, team_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    if request.method == "POST":
+        form = PlayerRosterForm(request.POST, instance=Player(team=team))
+        if form.is_valid():
+            form.save()
+            return redirect("accounts:coach_roster", team_id=team.pk)
+    else:
+        form = PlayerRosterForm()
+    return render(
+        request,
+        "accounts/coach_roster_form.html",
+        {"team": team, "form": form, "heading": "Add Player"},
+    )
+
+
+@login_required
+def coach_roster_edit_player(request, team_id, player_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    player = get_object_or_404(Player, pk=player_id, team=team)
+    if request.method == "POST":
+        form = PlayerRosterForm(request.POST, instance=player)
+        if form.is_valid():
+            form.save()
+            return redirect("accounts:coach_roster", team_id=team.pk)
+    else:
+        form = PlayerRosterForm(instance=player)
+    return render(
+        request,
+        "accounts/coach_roster_form.html",
+        {"team": team, "form": form, "heading": f"Edit {player}"},
+    )
+
+
+@login_required
+@require_POST
+def coach_roster_remove_player(request, team_id, player_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    player = get_object_or_404(Player, pk=player_id, team=team)
+    # Removes from this roster, doesn't delete the Player -- preserves fee
+    # history and keeps the record around for reassignment elsewhere.
+    player.team = None
+    player.save()
+    return redirect("accounts:coach_roster", team_id=team.pk)
+
+
+@login_required
+def coach_practices(request, team_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    events = team.events.filter(event_type=EventType.PRACTICE).order_by("start_datetime")
+    return render(request, "accounts/coach_practices.html", {"team": team, "events": events})
+
+
+@login_required
+def coach_practice_add(request, team_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    if request.method == "POST":
+        form = PracticeEventForm(
+            request.POST, instance=Event(team=team, event_type=EventType.PRACTICE)
+        )
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.created_by = request.user
+            event.save()
+            return redirect("accounts:coach_practices", team_id=team.pk)
+    else:
+        form = PracticeEventForm()
+    return render(
+        request,
+        "accounts/coach_practice_form.html",
+        {"team": team, "form": form, "heading": "Add Practice"},
+    )
+
+
+@login_required
+def coach_practice_edit(request, team_id, event_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    event = get_object_or_404(Event, pk=event_id, team=team, event_type=EventType.PRACTICE)
+    if request.method == "POST":
+        form = PracticeEventForm(request.POST, instance=event)
+        if form.is_valid():
+            updated = form.save(commit=False)
+            updated.updated_by = request.user
+            updated.save()
+            return redirect("accounts:coach_practices", team_id=team.pk)
+    else:
+        form = PracticeEventForm(instance=event)
+    return render(
+        request,
+        "accounts/coach_practice_form.html",
+        {"team": team, "form": form, "heading": "Edit Practice"},
+    )
+
+
+@login_required
+@require_POST
+def coach_practice_delete(request, team_id, event_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    event = get_object_or_404(Event, pk=event_id, team=team, event_type=EventType.PRACTICE)
+    event.delete()
+    return redirect("accounts:coach_practices", team_id=team.pk)
+
+
+@login_required
+def coach_tournaments(request, team_id):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    team = _get_coach_team_or_404(request.user, team_id)
+    events = team.events.filter(event_type=EventType.TOURNAMENT).order_by("start_datetime")
+    return render(request, "accounts/coach_tournaments.html", {"team": team, "events": events})
+
+
+@login_required
+def coach_tryouts(request):
+    if not request.user.is_coach:
+        raise PermissionDenied
+    signups = TryoutSignup.objects.prefetch_related("positions").order_by("-submitted_at")
+    return render(request, "accounts/coach_tryouts.html", {"signups": signups})
 
 
 @login_required

@@ -7,5 +7,35 @@
     <h1>Coach Dashboard</h1>
     <p>Signed in as {{ user }}.</p>
   </section>
-  <p>Roster editing, practice scheduling, and try-out sign-ups will live here.</p>
+
+  {% if not assignments %}
+    <p>You're not assigned to any teams yet. Contact the club to get set up.</p>
+  {% else %}
+    {% if assignments|length > 1 %}
+      <div class="team-switcher">
+        {% for assignment in assignments %}
+          <a
+            class="team-switcher__item{% if assignment.team_id == current_team.pk %} team-switcher__item--active{% endif %}"
+            href="{% url 'accounts:dashboard_coach' %}?team={{ assignment.team_id }}"
+          >
+            {{ assignment.team.name }} <span class="team-switcher__role">({{ assignment.get_role_display }})</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <section class="team-section">
+      <h2>{{ current_team.name }}</h2>
+      <p>{{ current_assignment.get_role_display }} &middot; {{ current_team.division }} &middot; {{ current_team.season_year }}</p>
+      <div class="dashboard-links">
+        <a class="btn" href="{% url 'accounts:coach_roster' current_team.pk %}">Roster</a>
+        <a class="btn" href="{% url 'accounts:coach_practices' current_team.pk %}">Practice Schedule</a>
+        <a class="btn" href="{% url 'accounts:coach_tournaments' current_team.pk %}">Tournament Schedule</a>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="team-section">
+    <a href="{% url 'accounts:coach_tryouts' %}">View all try-out sign-ups &rarr;</a>
+  </section>
 {% endblock %}

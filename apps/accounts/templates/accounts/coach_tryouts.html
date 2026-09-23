@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Try-Out Sign-Ups · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Try-Out Sign-Ups</h1>
+    <p>All teams, all years. View-only.</p>
+  </section>
+
+  {% if signups %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Positions</th>
+          <th>Parent</th>
+          <th>Phone</th>
+          <th>Submitted</th>
+          <th>Year</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for signup in signups %}
+          <tr>
+            <td>{{ signup.player_full_name }}</td>
+            <td>{{ signup.positions_display }}</td>
+            <td>{{ signup.parent_full_name }}</td>
+            <td>{{ signup.parent_phone }}</td>
+            <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
+            <td>{{ signup.tryout_year }}</td>
+            <td>{{ signup.get_status_display }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No try-out sign-ups yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_coach' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

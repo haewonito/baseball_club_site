@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ heading }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ heading }}</h1>
+    <p>{{ team.name }}</p>
+  </section>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.first_name %}
+      {% include "partials/_form_field.html" with field=form.last_name %}
+    </div>
+    {% include "partials/_form_field.html" with field=form.date_of_birth %}
+    {% include "partials/_form_field.html" with field=form.jersey_number %}
+    {% include "partials/_form_field.html" with field=form.positions %}
+    <button class="btn btn--primary" type="submit">Save</button>
+  </form>
+
+  <p><a href="{% url 'accounts:coach_roster' team.pk %}">&larr; Back to roster</a></p>
+{% endblock %}

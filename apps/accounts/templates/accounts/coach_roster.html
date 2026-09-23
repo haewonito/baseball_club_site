@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} Roster · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ team.name }} &mdash; Roster</h1>
+    <a class="btn btn--primary" href="{% url 'accounts:coach_roster_add' team.pk %}">Add Player</a>
+  </section>
+
+  {% if players %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Positions</th>
+          <th>#</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for player in players %}
+          <tr>
+            <td>{{ player }}</td>
+            <td>
+              {% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </td>
+            <td>{{ player.jersey_number|default:"—" }}</td>
+            <td>
+              <a href="{% url 'accounts:coach_roster_edit_player' team.pk player.pk %}">Edit</a>
+              <form method="post" action="{% url 'accounts:coach_roster_remove_player' team.pk player.pk %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="link-button">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No players on the roster yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_coach' %}">&larr; Back to dashboard</a></p>
+{% endblock %}
