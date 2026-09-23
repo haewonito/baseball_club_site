@@ -52,6 +52,11 @@ class CoachProfile(models.Model):
     photo = models.ImageField(upload_to="coach_photos/", blank=True, null=True)
     contact_email = models.EmailField(blank=True)  # optional; may route through admins instead
 
+    def save(self, *args, **kwargs):
+        if not self.contact_email:
+            self.contact_email = self.coach.email
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Bio for {self.coach}"
 
