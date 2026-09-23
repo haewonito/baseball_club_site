@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
+  {% block announcement %}{% endblock %}
   <header class="site-header">
     <div class="site-header__inner">
       <a class="site-header__brand" href="{% url 'home' %}">Choice Select</a>
