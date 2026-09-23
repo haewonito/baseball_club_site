@@ -56,8 +56,9 @@ class PlayerPositionInline(admin.TabularInline):
     # PlayerPosition -> apps.teams.models.Position is the same canonical
     # position list used by apps.tryouts.TryoutSignupPosition; see
     # CLAUDE.md's "Baseball positions" note. Inlined here so a position is
-    # editable right on the player, not only via the separate top-level
-    # Player positions admin page.
+    # editable right on the player -- this is the only place to edit it in
+    # Django admin; the separate top-level "Player positions" page was
+    # removed as redundant.
     model = PlayerPosition
     extra = 1
 

@@ -47,4 +47,20 @@ class TryoutYearSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(TryoutStatusChange)
 class TryoutStatusChangeAdmin(admin.ModelAdmin):
+    """
+    Read-only -- this is an append-only audit trail (see CLAUDE.md), so
+    editing/deleting rows here would let an admin falsify history that's
+    meant to be immutable. Rows are written by the status-change flow on
+    the custom admin dashboard, not created here.
+    """
+
     list_display = ("signup", "old_status", "new_status", "changed_by", "changed_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

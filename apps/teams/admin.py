@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CoachProfile, PlayerPosition, Team, TeamCoach
+from .models import CoachProfile, Team, TeamCoach
 
 
 class TeamCoachInline(admin.TabularInline):
@@ -18,8 +18,3 @@ class TeamAdmin(admin.ModelAdmin):
 @admin.register(CoachProfile)
 class CoachProfileAdmin(admin.ModelAdmin):
     list_display = ("coach",)
-
-
-@admin.register(PlayerPosition)
-class PlayerPositionAdmin(admin.ModelAdmin):
-    list_display = ("player", "position")
