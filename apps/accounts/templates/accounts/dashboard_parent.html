@@ -7,5 +7,36 @@
     <h1>Parent Dashboard</h1>
     <p>Signed in as {{ user }}.</p>
   </section>
-  <p>Your kids' next events and fee balances will live here.</p>
+
+  {% if cards %}
+    <div class="kid-cards">
+      {% for card in cards %}
+        <div class="kid-card">
+          <h2>{{ card.player }}</h2>
+          {% if card.player.team %}
+            <p class="kid-card__team">{{ card.player.team.name }}</p>
+          {% endif %}
+          <p class="kid-card__row">
+            <span>Next event</span>
+            {% if card.next_event %}
+              {{ card.next_event.start_datetime|date:"D, M j g:i A" }} &mdash; {{ card.next_event.get_event_type_display }}
+            {% else %}
+              No upcoming events
+            {% endif %}
+          </p>
+          <p class="kid-card__row">
+            <span>Fee balance</span>
+            {% if card.balance > 0 %}
+              <span class="status-badge">${{ card.balance }} due</span>
+            {% else %}
+              $0.00
+            {% endif %}
+          </p>
+          <a class="btn" href="{% url 'accounts:parent_player_payments' card.player.pk %}">View payment history</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No players linked to your account yet. Contact the club to get set up.</p>
+  {% endif %}
 {% endblock %}

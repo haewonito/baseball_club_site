@@ -12,5 +12,10 @@ urlpatterns = [
     path("dashboard/admin/", views.dashboard_admin, name="dashboard_admin"),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/parent/", views.dashboard_parent, name="dashboard_parent"),
+    path(
+        "dashboard/parent/players/<int:player_id>/payments/",
+        views.parent_player_payments,
+        name="parent_player_payments",
+    ),
     # invite claim views go here later
 ]

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ player }} Payments · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ player }} &mdash; Payment History</h1>
+    <p>
+      Total due: ${{ total_due }} &middot; Paid: ${{ total_paid }} &middot;
+      Balance: ${{ balance }}
+    </p>
+  </section>
+
+  {% if rows %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Method</th>
+          <th>Amount</th>
+          <th>Running Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.payment.paid_at }}</td>
+            <td>{{ row.payment.fee.description }}</td>
+            <td>{{ row.payment.get_method_display }}</td>
+            <td>${{ row.payment.amount }}</td>
+            <td>${{ row.running_total }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No payments recorded yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_parent' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

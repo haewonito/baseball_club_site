@@ -448,3 +448,46 @@ legend {
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
+
+/* --- Parent dashboard kid cards ----------------------------------------- */
+
+.kid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.kid-card {
+  border: 1px solid var(--color-gray-line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.kid-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.kid-card__team {
+  color: var(--color-gray-text);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.kid-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  margin: 0.4rem 0;
+}
+
+.kid-card__row span:first-child {
+  color: var(--color-gray-text);
+}
+
+.kid-card .btn {
+  margin-top: 0.75rem;
+}
