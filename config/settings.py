@@ -75,6 +75,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 AUTH_USER_MODEL = "accounts.User"
 
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:dashboard"
+LOGOUT_REDIRECT_URL = "home"
+
 # --- Database -------------------------------------------------------------
 # DATABASE_URL is injected automatically by Railway's Postgres addon.
 # Locally, set it in .env to something like:

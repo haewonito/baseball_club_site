@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Coach Dashboard · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Coach Dashboard</h1>
+    <p>Signed in as {{ user }}.</p>
+  </section>
+  <p>Roster editing, practice scheduling, and try-out sign-ups will live here.</p>
+{% endblock %}

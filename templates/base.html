@@ -15,6 +15,15 @@
         <a href="{% url 'teams:index' %}">Teams</a>
         <a href="{% url 'schedule:list' %}">Schedule</a>
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+          <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit">Log Out</button>
+          </form>
+        {% else %}
+          <a href="{% url 'accounts:login' %}">Log In</a>
+        {% endif %}
       </nav>
     </div>
   </header>

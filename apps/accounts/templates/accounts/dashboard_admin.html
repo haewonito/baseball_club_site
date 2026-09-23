@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Admin Dashboard</h1>
+    <p>Signed in as {{ user }}.</p>
+  </section>
+  <p>Try-out sign-ups, fees &amp; payments, team management, and site content will live here.</p>
+{% endblock %}

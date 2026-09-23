@@ -113,6 +113,25 @@ a:hover {
   font-weight: 500;
 }
 
+.site-nav form {
+  display: inline;
+}
+
+.site-nav button {
+  background: none;
+  border: none;
+  color: var(--color-white);
+  font: inherit;
+  font-weight: 500;
+  margin-left: 1.5rem;
+  padding: 0;
+  cursor: pointer;
+}
+
+.site-nav button:hover {
+  text-decoration: underline;
+}
+
 .site-footer__inner {
   font-size: 0.85rem;
   color: #cccccc;

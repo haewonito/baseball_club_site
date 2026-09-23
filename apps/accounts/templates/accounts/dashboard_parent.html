@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Parent Dashboard · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Parent Dashboard</h1>
+    <p>Signed in as {{ user }}.</p>
+  </section>
+  <p>Your kids' next events and fee balances will live here.</p>
+{% endblock %}
