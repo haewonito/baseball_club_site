@@ -5,7 +5,14 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from apps.accounts.models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
+from apps.accounts.models import (
+    ParentInvite,
+    ParentPlayerLink,
+    Player,
+    Role,
+    User,
+    UserRole,
+)
 from apps.fees.models import Fee, Payment, PaymentMethod
 from apps.schedule.models import Event, EventStatus, EventType
 from apps.teams.models import CoachProfile, Position, Team, TeamCoach, TeamCoachRole
@@ -14,31 +21,52 @@ from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 DEMO_PASSWORD = "demopass123"
 
 TEAMS = [
-    {"name": "10U Bulldogs", "division": "10U", "season_year": 2026, "birth_year": 2016},
-    {"name": "12U Bulldogs", "division": "12U", "season_year": 2026, "birth_year": 2014},
+    {
+        "name": "Choice Select 10U",
+        "division": "10U",
+        "season_year": 2026,
+        "birth_year": 2016,
+    },
+    {
+        "name": "Choice Select 12U",
+        "division": "12U",
+        "season_year": 2026,
+        "birth_year": 2014,
+    },
 ]
 
 # (first, last, email, roles, coach assignments as list of (team_name, TeamCoachRole))
 COACHES = [
     (
-        "Marcus", "Owens", "marcus.owens@example.com",
+        "Marcus",
+        "Owens",
+        "marcus.owens@example.com",
         [Role.ADMIN, Role.COACH],
-        [("10U Bulldogs", TeamCoachRole.HEAD)],
+        [("Choice Select 10U", TeamCoachRole.HEAD)],
     ),
     (
-        "Dana", "Reyes", "dana.reyes@example.com",
+        "Dana",
+        "Reyes",
+        "dana.reyes@example.com",
         [Role.COACH],
-        [("10U Bulldogs", TeamCoachRole.ASSISTANT)],
+        [("Choice Select 10U", TeamCoachRole.ASSISTANT)],
     ),
     (
-        "Trevor", "Kim", "trevor.kim@example.com",
+        "Trevor",
+        "Kim",
+        "trevor.kim@example.com",
         [Role.COACH],
-        [("12U Bulldogs", TeamCoachRole.HEAD)],
+        [("Choice Select 12U", TeamCoachRole.HEAD)],
     ),
     (
-        "Priya", "Nair", "priya.nair@example.com",
+        "Priya",
+        "Nair",
+        "priya.nair@example.com",
         [Role.COACH],
-        [("10U Bulldogs", TeamCoachRole.ASSISTANT), ("12U Bulldogs", TeamCoachRole.ASSISTANT)],
+        [
+            ("Choice Select 10U", TeamCoachRole.ASSISTANT),
+            ("Choice Select 12U", TeamCoachRole.ASSISTANT),
+        ],
     ),
 ]
 
@@ -46,7 +74,7 @@ ADMIN_ONLY = ("Sandra", "Lee", "sandra.lee@example.com")
 
 # (first, last, jersey_number, positions) per team
 PLAYERS_BY_TEAM = {
-    "10U Bulldogs": [
+    "Choice Select 10U": [
         ("Ethan", "Brooks", 2, [Position.SHORTSTOP, Position.SECOND_BASE]),
         ("Liam", "Foster", 4, [Position.CATCHER]),
         ("Noah", "Ramirez", 7, [Position.RIGHT_PITCHER, Position.FIRST_BASE]),
@@ -56,7 +84,7 @@ PLAYERS_BY_TEAM = {
         ("Jack", "Sullivan", 16, [Position.RIGHT_FIELD, Position.SECOND_BASE]),
         ("Elijah", "Ward", 21, [Position.LEFT_PITCHER]),
     ],
-    "12U Bulldogs": [
+    "Choice Select 12U": [
         ("Ava", "Bennett", 3, [Position.SHORTSTOP]),
         ("Sophia", "Coleman", 5, [Position.CATCHER, Position.FIRST_BASE]),
         ("Mia", "Ellison", 8, [Position.RIGHT_PITCHER]),
@@ -69,17 +97,43 @@ PLAYERS_BY_TEAM = {
 }
 
 PARENT_FIRST_NAMES = [
-    "James", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth",
-    "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah",
+    "James",
+    "Patricia",
+    "Robert",
+    "Jennifer",
+    "Michael",
+    "Linda",
+    "William",
+    "Elizabeth",
+    "David",
+    "Barbara",
+    "Richard",
+    "Susan",
+    "Joseph",
+    "Jessica",
+    "Thomas",
+    "Sarah",
 ]
 
 TRYOUT_SIGNUPS = [
     ("Carter", "Mills", 2016, [Position.SHORTSTOP], TryoutStatus.NEW),
     ("Grace", "Nolan", 2015, [Position.CATCHER], TryoutStatus.CONTACTED),
-    ("Henry", "Ortiz", 2014, [Position.RIGHT_PITCHER, Position.FIRST_BASE], TryoutStatus.ATTENDED),
+    (
+        "Henry",
+        "Ortiz",
+        2014,
+        [Position.RIGHT_PITCHER, Position.FIRST_BASE],
+        TryoutStatus.ATTENDED,
+    ),
     ("Ella", "Pierce", 2016, [Position.CENTER_FIELD], TryoutStatus.NEW),
     ("Sebastian", "Quinn", 2014, [Position.THIRD_BASE], TryoutStatus.CONTACTED),
-    ("Zoey", "Rhodes", 2015, [Position.LEFT_FIELD, Position.SECOND_BASE], TryoutStatus.ATTENDED),
+    (
+        "Zoey",
+        "Rhodes",
+        2015,
+        [Position.LEFT_FIELD, Position.SECOND_BASE],
+        TryoutStatus.ATTENDED,
+    ),
 ]
 
 
@@ -129,7 +183,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("\nDemo data seeded."))
         self.stdout.write(f"All seeded users share the password: {self.password}")
-        self.stdout.write(f"Admin+head coach (dual role): {self.coaches['marcus.owens@example.com'].email}")
+        self.stdout.write(
+            f"Admin+head coach (dual role): {self.coaches['marcus.owens@example.com'].email}"
+        )
         self.stdout.write(f"Admin-only: {self.admin.email}")
 
     # -- accounts ---------------------------------------------------------
@@ -155,12 +211,16 @@ class Command(BaseCommand):
 
             CoachProfile.objects.get_or_create(
                 coach=user,
-                defaults={"bio_text": f"{first} has been coaching with the club for several seasons."},
+                defaults={
+                    "bio_text": f"{first} has been coaching with the club for several seasons."
+                },
             )
 
             for team_name, coach_role in assignments:
                 TeamCoach.objects.get_or_create(
-                    team=self.teams[team_name], coach=user, defaults={"role": coach_role}
+                    team=self.teams[team_name],
+                    coach=user,
+                    defaults={"role": coach_role},
                 )
 
             coaches[email] = user
@@ -169,7 +229,8 @@ class Command(BaseCommand):
     def _seed_admin_only(self):
         first, last, email = ADMIN_ONLY
         user, _ = User.objects.get_or_create(
-            email=email, defaults={"first_name": first, "last_name": last, "is_active": True}
+            email=email,
+            defaults={"first_name": first, "last_name": last, "is_active": True},
         )
         user.set_password(self.password)
         user.first_name, user.last_name = first, last
@@ -183,7 +244,9 @@ class Command(BaseCommand):
         teams = {}
         for t in TEAMS:
             team, _ = Team.objects.get_or_create(
-                name=t["name"], season_year=t["season_year"], defaults={"division": t["division"]}
+                name=t["name"],
+                season_year=t["season_year"],
+                defaults={"division": t["division"]},
             )
             teams[t["name"]] = team
         return teams
@@ -229,11 +292,12 @@ class Command(BaseCommand):
 
             # First player of each team gets a second parent, one linked
             # and one still pending via invite -- exercises both flows.
-            if i in (0, len(PLAYERS_BY_TEAM["10U Bulldogs"])):
+            if i in (0, len(PLAYERS_BY_TEAM["Choice Select 10U"])):
                 second_first = next(name_cycle)
                 second_email = f"{second_first.lower()}.{last.lower()}@example.com"
                 second_parent, _ = User.objects.get_or_create(
-                    email=second_email, defaults={"first_name": second_first, "last_name": last}
+                    email=second_email,
+                    defaults={"first_name": second_first, "last_name": last},
                 )
                 second_parent.set_password(self.password)
                 second_parent.save()
@@ -269,13 +333,19 @@ class Command(BaseCommand):
             outcome = i % 3
             if outcome == 0:
                 Payment.objects.create(
-                    fee=fee, amount=350, method=PaymentMethod.VENMO,
-                    paid_at=datetime.date(2026, 2, 10), recorded_by=admin_user,
+                    fee=fee,
+                    amount=350,
+                    method=PaymentMethod.VENMO,
+                    paid_at=datetime.date(2026, 2, 10),
+                    recorded_by=admin_user,
                 )
             elif outcome == 1:
                 Payment.objects.create(
-                    fee=fee, amount=150, method=PaymentMethod.CHECK,
-                    paid_at=datetime.date(2026, 2, 15), recorded_by=admin_user,
+                    fee=fee,
+                    amount=150,
+                    method=PaymentMethod.CHECK,
+                    paid_at=datetime.date(2026, 2, 15),
+                    recorded_by=admin_user,
                     notes="First installment",
                 )
             # outcome == 2: left unpaid/overdue on purpose
@@ -290,7 +360,9 @@ class Command(BaseCommand):
         for team in self.teams.values():
             for week in range(4):
                 practice_date = next_tuesday + datetime.timedelta(weeks=week)
-                start = timezone.make_aware(datetime.datetime.combine(practice_date, datetime.time(18, 0)))
+                start = timezone.make_aware(
+                    datetime.datetime.combine(practice_date, datetime.time(18, 0))
+                )
                 end = start + datetime.timedelta(hours=1, minutes=30)
                 Event.objects.get_or_create(
                     team=team,
@@ -300,13 +372,17 @@ class Command(BaseCommand):
                         "title": "Weekly practice",
                         "end_datetime": end,
                         "location_name": "Community Park Field 2",
-                        "status": EventStatus.CANCELLED if week == 2 else EventStatus.SCHEDULED,
+                        "status": EventStatus.CANCELLED
+                        if week == 2
+                        else EventStatus.SCHEDULED,
                         "created_by": admin_user,
                     },
                 )
 
             tournament_date = today + datetime.timedelta(days=30)
-            start = timezone.make_aware(datetime.datetime.combine(tournament_date, datetime.time(9, 0)))
+            start = timezone.make_aware(
+                datetime.datetime.combine(tournament_date, datetime.time(9, 0))
+            )
             Event.objects.get_or_create(
                 team=team,
                 event_type=EventType.TOURNAMENT,
@@ -324,7 +400,9 @@ class Command(BaseCommand):
 
     def _seed_tryouts(self):
         admin_user = self.coaches["marcus.owens@example.com"]
-        for i, (first, last, birth_year, positions, status) in enumerate(TRYOUT_SIGNUPS):
+        for i, (first, last, birth_year, positions, status) in enumerate(
+            TRYOUT_SIGNUPS
+        ):
             parent_first = PARENT_FIRST_NAMES[i]
             signup, created = TryoutSignup.objects.get_or_create(
                 player_first_name=first,
