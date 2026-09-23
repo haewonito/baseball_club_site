@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Schedule</h1>
+    <p>Upcoming practices and tournaments.</p>
+  </section>
+
+  <form class="filter-form" method="get">
+    <div class="form-field">
+      <label for="id_team">Team</label>
+      <select id="id_team" name="team" onchange="this.form.submit()">
+        <option value="">All teams</option>
+        {% for team in teams %}
+          <option value="{{ team.pk }}" {% if selected_team_id == team.pk|stringformat:"s" %}selected{% endif %}>
+            {{ team.name }} ({{ team.division }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <noscript><button class="btn btn--primary" type="submit">Filter</button></noscript>
+  </form>
+
+  {% if events %}
+    <ul class="schedule-list">
+      {% for event in events %}
+        <li class="schedule-item">
+          <div class="schedule-item__date">
+            <span class="schedule-item__day">{{ event.start_datetime|date:"D, M j" }}</span>
+            <span class="schedule-item__time">{{ event.start_datetime|date:"g:i A" }}</span>
+          </div>
+          <div class="schedule-item__details">
+            <div class="schedule-item__title">
+              {{ event.title|default:event.get_event_type_display }}
+              {% if event.status != "scheduled" %}
+                <span class="status-badge">{{ event.get_status_display }}</span>
+              {% endif %}
+            </div>
+            <div class="schedule-item__meta">
+              {{ event.team.name }}
+              {% if event.location_name %} &middot; {{ event.location_name }}{% endif %}
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No upcoming events{% if selected_team_id %} for this team{% endif %}.</p>
+  {% endif %}
+{% endblock %}

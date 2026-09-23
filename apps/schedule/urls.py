@@ -1,7 +1,10 @@
 from django.urls import path
 
+from . import views
+
 app_name = "schedule"
 
 urlpatterns = [
-    # public schedule (filterable by team), coach edit views go here
+    path("", views.schedule_list, name="list"),
+    # coach edit views go here later
 ]

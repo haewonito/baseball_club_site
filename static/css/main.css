@@ -308,3 +308,58 @@ legend {
   color: var(--color-red);
   border: 1px solid var(--color-red);
 }
+
+/* --- Schedule page --------------------------------------------------- */
+
+.filter-form {
+  max-width: 260px;
+  margin-bottom: 2rem;
+}
+
+.schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.schedule-item {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-gray-line);
+}
+
+.schedule-item__date {
+  display: flex;
+  flex-direction: column;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.schedule-item__day {
+  font-weight: 600;
+}
+
+.schedule-item__time,
+.schedule-item__meta {
+  font-size: 0.85rem;
+  color: var(--color-gray-text);
+}
+
+.schedule-item__title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-block;
+  background: var(--color-red-pale);
+  color: var(--color-red);
+  border-radius: var(--radius);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
