@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Baseball Club{% endblock %}</title>
+  <title>{% block title %}Choice Select{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
   <header class="site-header">
     <div class="site-header__inner">
-      <a class="site-header__brand" href="{% url 'home' %}">Baseball Club</a>
+      <a class="site-header__brand" href="{% url 'home' %}">Choice Select</a>
       <nav class="site-nav">
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
       </nav>
@@ -29,7 +29,7 @@
 
   <footer class="site-footer">
     <div class="site-footer__inner">
-      <p>&copy; {% now "Y" %} Baseball Club</p>
+      <p>&copy; {% now "Y" %} Choice Select</p>
     </div>
   </footer>
 </body>
