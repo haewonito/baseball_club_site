@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Bio: {{ coach }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Edit Bio: {{ coach }}</h1>
+  </section>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  {% if form.instance.photo %}
+    <p><img src="{{ form.instance.photo.url }}" alt="{{ coach }}" class="coach-photo-preview"></p>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% include "partials/_form_field.html" with field=form.bio_text %}
+    {% include "partials/_form_field.html" with field=form.photo %}
+    {% include "partials/_form_field.html" with field=form.contact_email %}
+    <button class="btn btn--primary" type="submit">Save</button>
+  </form>
+
+  <p><a href="{% url 'accounts:admin_coaches_list' %}">&larr; Back to coach bios</a></p>
+{% endblock %}

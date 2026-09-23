@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Coach Bios · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Coach Bios</h1>
+  </section>
+
+  {% if coaches %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Coach</th>
+          <th>Teams</th>
+          <th>Bio</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for coach in coaches %}
+          <tr>
+            <td>{{ coach }}</td>
+            <td>
+              {% for assignment in coach.team_assignments.all %}
+                {{ assignment.team.name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </td>
+            <td>{% if coach.coach_profile.bio_text %}Yes{% else %}No bio yet{% endif %}</td>
+            <td><a href="{% url 'accounts:admin_coach_bio_edit' coach.pk %}">Edit Bio</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No coaches yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

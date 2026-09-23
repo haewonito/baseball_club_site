@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Coaches · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Coaches</h1>
+  </section>
+
+  {% if coaches %}
+    <div class="kid-cards">
+      {% for coach in coaches %}
+        <div class="kid-card">
+          {% if coach.coach_profile.photo %}
+            <img src="{{ coach.coach_profile.photo.url }}" alt="{{ coach }}" class="coach-photo-preview">
+          {% endif %}
+          <h2>{{ coach }}</h2>
+          <p class="kid-card__team">
+            {% for assignment in coach.team_assignments.all %}
+              {{ assignment.team.name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </p>
+          {% if coach.coach_profile.bio_text %}
+            <p>{{ coach.coach_profile.bio_text }}</p>
+          {% endif %}
+          {% if coach.coach_profile.contact_email %}
+            <p><a href="mailto:{{ coach.coach_profile.contact_email }}">{{ coach.coach_profile.contact_email }}</a></p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No coaches listed yet.</p>
+  {% endif %}
+{% endblock %}

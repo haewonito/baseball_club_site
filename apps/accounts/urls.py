@@ -26,6 +26,12 @@ urlpatterns = [
         views.admin_fee_record_payment,
         name="admin_fee_record_payment",
     ),
+    path("dashboard/admin/coaches/", views.admin_coaches_list, name="admin_coaches_list"),
+    path(
+        "dashboard/admin/coaches/<int:user_id>/bio/",
+        views.admin_coach_bio_edit,
+        name="admin_coach_bio_edit",
+    ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
     path("dashboard/coach/teams/<int:team_id>/roster/", views.coach_roster, name="coach_roster"),

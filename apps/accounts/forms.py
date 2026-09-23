@@ -2,7 +2,7 @@ from django import forms
 
 from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event
-from apps.teams.models import PlayerPosition, Position, Team
+from apps.teams.models import CoachProfile, PlayerPosition, Position, Team
 
 from .models import Player
 
@@ -127,4 +127,16 @@ class PaymentForm(forms.ModelForm):
         fields = ["amount", "method", "paid_at", "notes"]
         widgets = {
             "paid_at": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class CoachProfileForm(forms.ModelForm):
+    """`coach` isn't a form field -- the profile is looked up/created from
+    the URL's user id, the same pattern used throughout this file."""
+
+    class Meta:
+        model = CoachProfile
+        fields = ["bio_text", "photo", "contact_email"]
+        widgets = {
+            "bio_text": forms.Textarea(attrs={"rows": 6}),
         }

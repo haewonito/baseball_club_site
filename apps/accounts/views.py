@@ -8,11 +8,11 @@ from django.views.decorators.http import require_POST
 
 from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event, EventType
-from apps.teams.models import Team, TeamCoach
+from apps.teams.models import CoachProfile, Team, TeamCoach
 from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 
-from .forms import FeeForm, PaymentForm, PlayerRosterForm, PracticeEventForm
-from .models import ParentPlayerLink, Player
+from .forms import CoachProfileForm, FeeForm, PaymentForm, PlayerRosterForm, PracticeEventForm
+from .models import ParentPlayerLink, Player, Role, User
 
 FEE_STATUS_LABELS = {
     "paid": "Paid",
@@ -230,6 +230,40 @@ def admin_fee_record_payment(request, pk):
     fee = Fee.objects.select_related("player", "team").prefetch_related("payments").get(pk=fee.pk)
     return render(
         request, "partials/_fee_ledger.html", {"fee": fee, "payment_form": payment_form}
+    )
+
+
+@login_required
+def admin_coaches_list(request):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    coaches = (
+        User.objects.filter(roles__role=Role.COACH)
+        .distinct()
+        .select_related("coach_profile")
+        .prefetch_related("team_assignments__team")
+        .order_by("last_name", "first_name")
+    )
+    return render(request, "accounts/admin_coaches_list.html", {"coaches": coaches})
+
+
+@login_required
+def admin_coach_bio_edit(request, user_id):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    coach = get_object_or_404(User, pk=user_id, roles__role=Role.COACH)
+    profile, _ = CoachProfile.objects.get_or_create(coach=coach)
+    if request.method == "POST":
+        form = CoachProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect("accounts:admin_coaches_list")
+    else:
+        form = CoachProfileForm(instance=profile)
+    return render(
+        request, "accounts/admin_coach_bio_form.html", {"form": form, "coach": coach}
     )
 
 
