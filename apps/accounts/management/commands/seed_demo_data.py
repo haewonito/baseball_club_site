@@ -1,6 +1,8 @@
 import datetime
+from pathlib import Path
 
 from django.conf import settings
+from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -19,6 +21,11 @@ from apps.teams.models import CoachProfile, Position, Team, TeamCoach, TeamCoach
 from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 
 DEMO_PASSWORD = "demopass123"
+
+# Fun, not real -- see seed_photos/README (none of these are photos of the
+# actual named coaches). Keyed by the local part of each coach's email with
+# "." replaced by "_", e.g. marcus.owens@example.com -> marcus_owens.jpg.
+SEED_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_photos"
 
 TEAMS = [
     {
@@ -209,12 +216,13 @@ class Command(BaseCommand):
             user.save()
             user.roles.set([self.roles[r] for r in role_list])
 
-            CoachProfile.objects.get_or_create(
+            profile, _ = CoachProfile.objects.get_or_create(
                 coach=user,
                 defaults={
                     "bio_text": f"{first} has been coaching with the club for several seasons."
                 },
             )
+            self._seed_coach_photo(profile, email)
 
             for team_name, coach_role in assignments:
                 TeamCoach.objects.get_or_create(
@@ -225,6 +233,16 @@ class Command(BaseCommand):
 
             coaches[email] = user
         return coaches
+
+    def _seed_coach_photo(self, profile, email):
+        if profile.photo:
+            return
+        filename = email.split("@")[0].replace(".", "_") + ".jpg"
+        photo_path = SEED_PHOTOS_DIR / filename
+        if not photo_path.exists():
+            return
+        with open(photo_path, "rb") as f:
+            profile.photo.save(filename, File(f), save=True)
 
     def _seed_admin_only(self):
         first, last, email = ADMIN_ONLY
