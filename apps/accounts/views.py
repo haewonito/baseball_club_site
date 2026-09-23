@@ -6,13 +6,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.fees.models import Payment
+from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import Team, TeamCoach
 from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 
-from .forms import PlayerRosterForm, PracticeEventForm
+from .forms import FeeForm, PaymentForm, PlayerRosterForm, PracticeEventForm
 from .models import ParentPlayerLink, Player
+
+FEE_STATUS_LABELS = {
+    "paid": "Paid",
+    "partially_paid": "Partially Paid",
+    "overdue": "Overdue",
+    "unpaid": "Unpaid",
+}
 
 
 class LoginView(BaseLoginView):
@@ -114,6 +121,115 @@ def admin_tryout_status_change(request, pk):
         request,
         "partials/_tryout_status_select.html",
         {"signup": signup, "status_choices": TryoutStatus.choices},
+    )
+
+
+@login_required
+def admin_fees_list(request):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    only_outstanding = request.GET.get("outstanding") == "1"
+    fees = Fee.objects.select_related("player", "team").prefetch_related("payments").order_by("-created_at")
+
+    rows = []
+    total_outstanding = 0
+    for fee in fees:
+        balance = fee.balance
+        if balance > 0:
+            total_outstanding += balance
+        if only_outstanding and balance <= 0:
+            continue
+        status = fee.status
+        rows.append(
+            {
+                "fee": fee,
+                "balance": balance,
+                "status_label": FEE_STATUS_LABELS.get(status, status),
+            }
+        )
+
+    return render(
+        request,
+        "accounts/admin_fees_list.html",
+        {"rows": rows, "total_outstanding": total_outstanding, "only_outstanding": only_outstanding},
+    )
+
+
+@login_required
+def admin_fee_add(request):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = FeeForm(request.POST)
+        if form.is_valid():
+            fee = form.save(commit=False)
+            fee.created_by = request.user
+            fee.save()
+            return redirect("accounts:admin_fee_detail", pk=fee.pk)
+    else:
+        form = FeeForm()
+    return render(request, "accounts/admin_fee_form.html", {"form": form, "heading": "Add Fee"})
+
+
+@login_required
+def admin_fee_edit(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    fee = get_object_or_404(Fee, pk=pk)
+    if request.method == "POST":
+        form = FeeForm(request.POST, instance=fee)
+        if form.is_valid():
+            form.save()
+            return redirect("accounts:admin_fee_detail", pk=fee.pk)
+    else:
+        form = FeeForm(instance=fee)
+    return render(
+        request, "accounts/admin_fee_form.html", {"form": form, "heading": "Edit Fee", "fee": fee}
+    )
+
+
+@login_required
+def admin_fee_detail(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    fee = get_object_or_404(
+        Fee.objects.select_related("player", "team").prefetch_related("payments"), pk=pk
+    )
+    return render(
+        request,
+        "accounts/admin_fee_detail.html",
+        {"fee": fee, "payment_form": PaymentForm()},
+    )
+
+
+@login_required
+@require_POST
+def admin_fee_record_payment(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    fee = get_object_or_404(Fee, pk=pk)
+    form = PaymentForm(request.POST)
+    if form.is_valid():
+        payment = form.save(commit=False)
+        payment.fee = fee
+        payment.recorded_by = request.user
+        payment.save()
+        payment_form = PaymentForm()
+    else:
+        payment_form = form
+
+    # Re-fetch with a fresh prefetch -- the queryset above didn't prefetch
+    # payments, and even if it had, the cache wouldn't include the row just
+    # created, so fee.balance/amount_paid (which iterate fee.payments.all())
+    # would read stale data.
+    fee = Fee.objects.select_related("player", "team").prefetch_related("payments").get(pk=fee.pk)
+    return render(
+        request, "partials/_fee_ledger.html", {"fee": fee, "payment_form": payment_form}
     )
 
 

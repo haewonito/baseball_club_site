@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}{{ fee.description }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ fee.description }}</h1>
+    <p>{{ fee.player|default:fee.team }}{% if fee.due_date %} &middot; Due {{ fee.due_date }}{% endif %}</p>
+    <a href="{% url 'accounts:admin_fee_edit' fee.pk %}">Edit fee</a>
+  </section>
+
+  {% include "partials/_fee_ledger.html" with fee=fee payment_form=payment_form %}
+
+  <p><a href="{% url 'accounts:admin_fees_list' %}">&larr; Back to fees list</a></p>
+{% endblock %}

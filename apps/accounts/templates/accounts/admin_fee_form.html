@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ heading }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ heading }}</h1>
+  </section>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% include "partials/_form_field.html" with field=form.description %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.player %}
+      {% include "partials/_form_field.html" with field=form.team %}
+    </div>
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.amount_due %}
+      {% include "partials/_form_field.html" with field=form.due_date %}
+    </div>
+    <button class="btn btn--primary" type="submit">Save</button>
+  </form>
+
+  {% if fee %}
+    <p><a href="{% url 'accounts:admin_fee_detail' fee.pk %}">&larr; Back to fee</a></p>
+  {% else %}
+    <p><a href="{% url 'accounts:admin_fees_list' %}">&larr; Back to fees list</a></p>
+  {% endif %}
+{% endblock %}

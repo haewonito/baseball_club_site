@@ -1,7 +1,8 @@
 from django import forms
 
+from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event
-from apps.teams.models import PlayerPosition, Position
+from apps.teams.models import PlayerPosition, Position, Team
 
 from .models import Player
 
@@ -81,4 +82,49 @@ class PracticeEventForm(forms.ModelForm):
         ]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
+class FeeForm(forms.ModelForm):
+    """
+    Exactly one of `player`/`team` must be set -- a Fee is either for one
+    player or team-wide (see the Fee docstring in apps/fees/models.py).
+    The model itself doesn't enforce this with a DB constraint since how
+    a team-wide fee expands into per-player ledger rows is still an open
+    design question, but the form shouldn't let you create a Fee that's
+    ambiguous or orphaned either way.
+    """
+
+    class Meta:
+        model = Fee
+        fields = ["player", "team", "description", "amount_due", "due_date"]
+        widgets = {
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["player"].queryset = Player.objects.order_by("last_name", "first_name")
+        self.fields["team"].queryset = Team.objects.order_by("-season_year", "division")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        player = cleaned_data.get("player")
+        team = cleaned_data.get("team")
+        if bool(player) == bool(team):
+            raise forms.ValidationError(
+                "Choose exactly one of Player or Team -- not both, not neither."
+            )
+        return cleaned_data
+
+
+class PaymentForm(forms.ModelForm):
+    """`fee` and `recorded_by` aren't form fields -- set on the instance by
+    the view, the same pattern as PracticeEventForm's team/event_type."""
+
+    class Meta:
+        model = Payment
+        fields = ["amount", "method", "paid_at", "notes"]
+        widgets = {
+            "paid_at": forms.DateInput(attrs={"type": "date"}),
         }

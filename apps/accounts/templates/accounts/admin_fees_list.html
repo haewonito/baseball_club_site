@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Fees &amp; Payments · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Fees &amp; Payments</h1>
+    <p>Total outstanding: <strong>${{ total_outstanding }}</strong></p>
+    <a class="btn btn--primary" href="{% url 'accounts:admin_fee_add' %}">Add Fee</a>
+  </section>
+
+  <p>
+    {% if only_outstanding %}
+      <a href="{% url 'accounts:admin_fees_list' %}">Show all fees</a>
+    {% else %}
+      <a href="{% url 'accounts:admin_fees_list' %}?outstanding=1">Show only outstanding</a>
+    {% endif %}
+  </p>
+
+  {% if rows %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Player / Team</th>
+          <th>Due</th>
+          <th>Amount Due</th>
+          <th>Balance</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">{{ row.fee.description }}</a></td>
+            <td>{{ row.fee.player|default:row.fee.team }}</td>
+            <td>{{ row.fee.due_date|default:"—" }}</td>
+            <td>${{ row.fee.amount_due }}</td>
+            <td>${{ row.balance }}</td>
+            <td>{{ row.status_label }}</td>
+            <td><a href="{% url 'accounts:admin_fee_edit' row.fee.pk %}">Edit</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No fees{% if only_outstanding %} outstanding{% endif %}.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+{% endblock %}
