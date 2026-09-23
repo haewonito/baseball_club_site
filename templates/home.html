@@ -3,6 +3,22 @@
 {% block content %}
   <section class="page-hero">
     <h1>Choice Select</h1>
-    <p>Site under construction &mdash; check back soon.</p>
+    {# TODO: placeholder copy -- replace with the club's real mission statement #}
+    <p>
+      Choice Select is a youth baseball club dedicated to developing players on and off
+      the field. We build teams where kids learn the fundamentals of the game, compete
+      with heart, and grow as teammates -- coached by volunteers who care as much about
+      character as they do about the scoreboard.
+    </p>
   </section>
+
+  {% if show_tryout_banner %}
+    <section class="tryout-banner">
+      <div class="tryout-banner__text">
+        <h2>Try-outs are coming up</h2>
+        <p>Try-outs are scheduled for {{ next_tryout_date|date:"F j, Y" }}. Sign up now to reserve your spot.</p>
+      </div>
+      <a class="btn btn--primary" href="{% url 'tryouts:signup' %}">Sign up for try-outs</a>
+    </section>
+  {% endif %}
 {% endblock %}

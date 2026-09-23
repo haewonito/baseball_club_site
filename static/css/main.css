@@ -101,6 +101,32 @@ a:hover {
   max-width: 60ch;
 }
 
+/* --- Tryout banner (home page) ----------------------------------------- */
+
+.tryout-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: var(--color-red-pale);
+  border: 1px solid var(--color-red);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tryout-banner__text h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  color: var(--color-red);
+}
+
+.tryout-banner__text p {
+  margin: 0;
+  color: var(--color-black);
+}
+
 /* --- Forms ------------------------------------------------------------ */
 
 fieldset {

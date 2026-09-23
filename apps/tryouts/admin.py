@@ -42,7 +42,7 @@ class TryoutSignupAdmin(admin.ModelAdmin):
 
 @admin.register(TryoutYearSettings)
 class TryoutYearSettingsAdmin(admin.ModelAdmin):
-    list_display = ("cutoff_month", "cutoff_day")
+    list_display = ("cutoff_month", "cutoff_day", "next_tryout_date")
 
 
 @admin.register(TryoutStatusChange)

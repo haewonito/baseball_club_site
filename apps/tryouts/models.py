@@ -16,6 +16,11 @@ class TryoutYearSettings(models.Model):
 
     cutoff_month = models.PositiveSmallIntegerField(default=9)
     cutoff_day = models.PositiveSmallIntegerField(default=1)
+    next_tryout_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Drives the public home page banner -- shown when this date is within 30 days.",
+    )
 
     def __str__(self):
         return f"Cutoff: {self.cutoff_month}/{self.cutoff_day}"
@@ -29,6 +34,11 @@ class TryoutYearSettings(models.Model):
             settings.DEFAULT_TRYOUT_YEAR_CUTOFF_MONTH,
             settings.DEFAULT_TRYOUT_YEAR_CUTOFF_DAY,
         )
+
+    @classmethod
+    def get_next_tryout_date(cls):
+        row = cls.objects.first()
+        return row.next_tryout_date if row else None
 
 
 def compute_tryout_year(submission_date: date) -> int:
