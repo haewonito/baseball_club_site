@@ -9,8 +9,7 @@
 <body>
   <header class="site-header">
     <div class="site-header__inner">
-      {# TODO: link brand to the home page once it exists (see CLAUDE.md site map) #}
-      <span class="site-header__brand">Baseball Club</span>
+      <a class="site-header__brand" href="{% url 'home' %}">Baseball Club</a>
       <nav class="site-nav">
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
       </nav>
