@@ -1,7 +1,10 @@
 from django.urls import path
 
+from . import views
+
 app_name = "teams"
 
 urlpatterns = [
-    # team index, team detail views go here
+    path("", views.team_index, name="index"),
+    path("<int:pk>/", views.team_detail, name="detail"),
 ]

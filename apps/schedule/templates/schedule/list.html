@@ -26,24 +26,7 @@
   {% if events %}
     <ul class="schedule-list">
       {% for event in events %}
-        <li class="schedule-item">
-          <div class="schedule-item__date">
-            <span class="schedule-item__day">{{ event.start_datetime|date:"D, M j" }}</span>
-            <span class="schedule-item__time">{{ event.start_datetime|date:"g:i A" }}</span>
-          </div>
-          <div class="schedule-item__details">
-            <div class="schedule-item__title">
-              {{ event.title|default:event.get_event_type_display }}
-              {% if event.status != "scheduled" %}
-                <span class="status-badge">{{ event.get_status_display }}</span>
-              {% endif %}
-            </div>
-            <div class="schedule-item__meta">
-              {{ event.team.name }}
-              {% if event.location_name %} &middot; {{ event.location_name }}{% endif %}
-            </div>
-          </div>
-        </li>
+        {% include "partials/_event_item.html" with event=event show_team=True %}
       {% endfor %}
     </ul>
   {% else %}

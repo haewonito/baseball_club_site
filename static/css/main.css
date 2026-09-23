@@ -363,3 +363,69 @@ legend {
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+/* --- Teams pages ------------------------------------------------------- */
+
+.team-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.team-list__item {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--color-gray-line);
+}
+
+.team-list__item a {
+  font-weight: 600;
+}
+
+.team-list__meta {
+  color: var(--color-gray-text);
+  font-size: 0.85rem;
+  margin-left: 0.75rem;
+}
+
+.team-section {
+  margin-bottom: 2.5rem;
+}
+
+.team-section h2 {
+  font-size: 1.1rem;
+  border-bottom: 1px solid var(--color-gray-line);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.coach-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coach-list li {
+  padding: 0.4rem 0;
+  color: var(--color-gray-text);
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.roster-table th,
+.roster-table td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--color-gray-line);
+  font-size: 0.9rem;
+}
+
+.roster-table th {
+  color: var(--color-gray-text);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}

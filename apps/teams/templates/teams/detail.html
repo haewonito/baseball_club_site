@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ team.name }}</h1>
+    <p>{{ team.division }} &middot; {{ team.season_year }}</p>
+  </section>
+
+  <section class="team-section">
+    <h2>Coaching Staff</h2>
+    {% if team.coach_assignments.all %}
+      <ul class="coach-list">
+        {% for assignment in team.coach_assignments.all %}
+          <li>{{ assignment.coach }} &mdash; {{ assignment.get_role_display }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No coaches assigned yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="team-section">
+    <h2>Roster</h2>
+    {% if team.players.all %}
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Positions</th>
+            <th>#</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in team.players.all %}
+            <tr>
+              <td>{{ player }}</td>
+              <td>
+                {% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}
+              </td>
+              <td>{{ player.jersey_number|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No players on the roster yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="team-section">
+    <h2>Schedule</h2>
+    {% if upcoming_events %}
+      <ul class="schedule-list">
+        {% for event in upcoming_events %}
+          {% include "partials/_event_item.html" with event=event %}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No upcoming events.</p>
+    {% endif %}
+  </section>
+{% endblock %}

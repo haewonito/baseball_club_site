@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Teams · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Teams</h1>
+  </section>
+
+  {% if teams %}
+    <ul class="team-list">
+      {% for team in teams %}
+        <li class="team-list__item">
+          <a href="{% url 'teams:detail' team.pk %}">{{ team.name }}</a>
+          <span class="team-list__meta">{{ team.division }} &middot; {{ team.season_year }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No teams yet.</p>
+  {% endif %}
+{% endblock %}
