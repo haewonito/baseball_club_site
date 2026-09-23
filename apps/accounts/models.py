@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -12,16 +13,54 @@ class Role(models.TextChoices):
     COACH = "coach", "Coach"
 
 
+class UserManager(BaseUserManager):
+    """create_user/create_superuser keyed on email -- there is no username."""
+
+    def _create_user(self, email, password, **extra_fields):
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+        return self._create_user(email, password, **extra_fields)
+
+
 class User(AbstractUser):
     """
     One auth system, roles are many-to-many (not a single field) so a
     person can hold more than one role at once -- e.g. the league owner,
     who is also a head coach and needs to see fee data like an Admin.
+
+    Login is by email, not username -- there is no username field.
     """
+
+    username = None
+    email = models.EmailField(unique=True)
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
 
     roles = models.ManyToManyField(
         "UserRole", blank=True, related_name="users"
     )
+
+    def __str__(self):
+        return self.get_full_name() or self.email
 
     def has_role(self, role: str) -> bool:
         return self.roles.filter(role=role).exists()
