@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
+from apps.tryouts.models import TryoutDecision
+
 from .models import CoachProfile, Team, TeamCoach
 
 
@@ -14,8 +16,15 @@ class TeamCoachInline(admin.TabularInline):
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ("name", "division", "season_year", "is_public", "accepting_tryouts")
-    list_filter = ("division", "season_year", "is_public", "accepting_tryouts")
+    list_display = (
+        "name",
+        "division",
+        "season_year",
+        "is_public",
+        "accepting_tryouts",
+        "decisions_finalized",
+    )
+    list_filter = ("division", "season_year", "is_public", "accepting_tryouts", "decisions_finalized")
     list_editable = ("is_public", "accepting_tryouts")
     inlines = [TeamCoachInline]
 
@@ -25,6 +34,11 @@ class TeamAdmin(admin.ModelAdmin):
                 "<int:object_id>/publish/",
                 self.admin_site.admin_view(self.publish_view),
                 name="teams_team_publish",
+            ),
+            path(
+                "<int:object_id>/finalize-decisions/",
+                self.admin_site.admin_view(self.finalize_decisions_view),
+                name="teams_team_finalize_decisions",
             ),
         ]
         return custom + super().get_urls()
@@ -41,6 +55,38 @@ class TeamAdmin(admin.ModelAdmin):
             messages.success(request, f'"{team}" is now public.')
         else:
             messages.success(request, f'"{team}" reverted to draft -- no longer public.')
+        return redirect("admin:teams_team_change", object_id)
+
+    def finalize_decisions_view(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:teams_team_change", object_id)
+        team = get_object_or_404(Team, pk=object_id)
+        if not self.has_change_permission(request, team):
+            raise PermissionDenied
+
+        if team.decisions_finalized:
+            # Un-finalizing is always allowed -- no reveal page exists yet
+            # to have gone out to anyone, so there's nothing to undo beyond
+            # the flag itself.
+            team.decisions_finalized = False
+            team.save(update_fields=["decisions_finalized"])
+            messages.success(request, f'"{team}" try-out decisions reverted to not finalized.')
+            return redirect("admin:teams_team_change", object_id)
+
+        unresolved = team.tryout_signups.filter(
+            coach_decision__in=[TryoutDecision.UNDECIDED, TryoutDecision.MAYBE]
+        ).count()
+        if unresolved:
+            messages.error(
+                request,
+                f'Can\'t finalize "{team}" -- {unresolved} sign-up(s) still need a final '
+                "coach decision (not Undecided/Maybe).",
+            )
+            return redirect("admin:teams_team_change", object_id)
+
+        team.decisions_finalized = True
+        team.save(update_fields=["decisions_finalized"])
+        messages.success(request, f'"{team}" try-out decisions are now finalized.')
         return redirect("admin:teams_team_change", object_id)
 
     def get_fieldsets(self, request, obj=None):
@@ -65,12 +111,13 @@ class TeamAdmin(admin.ModelAdmin):
         return (
             (None, {"fields": ("name", "division", "season_year", "accepting_tryouts")}),
             ("Publish Status", {"fields": ("publish_status",)}),
+            ("Try-Out Decisions", {"fields": ("decisions_finalized_status",)}),
         )
 
     def get_readonly_fields(self, request, obj=None):
         if obj is None:
             return ()
-        return ("publish_status",)
+        return ("publish_status", "decisions_finalized_status")
 
     @admin.display(description="")
     def publish_status(self, obj):
@@ -95,6 +142,42 @@ class TeamAdmin(admin.ModelAdmin):
             "Publish Team"
             "</button>",
             publish_url,
+        )
+
+    @admin.display(description="")
+    def decisions_finalized_status(self, obj):
+        finalize_url = reverse("admin:teams_team_finalize_decisions", args=[obj.pk])
+        if obj.decisions_finalized:
+            return format_html(
+                '<p style="color: #2e7d32; margin: 0 0 0.75rem;">'
+                "This team&rsquo;s try-out decisions are finalized."
+                "</p>"
+                '<button type="submit" formaction="{}" formmethod="post" class="button">'
+                "Un-finalize"
+                "</button>",
+                finalize_url,
+            )
+
+        unresolved = obj.tryout_signups.filter(
+            coach_decision__in=[TryoutDecision.UNDECIDED, TryoutDecision.MAYBE]
+        ).count()
+        if unresolved:
+            return format_html(
+                '<p style="color: #a50d26; margin: 0;">'
+                "{} sign-up(s) still need a final coach decision (not Undecided/Maybe) "
+                "before this team&rsquo;s decisions can be finalized."
+                "</p>",
+                unresolved,
+            )
+        return format_html(
+            '<p style="color: #a50d26; margin: 0 0 0.75rem;">'
+            "Every sign-up for this team has a final coach decision. Finalizing locks "
+            "them in for reveal to families."
+            "</p>"
+            '<button type="submit" formaction="{}" formmethod="post" class="button default">'
+            "Finalize Decisions"
+            "</button>",
+            finalize_url,
         )
 
 

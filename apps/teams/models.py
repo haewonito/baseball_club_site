@@ -5,9 +5,8 @@ from django.db import models
 class Team(models.Model):
     name = models.CharField(max_length=100)  # e.g. "12U Bulldogs"
     division = models.CharField(max_length=50)  # e.g. "12U"
-    # The spring/summer year the season plays out in -- e.g. 2027 for a team
-    # assembled from fall-2026 tryouts (see compute_tryout_year's cutoff
-    # logic in apps.tryouts.models, which uses this same convention).
+    # The spring/summer year the season plays out in -- e.g. 2027 for a
+    # 2026-2027 season (see season_label below).
     season_year = models.PositiveIntegerField()
     is_public = models.BooleanField(
         default=True,
@@ -21,6 +20,19 @@ class Team(models.Model):
     accepting_tryouts = models.BooleanField(
         default=False,
         help_text="Whether this team appears as a choice on the public try-out sign-up form.",
+    )
+    # Batch reveal for this team's try-out results -- see apps.tryouts'
+    # TryoutSignup.coach_decision. Scoped per team (not per tryout year
+    # overall) so one team's evaluation running long doesn't hold up
+    # another's families. Flipping this to True is only meant to happen
+    # once every one of this team's signups has resolved off
+    # undecided/maybe -- see TeamAdmin.finalize_decisions_view.
+    decisions_finalized = models.BooleanField(
+        default=False,
+        help_text=(
+            "Locks in this team's try-out decisions for reveal. Only flip this once every "
+            "signup for this team has a final coach decision (not Undecided/Maybe)."
+        ),
     )
 
     class Meta:
