@@ -10,8 +10,9 @@ class TeamCoachInline(admin.TabularInline):
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ("name", "division", "season_year")
-    list_filter = ("division", "season_year")
+    list_display = ("name", "division", "season_year", "is_public", "accepting_tryouts")
+    list_filter = ("division", "season_year", "is_public", "accepting_tryouts")
+    list_editable = ("is_public", "accepting_tryouts")
     inlines = [TeamCoachInline]
 
 

@@ -18,7 +18,7 @@ _HEAD_FIRST = Case(
 
 def team_index(request):
     """Public teams index. No login required."""
-    teams = Team.objects.order_by("-season_year", "division")
+    teams = Team.objects.filter(is_public=True).order_by("-season_year", "division")
     return render(request, "teams/index.html", {"teams": teams})
 
 
@@ -30,7 +30,7 @@ def team_detail(request, pk):
         .order_by("_order", "coach__last_name")
     )
     team = get_object_or_404(
-        Team.objects.prefetch_related(
+        Team.objects.filter(is_public=True).prefetch_related(
             "players__positions",
             Prefetch("coach_assignments", queryset=coach_assignments),
         ),
@@ -45,24 +45,30 @@ def team_detail(request, pk):
 
 
 def coach_index(request):
-    """Public coach bios. No login required."""
+    """
+    Public coach bios. No login required. A coach whose every assignment is
+    on a not-yet-public team (see Team.is_public) doesn't appear at all --
+    their whole public presence would otherwise be tied to a hidden team.
+    """
+    public_assignments = TeamCoach.objects.filter(team__is_public=True).select_related("team")
     coaches = (
-        User.objects.filter(roles__role=Role.COACH)
+        User.objects.filter(roles__role=Role.COACH, team_assignments__team__is_public=True)
         .distinct()
         .select_related("coach_profile")
-        .prefetch_related("team_assignments__team")
+        .prefetch_related(Prefetch("team_assignments", queryset=public_assignments))
         .order_by("last_name", "first_name")
     )
     return render(request, "teams/coaches.html", {"coaches": coaches})
 
 
 def coach_detail(request, pk):
-    """Public coach bio detail. No login required."""
+    """Public coach bio detail. No login required. Same is_public rule as coach_index."""
+    public_assignments = TeamCoach.objects.filter(team__is_public=True).select_related("team")
     coach = get_object_or_404(
-        User.objects.filter(roles__role=Role.COACH)
+        User.objects.filter(roles__role=Role.COACH, team_assignments__team__is_public=True)
         .distinct()
         .select_related("coach_profile")
-        .prefetch_related("team_assignments__team"),
+        .prefetch_related(Prefetch("team_assignments", queryset=public_assignments)),
         pk=pk,
     )
     return render(request, "teams/coach_detail.html", {"coach": coach})

@@ -9,6 +9,19 @@ class Team(models.Model):
     # assembled from fall-2026 tryouts (see compute_tryout_year's cutoff
     # logic in apps.tryouts.models, which uses this same convention).
     season_year = models.PositiveIntegerField()
+    is_public = models.BooleanField(
+        default=True,
+        help_text=(
+            "Whether this team shows up anywhere on the public site (Teams "
+            "index/detail, Coaches, public Schedule). A team pre-created for "
+            "an upcoming season should start unpublished until its roster is "
+            "finalized and it's ready to be revealed."
+        ),
+    )
+    accepting_tryouts = models.BooleanField(
+        default=False,
+        help_text="Whether this team appears as a choice on the public try-out sign-up form.",
+    )
 
     class Meta:
         ordering = ["-season_year", "division"]
