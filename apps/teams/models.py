@@ -12,6 +12,9 @@ class Team(models.Model):
 
     class Meta:
         ordering = ["-season_year", "division"]
+        constraints = [
+            models.UniqueConstraint(fields=["name", "season_year"], name="unique_team_name_per_season")
+        ]
 
     @property
     def season_label(self):
