@@ -36,6 +36,23 @@
     {% else %}
       <p>Available once {{ signup.team.name }}'s try-out decisions are finalized.</p>
     {% endif %}
+
+    {% if signup.family_response == "accepted" %}
+      {% if signup.promoted_player %}
+        {# Not linked -- same reasoning as the team name above: a
+           business-Admin-role user may not have Django-admin access. #}
+        <p>Promoted to roster: {{ signup.promoted_player }}</p>
+      {% else %}
+        <form
+          method="post"
+          action="{% url 'accounts:admin_tryout_promote' signup.pk %}"
+          onsubmit="return confirm('Add {{ signup.player_full_name }} to {{ signup.team.name }}&#39;s roster?');"
+        >
+          {% csrf_token %}
+          <button class="btn btn--primary" type="submit">Promote to Roster</button>
+        </form>
+      {% endif %}
+    {% endif %}
   </section>
 
   <section class="team-section">

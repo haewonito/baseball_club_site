@@ -118,6 +118,27 @@ class TryoutSignup(models.Model):
         choices=TryoutFamilyResponse.choices,
         default=TryoutFamilyResponse.PENDING,
     )
+    # Set alongside family_response by apps.tryouts.views._complete_response
+    # -- the User who actually accepted/declined (either newly created on
+    # the spot or already logged in). Promotion (admin_tryout_promote)
+    # needs this to link the right parent account without guessing from
+    # parent_email, which the family could've changed on the accept form.
+    responded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # Set once by admin_tryout_promote -- guards against promoting the
+    # same signup twice and gives the detail page something to link to.
+    promoted_player = models.OneToOneField(
+        "accounts.Player",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tryout_signup",
+    )
 
     class Meta:
         ordering = ["-submitted_at"]

@@ -33,6 +33,7 @@
           <th>Status</th>
           <th>Decision</th>
           <th>Family Response</th>
+          <th>Roster</th>
         </tr>
       </thead>
       <tbody>
@@ -49,6 +50,7 @@
             {# Set by the assigned coach, not editable from here -- see coach_tryout_decision_change. #}
             <td>{{ signup.get_coach_decision_display }}</td>
             <td>{{ signup.get_family_response_display }}</td>
+            <td>{{ signup.promoted_player|yesno:"Promoted,—" }}</td>
           </tr>
         {% endfor %}
       </tbody>

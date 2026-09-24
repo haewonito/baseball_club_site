@@ -22,6 +22,11 @@ urlpatterns = [
         views.admin_tryout_response_invite,
         name="admin_tryout_response_invite",
     ),
+    path(
+        "dashboard/admin/tryouts/<int:pk>/promote/",
+        views.admin_tryout_promote,
+        name="admin_tryout_promote",
+    ),
     path("dashboard/admin/fees/", views.admin_fees_list, name="admin_fees_list"),
     path("dashboard/admin/fees/add/", views.admin_fee_add, name="admin_fee_add"),
     path("dashboard/admin/fees/<int:pk>/", views.admin_fee_detail, name="admin_fee_detail"),

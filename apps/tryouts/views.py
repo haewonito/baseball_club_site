@@ -63,14 +63,18 @@ def respond(request, token):
                 return render(request, "tryouts/respond_done.html", {"signup": signup})
             if action == "accept":
                 if request.user.is_authenticated:
-                    _complete_response(signup, invite, TryoutFamilyResponse.ACCEPTED)
+                    _complete_response(
+                        signup, invite, TryoutFamilyResponse.ACCEPTED, responded_by=request.user
+                    )
                     return render(request, "tryouts/respond_done.html", {"signup": signup})
                 form = InviteClaimSignupForm(request.POST)
                 if form.is_valid():
                     user = form.save()
                     _grant_parent_role(user)
                     auth_login(request, user)
-                    _complete_response(signup, invite, TryoutFamilyResponse.ACCEPTED)
+                    _complete_response(
+                        signup, invite, TryoutFamilyResponse.ACCEPTED, responded_by=user
+                    )
                     return render(request, "tryouts/respond_done.html", {"signup": signup})
         elif not request.user.is_authenticated:
             form = InviteClaimSignupForm(
@@ -88,9 +92,13 @@ def respond(request, token):
     )
 
 
-def _complete_response(signup, invite, response):
+def _complete_response(signup, invite, response, responded_by=None):
     signup.family_response = response
-    signup.save(update_fields=["family_response"])
+    update_fields = ["family_response"]
+    if responded_by is not None:
+        signup.responded_by = responded_by
+        update_fields.append("responded_by")
+    signup.save(update_fields=update_fields)
     invite.responded_at = timezone.now()
     invite.save(update_fields=["responded_at"])
 
