@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ coach }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    {% if coach.coach_profile.photo %}
+      <img src="{{ coach.coach_profile.photo.url }}" alt="{{ coach }}" class="coach-photo-preview">
+    {% endif %}
+    <h1>{{ coach }}</h1>
+    <p class="kid-card__team">
+      {% for assignment in coach.team_assignments.all %}
+        <a href="{% url 'teams:detail' assignment.team.pk %}">{{ assignment.team.name }}</a>
+        ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+  </section>
+
+  {% if coach.coach_profile.bio_text %}
+    <section class="team-section">
+      <h2>Bio</h2>
+      <p>{{ coach.coach_profile.bio_text }}</p>
+    </section>
+  {% endif %}
+
+  {% if coach.coach_profile.contact_email %}
+    <section class="team-section">
+      <h2>Contact</h2>
+      {# TODO: mailto: link removed for now -- see home.html's contact section note #}
+      <p>{{ coach.coach_profile.contact_email }}</p>
+    </section>
+  {% endif %}
+
+  <p><a href="{% url 'teams:coaches' %}">&larr; Back to coaches</a></p>
+{% endblock %}

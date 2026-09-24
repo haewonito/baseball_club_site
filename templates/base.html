@@ -13,13 +13,20 @@
     <div class="site-header__inner">
       <a class="site-header__brand" href="{% url 'home' %}">Choice Select</a>
       <nav class="site-nav">
+        <a href="{% url 'home' %}">Home</a>
         <a href="{% url 'teams:index' %}">Teams</a>
         <a href="{% url 'teams:coaches' %}">Coaches</a>
         <a href="{% url 'schedule:list' %}">Schedule</a>
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
         <a href="{% url 'location' %}">Location</a>
         {% if user.is_authenticated %}
-          <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+          <a href="{% url 'accounts:dashboard' %}">
+            {% if user.is_admin %}Admin Dashboard
+            {% elif user.is_coach %}Coach Dashboard
+            {% elif user.is_parent %}Parent Dashboard
+            {% else %}Dashboard
+            {% endif %}
+          </a>
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
             <button type="submit">Log Out</button>

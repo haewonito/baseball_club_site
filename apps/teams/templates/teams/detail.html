@@ -13,7 +13,10 @@
     {% if team.coach_assignments.all %}
       <ul class="coach-list">
         {% for assignment in team.coach_assignments.all %}
-          <li>{{ assignment.coach }} &mdash; {{ assignment.get_role_display }}</li>
+          <li>
+            <a href="{% url 'teams:coach_detail' assignment.coach.pk %}">{{ assignment.coach }}</a>
+            &mdash; {{ assignment.get_role_display }}
+          </li>
         {% endfor %}
       </ul>
     {% else %}

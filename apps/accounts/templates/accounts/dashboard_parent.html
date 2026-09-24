@@ -4,8 +4,7 @@
 
 {% block content %}
   <section class="page-hero">
-    <h1>Parent Dashboard</h1>
-    <p>Signed in as {{ user }}.</p>
+    <h1>Parent Dashboard <span class="page-hero__subname">{{ user }}</span></h1>
   </section>
 
   {% if cards %}
@@ -33,7 +32,7 @@
             {% endif %}
           </p>
           <a class="btn" href="{% url 'accounts:parent_player_payments' card.player.pk %}">View payment history</a>
-          <a class="btn" href="{% url 'accounts:parent_invite_player' card.player.pk %}">Invite a parent</a>
+          <a class="btn" href="{% url 'accounts:parent_invite_player' card.player.pk %}">Invite Another Adult</a>
         </div>
       {% endfor %}
     </div>

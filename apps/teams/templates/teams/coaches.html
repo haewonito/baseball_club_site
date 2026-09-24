@@ -14,7 +14,7 @@
           {% if coach.coach_profile.photo %}
             <img src="{{ coach.coach_profile.photo.url }}" alt="{{ coach }}" class="coach-photo-preview">
           {% endif %}
-          <h2>{{ coach }}</h2>
+          <h2><a href="{% url 'teams:coach_detail' coach.pk %}">{{ coach }}</a></h2>
           <p class="kid-card__team">
             {% for assignment in coach.team_assignments.all %}
               {{ assignment.team.name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
@@ -23,8 +23,9 @@
           {% if coach.coach_profile.bio_text %}
             <p>{{ coach.coach_profile.bio_text }}</p>
           {% endif %}
+          {# TODO: mailto: link removed for now -- see home.html's contact section note #}
           {% if coach.coach_profile.contact_email %}
-            <p><a href="mailto:{{ coach.coach_profile.contact_email }}">{{ coach.coach_profile.contact_email }}</a></p>
+            <p>{{ coach.coach_profile.contact_email }}</p>
           {% endif %}
         </div>
       {% endfor %}

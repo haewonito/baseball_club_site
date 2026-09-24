@@ -159,6 +159,13 @@ a:hover {
   max-width: 60ch;
 }
 
+.page-hero__subname {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--color-gray-text);
+  margin-left: 0.5rem;
+}
+
 /* --- Forms ------------------------------------------------------------ */
 
 fieldset {
@@ -461,7 +468,7 @@ legend {
 
 .kid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
 }
@@ -483,17 +490,21 @@ legend {
   margin: 0 0 0.75rem;
 }
 
+/* Label stacked above its value (not side-by-side flex) so a narrow
+   viewport wraps "Next Event" cleanly onto its own line(s) instead of
+   running into the value text next to it. */
 .kid-card__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
   font-size: 0.9rem;
-  margin: 0.4rem 0;
+  margin: 0.6rem 0;
 }
 
 .kid-card__row span:first-child {
+  display: block;
   color: var(--color-gray-text);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.15rem;
 }
 
 .kid-card .btn {
