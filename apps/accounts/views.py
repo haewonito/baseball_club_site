@@ -14,6 +14,7 @@ from apps.teams.models import CoachProfile, Team, TeamCoach
 from apps.tryouts.models import (
     TryoutDecision,
     TryoutDecisionChange,
+    TryoutResponseInvite,
     TryoutSignup,
     TryoutStatus,
     TryoutStatusChange,
@@ -145,6 +146,44 @@ def admin_tryout_status_change(request, pk):
         request,
         "partials/_tryout_status_select.html",
         {"signup": signup, "status_choices": TryoutStatus.choices},
+    )
+
+
+@login_required
+def admin_tryout_response_invite(request, pk):
+    """
+    Generate/display the public Accept-Decline link for one signup. Only
+    once the signup's team has finalized decisions -- this is the "reveal"
+    step (CLAUDE.md's roster-promotion plan, step 6): every signup in a
+    finalized team gets its own link, and the admin sends it manually
+    (there's no email infra yet). Mirrors parent_invite_player's pattern.
+    """
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
+    if not signup.team.decisions_finalized:
+        raise PermissionDenied
+
+    invite = (
+        TryoutResponseInvite.objects.filter(signup=signup, responded_at__isnull=True)
+        .order_by("-created_at")
+        .first()
+    )
+    if invite and not invite.is_valid:
+        invite = None
+
+    if request.method == "POST" and not invite:
+        invite = TryoutResponseInvite.objects.create(signup=signup, created_by=request.user)
+
+    invite_url = None
+    if invite:
+        invite_url = request.build_absolute_uri(reverse("tryouts:respond", args=[invite.token]))
+
+    return render(
+        request,
+        "accounts/admin_tryout_response_invite.html",
+        {"signup": signup, "invite": invite, "invite_url": invite_url},
     )
 
 

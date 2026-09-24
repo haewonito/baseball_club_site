@@ -32,6 +32,7 @@
           <th>Season</th>
           <th>Status</th>
           <th>Decision</th>
+          <th>Family Response</th>
         </tr>
       </thead>
       <tbody>
@@ -47,6 +48,7 @@
             <td>{% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}</td>
             {# Set by the assigned coach, not editable from here -- see coach_tryout_decision_change. #}
             <td>{{ signup.get_coach_decision_display }}</td>
+            <td>{{ signup.get_family_response_display }}</td>
           </tr>
         {% endfor %}
       </tbody>

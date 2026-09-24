@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     TryoutDecisionChange,
+    TryoutResponseInvite,
     TryoutSignup,
     TryoutSignupPosition,
     TryoutStatusChange,
@@ -25,8 +26,9 @@ class TryoutSignupAdmin(admin.ModelAdmin):
         "team",
         "status",
         "coach_decision",
+        "family_response",
     )
-    list_filter = ("team", "status", "coach_decision")
+    list_filter = ("team", "status", "coach_decision", "family_response")
     search_fields = (
         "player_first_name",
         "player_last_name",
@@ -66,6 +68,11 @@ class TryoutStatusChangeAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(TryoutResponseInvite)
+class TryoutResponseInviteAdmin(admin.ModelAdmin):
+    list_display = ("signup", "created_by", "created_at", "expires_at", "responded_at")
 
 
 @admin.register(TryoutDecisionChange)

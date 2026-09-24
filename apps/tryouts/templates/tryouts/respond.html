@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Try-Out Response · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ signup.player_full_name }}</h1>
+    <p>{{ signup.team.name }}</p>
+  </section>
+
+  {% if can_respond %}
+    <section class="team-section">
+      <h2>You're invited!</h2>
+      <p>
+        Congratulations &mdash; {{ signup.player_first_name }} is invited to join
+        {{ signup.team.name }}. Please accept or decline below.
+      </p>
+    </section>
+
+    <section class="team-section">
+      <h2>Accept</h2>
+      {% if user.is_authenticated %}
+        <p>Signed in as {{ user }}.</p>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="accept">
+          <button class="btn btn--primary" type="submit">Accept</button>
+        </form>
+      {% else %}
+        <p>
+          Already have an account?
+          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a>
+          first, then come back to this link.
+        </p>
+
+        {% if form.non_field_errors %}
+          <div class="form-errors">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="accept">
+          <div class="form-row">
+            {% include "partials/_form_field.html" with field=form.first_name %}
+            {% include "partials/_form_field.html" with field=form.last_name %}
+          </div>
+          {% include "partials/_form_field.html" with field=form.email %}
+          {% include "partials/_form_field.html" with field=form.password1 %}
+          {% include "partials/_form_field.html" with field=form.password2 %}
+          <button class="btn btn--primary" type="submit">Create Account &amp; Accept</button>
+        </form>
+      {% endif %}
+    </section>
+
+    <section class="team-section">
+      <h2>Decline</h2>
+      <form
+        method="post"
+        onsubmit="return confirm('Decline this invitation? This can&#39;t be undone from this link.');"
+      >
+        {% csrf_token %}
+        <input type="hidden" name="action" value="decline">
+        <button class="btn" type="submit">Decline</button>
+      </form>
+    </section>
+  {% else %}
+    <section class="team-section">
+      <p>
+        Thank you for trying out. We're not able to offer {{ signup.player_first_name }} a spot
+        on {{ signup.team.name }} this season.
+      </p>
+    </section>
+  {% endif %}
+{% endblock %}

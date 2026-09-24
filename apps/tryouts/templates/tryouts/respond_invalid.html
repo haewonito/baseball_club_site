@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Link No Longer Valid · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>This link is no longer valid</h1>
+    <p>
+      {% if invite.responded_at %}
+        A response has already been recorded for this sign-up.
+      {% else %}
+        It has expired.
+      {% endif %}
+      Contact us at <a href="mailto:{{ general_contact_email }}">{{ general_contact_email }}</a>
+      if you need a new link.
+    </p>
+  </section>
+{% endblock %}

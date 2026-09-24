@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Response Recorded · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Response Recorded</h1>
+    {% if signup.family_response == "accepted" %}
+      <p>
+        Thanks! You've accepted {{ signup.player_first_name }}'s spot on {{ signup.team.name }}.
+        We'll be in touch with next steps.
+      </p>
+    {% else %}
+      <p>
+        Thanks for letting us know. We've recorded that {{ signup.player_first_name }} won't be
+        joining {{ signup.team.name }} this season.
+      </p>
+    {% endif %}
+  </section>
+{% endblock %}

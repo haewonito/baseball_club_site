@@ -7,5 +7,5 @@ app_name = "tryouts"
 urlpatterns = [
     path("", views.signup, name="signup"),
     path("thanks/", views.signup_success, name="signup_success"),
-    # admin list/detail, HTMX status-change endpoint go here later
+    path("respond/<uuid:token>/", views.respond, name="respond"),
 ]
