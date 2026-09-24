@@ -132,6 +132,14 @@ if USE_R2:
     AWS_S3_ADDRESSING_STYLE = "virtual"
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
+    # AWS_S3_ENDPOINT_URL above is the private S3 API endpoint (uploads,
+    # admin ops) -- it isn't publicly readable. R2 buckets need "Public
+    # Access" enabled separately (r2.dev subdomain or a custom domain), and
+    # django-storages needs that domain explicitly via AWS_S3_CUSTOM_DOMAIN
+    # or generated file URLs (.url) point at the private endpoint and 403.
+    AWS_S3_CUSTOM_DOMAIN = (
+        config("R2_PUBLIC_URL").removeprefix("https://").removeprefix("http://")
+    )
 else:
     # Local dev fallback: save uploads to disk instead of R2
     MEDIA_URL = "media/"
