@@ -42,6 +42,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # First, before anything else (including static files via WhiteNoise
+    # below) -- see SITE_BASIC_AUTH_ENABLED further down for the toggle.
+    "config.middleware.BasicAuthMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -146,3 +149,13 @@ else:
     MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Site-wide HTTP Basic Auth gate (config/middleware.py) ------------------
+# Temporary, coarse-grained "keep randoms out while this isn't meant to be
+# public yet" -- independent of the app's own login system. Defaults off
+# (same convention as USE_R2) so local dev is never surprised by a lockout;
+# set all three on Railway to actually turn it on there.
+
+SITE_BASIC_AUTH_ENABLED = config("SITE_BASIC_AUTH_ENABLED", default=False, cast=bool)
+SITE_BASIC_AUTH_USER = config("SITE_BASIC_AUTH_USER", default="")
+SITE_BASIC_AUTH_PASSWORD = config("SITE_BASIC_AUTH_PASSWORD", default="")
