@@ -218,40 +218,69 @@ per-player ledger rows is an open decision.
 
 ## Future ideas (nice-to-have, not scheduled)
 
-- **Season roll-up / team promotion tool.** Each year most kids move up a division (10U → 11U, etc.)
-  while some leave. Admin wants a dedicated screen: a checklist of current players (checkbox per
-  player, default-checked) to mark who's moving up, then bulk-reassign those players'
-  `Player.team` to next season's team in one action, rather than editing each `Player` row by hand.
-  Fees do **not** carry over on promotion -- they're normally paid months before the new season
-  starts, so promotion doesn't need to touch `Fee`/`Payment` at all. Still open when this gets built:
-  how "next team" is determined (division-ordering convention doesn't exist yet -- `Team.division`
-  is free text like `"12U"`), whether it creates new `Team` rows for the new season or expects them
-  pre-created, and whether a player's `PlayerPosition` rows should carry over or reset.
+- **Season roll-up + post-tryout decision → roster workflow.** Right now nothing happens after a
+  signup reaches `status=attended`, and promoting players between seasons means editing each `Player`
+  row by hand. Refined design below (this supersedes two earlier separate notes on these ideas --
+  they turned out to be the same underlying mechanism, worked out across a planning conversation):
 
-- **Post-tryout decision → roster workflow.** Right now nothing happens after a signup reaches
-  `status=attended`. Proposed flow:
-  1. **Coach decides**, per signup: add `TryoutSignup.coach_decision` (`undecided` default →
+  1. **Pre-create next season's teams before announcing tryouts.** E.g. before opening 2027-2028
+     tryouts for 11U and 13U, an admin creates `Team` rows for "Choice Select 11U (2027-2028)" and
+     "Choice Select 13U (2027-2028)" -- and can assign next season's head coach to each via
+     `TeamCoach` right away, before a single signup comes in.
+  2. **New teams aren't public until ready.** Add `Team.is_public` (default `True`, so nothing
+     currently live changes), set to `False` on newly pre-created teams so they don't show up on the
+     public Teams/Coaches pages with an empty roster months before the season starts.
+     `team_index`/`team_detail` filter on it; admin flips it once the roster's finalized.
+  3. **Parents pick the team on the sign-up form**, not an inferred division. Add
+     `TryoutSignup.team` (FK to `Team`), and a team-select field on the public sign-up form scoped to
+     whichever teams are currently open for tryouts (its own flag, e.g. `Team.accepting_tryouts` --
+     distinct from `is_public`, since a team can accept signups before it's ready to be shown
+     publicly). Also resolves the age-cutoff-borderline-kid case more simply than automatic inference
+     ever did -- the parent just picks.
+  4. **`TryoutSignup.tryout_year`'s cutoff-date computation (`compute_tryout_year`) gets retired**
+     once every signup is explicitly tied to a team -- `tryout_year` becomes simply
+     `signup.team.season_year`, no heuristic needed.
+  5. **Coach decides, per signup**: add `TryoutSignup.coach_decision` (`undecided` default →
      `invite` / `maybe` / `not_selected`), with an audit trail model `TryoutDecisionChange` mirroring
-     the existing `TryoutStatusChange` pattern. This is a separate axis from `status` (which just
-     tracks contact/attendance logistics). `maybe` is internal-only -- never shown to the family;
-     a coach must resolve it to `invite` or `not_selected` before it's ever revealed.
-  2. **Batch reveal, not per-player auto-send.** Add a `decisions_finalized` flag per tryout
-     year, so an admin locks in all decisions for that group before any family sees anything --
-     avoids one family hearing back while another is still waiting.
-  3. **Family responds without logging in.** Reuse `ParentInvite`'s pattern (UUID token, expiring,
+     `TryoutStatusChange`. Separate axis from `status` (contact/attendance logistics). `maybe` is
+     internal-only -- never shown to the family; must resolve to `invite`/`not_selected` before
+     reveal. Since every signup now has an explicit `team`, "who's allowed to decide" reuses the
+     existing `coach_assignments__coach=user` permission pattern already used for roster/practice
+     editing -- no new permission model needed.
+  6. **Batch reveal, not per-player auto-send.** `decisions_finalized` flag, scoped per team (not
+     per tryout year overall) so e.g. 11U families aren't held up by 13U's evaluation running long.
+  7. **Family responds without logging in.** Reuse `ParentInvite`'s pattern (UUID token, expiring,
      single-use) for a new public page `/try-outs/respond/<token>/` with Accept/Decline. Add
      `TryoutSignup.family_response` (`pending` → `accepted`/`declined`). On accept, let them set a
      password in the same flow, so responding and creating their login happen in one visit.
-  4. **Promote to roster** (accepted signups only): an admin/coach action that creates the `Player`
-     from `player_first_name`/`player_last_name`/`date_of_birth` (no re-entry), copies each
-     `TryoutSignupPosition` row straight into `PlayerPosition` (same canonical `Position` list, so
-     this is a direct copy), assigns the chosen `Team`, and creates/links the parent's `User` +
-     `ParentPlayerLink`.
+  8. **Promote to roster** (accepted signups, plus existing players aging up from a predecessor
+     team): an admin/coach action that creates the `Player` from `player_first_name`/
+     `player_last_name`/`date_of_birth` (no re-entry) for new signups, copies each
+     `TryoutSignupPosition` row straight into `PlayerPosition` (same canonical `Position` list --
+     direct copy), links the parent's `User` + `ParentPlayerLink` (created during step 7's accept),
+     and bulk-reassigns `Player.team` for existing players moving up from the predecessor team
+     (checklist UI, default-checked, per the original season-roll-up idea). No separate "assign the
+     team" step needed -- it was already chosen in step 1/3.
+
+  Fees do **not** carry over on promotion -- they're normally paid months before the new season
+  starts, so this workflow doesn't need to touch `Fee`/`Payment` at all. Whether a player's
+  `PlayerPosition` rows carry over or reset on age-up promotion is still an open call.
 
   **Email sending is deliberately deferred and does NOT block building the rest of this** --
   `config/settings.py` has no `EMAIL_BACKEND`/SMTP configured yet, and this feature (plus
-  `ParentInvite`'s claim flow) is what will eventually need it. Until that infra exists, step 2's
+  `ParentInvite`'s claim flow) is what will eventually need it. Until that infra exists, step 6's
   "reveal" just displays each response link (e.g. a copy-link button) once `decisions_finalized` is
   set, and the admin sends it manually (text, personal email, phone call) -- same token/schema, no
   rework needed. Adding automated email later is purely additive: a "send" action that emails the
   already-existing link, on top of the manual flow rather than replacing it.
+
+- **Splitting a division into multiple teams reactively, based on tryout turnout.** The design above
+  assumes one team per division/season, decided *before* tryouts open (nothing stops creating two
+  named teams for the same division up front, e.g. "11U White"/"11U Blue" -- that already works with
+  no extra code, since the unique constraint is on `Team(name, season_year)`, not `(division,
+  season_year)`). The harder version -- not knowing team count until you see how many kids sign up,
+  and splitting an already-collected pool of signups across teams after the fact -- isn't supported
+  by the design above, since each signup points at one specific pre-created team. Deferred rather
+  than guessed at: if/when this is actually needed, signups would need to point at something broader
+  than a single `Team` (a lightweight "division" or "tryout session" grouping) that gets split into
+  one or more teams only after evaluation.
