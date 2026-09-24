@@ -46,13 +46,14 @@ def team_detail(request, pk):
 
 def coach_index(request):
     """
-    Public coach bios. No login required. A coach whose every assignment is
-    on a not-yet-public team (see Team.is_public) doesn't appear at all --
-    their whole public presence would otherwise be tied to a hidden team.
+    Public coach bios. No login required. Every coach is listed regardless
+    of team visibility -- a coach whose only assignment is on a not-yet-
+    public team (see Team.is_public) still shows up, just with no team
+    listed ("TBA" in the template) rather than leaking the hidden team.
     """
     public_assignments = TeamCoach.objects.filter(team__is_public=True).select_related("team")
     coaches = (
-        User.objects.filter(roles__role=Role.COACH, team_assignments__team__is_public=True)
+        User.objects.filter(roles__role=Role.COACH)
         .distinct()
         .select_related("coach_profile")
         .prefetch_related(Prefetch("team_assignments", queryset=public_assignments))
@@ -62,10 +63,10 @@ def coach_index(request):
 
 
 def coach_detail(request, pk):
-    """Public coach bio detail. No login required. Same is_public rule as coach_index."""
+    """Public coach bio detail. No login required. Same visibility rule as coach_index."""
     public_assignments = TeamCoach.objects.filter(team__is_public=True).select_related("team")
     coach = get_object_or_404(
-        User.objects.filter(roles__role=Role.COACH, team_assignments__team__is_public=True)
+        User.objects.filter(roles__role=Role.COACH)
         .distinct()
         .select_related("coach_profile")
         .prefetch_related(Prefetch("team_assignments", queryset=public_assignments)),

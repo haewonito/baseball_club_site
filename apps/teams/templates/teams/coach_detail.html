@@ -9,10 +9,14 @@
     {% endif %}
     <h1>{{ coach }}</h1>
     <p class="kid-card__team">
-      {% for assignment in coach.team_assignments.all %}
-        <a href="{% url 'teams:detail' assignment.team.pk %}">{{ assignment.team.name }}</a>
-        ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
-      {% endfor %}
+      {% if coach.team_assignments.all %}
+        {% for assignment in coach.team_assignments.all %}
+          <a href="{% url 'teams:detail' assignment.team.pk %}">{{ assignment.team.name }}</a>
+          ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      {% else %}
+        TBA
+      {% endif %}
     </p>
   </section>
 

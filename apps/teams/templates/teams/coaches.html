@@ -16,9 +16,13 @@
           {% endif %}
           <h2><a href="{% url 'teams:coach_detail' coach.pk %}">{{ coach }}</a></h2>
           <p class="kid-card__team">
-            {% for assignment in coach.team_assignments.all %}
-              {{ assignment.team.name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
-            {% endfor %}
+            {% if coach.team_assignments.all %}
+              {% for assignment in coach.team_assignments.all %}
+                {{ assignment.team.name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            {% else %}
+              TBA
+            {% endif %}
           </p>
           {% if coach.coach_profile.bio_text %}
             <p>{{ coach.coach_profile.bio_text }}</p>
