@@ -44,6 +44,8 @@ class UserAdmin(DjangoUserAdmin):
                 "fields": ("email", "password1", "password2"),
             },
         ),
+        ("Personal info", {"fields": ("first_name", "last_name")}),
+        ("Permissions", {"fields": ("roles",)}),
     )
 
 
