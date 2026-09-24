@@ -1,5 +1,3 @@
-from datetime import date
-
 from django.conf import settings
 from django.db import models
 
@@ -8,14 +6,13 @@ from apps.teams.models import Position
 
 class TryoutYearSettings(models.Model):
     """
-    Singleton-ish: the cutoff date used to decide which tryout_year a
-    submission gets tagged with. Default is September 1; admin can
-    change it. If no row exists, settings.DEFAULT_TRYOUT_YEAR_CUTOFF_*
-    is used instead.
+    Singleton-ish. Used to just also hold the fall-cutoff date for
+    computing which season a signup belonged to -- retired now that every
+    TryoutSignup is explicitly tied to a Team (whose own season_year is the
+    single source of truth), so all that's left here is the home-page
+    banner date.
     """
 
-    cutoff_month = models.PositiveSmallIntegerField(default=9)
-    cutoff_day = models.PositiveSmallIntegerField(default=1)
     next_tryout_date = models.DateField(
         null=True,
         blank=True,
@@ -27,36 +24,12 @@ class TryoutYearSettings(models.Model):
         verbose_name_plural = "Try-Out Year Settings"
 
     def __str__(self):
-        return f"Cutoff: {self.cutoff_month}/{self.cutoff_day}"
-
-    @classmethod
-    def get_cutoff(cls):
-        row = cls.objects.first()
-        if row:
-            return row.cutoff_month, row.cutoff_day
-        return (
-            settings.DEFAULT_TRYOUT_YEAR_CUTOFF_MONTH,
-            settings.DEFAULT_TRYOUT_YEAR_CUTOFF_DAY,
-        )
+        return f"Next try-out: {self.next_tryout_date or 'not set'}"
 
     @classmethod
     def get_next_tryout_date(cls):
         row = cls.objects.first()
         return row.next_tryout_date if row else None
-
-
-def compute_tryout_year(submission_date: date) -> int:
-    """
-    A submission after the cutoff date is tagged for next year's
-    tryouts; before the cutoff, it's tagged for the current year's.
-    e.g. cutoff Sept 1: a submission on 2026-09-15 -> 2027,
-    a submission on 2026-08-15 -> 2026.
-    """
-    cutoff_month, cutoff_day = TryoutYearSettings.get_cutoff()
-    cutoff_this_year = date(submission_date.year, cutoff_month, cutoff_day)
-    if submission_date >= cutoff_this_year:
-        return submission_date.year + 1
-    return submission_date.year
 
 
 class TryoutStatus(models.TextChoices):
@@ -68,6 +41,13 @@ class TryoutStatus(models.TextChoices):
 class TryoutSignup(models.Model):
     """Public, no-login submission from a prospective family."""
 
+    # Which team's tryout this is for -- the parent picks from whichever
+    # teams currently have Team.accepting_tryouts=True. PROTECT rather than
+    # CASCADE/SET_NULL: a signup is a historical record, and losing which
+    # team it was for isn't something a Team deletion should silently do.
+    team = models.ForeignKey(
+        "teams.Team", on_delete=models.PROTECT, related_name="tryout_signups"
+    )
     player_first_name = models.CharField(max_length=100)
     player_last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(null=True, blank=True)
@@ -85,7 +65,6 @@ class TryoutSignup(models.Model):
     parent_email = models.EmailField()
 
     submitted_at = models.DateTimeField(auto_now_add=True)
-    tryout_year = models.PositiveIntegerField(editable=False)
 
     status = models.CharField(
         max_length=20, choices=TryoutStatus.choices, default=TryoutStatus.NEW
@@ -98,9 +77,6 @@ class TryoutSignup(models.Model):
         verbose_name_plural = "Try-Out Sign-Ups"
 
     def save(self, *args, **kwargs):
-        if not self.tryout_year:
-            submitted_date = self.submitted_at.date() if self.submitted_at else date.today()
-            self.tryout_year = compute_tryout_year(submitted_date)
         # Public form, no input validation on casing -- normalize names so
         # "john smith" / "JOHN SMITH" / "john SMITH" all store consistently
         # rather than however each family happened to type it.
@@ -124,9 +100,7 @@ class TryoutSignup(models.Model):
 
     @property
     def season_label(self):
-        """Same convention as Team.season_label -- tryout_year is already
-        the spring/summer year the resulting season plays out in."""
-        return f"{self.tryout_year - 1}-{self.tryout_year}"
+        return self.team.season_label
 
     def __str__(self):
         return f"{self.player_full_name} ({self.season_label})"

@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.teams.models import Position
+from apps.teams.models import Position, Team
 
 from .models import TryoutSignup, TryoutSignupPosition
 
@@ -8,8 +8,8 @@ from .models import TryoutSignup, TryoutSignupPosition
 class TryoutSignupForm(forms.ModelForm):
     """
     Public-facing form for the try-out sign-up page. Deliberately excludes
-    the admin-only fields (submitted_at, tryout_year, status, admin_notes)
-    -- those are set by the model's save() or managed from the admin list.
+    the admin-only fields (submitted_at, status, admin_notes) -- those are
+    managed from the admin list, not set by the family.
 
     `positions` isn't a plain TryoutSignup field -- it's backed by
     TryoutSignupPosition (see models.py) so each selection is one of the
@@ -17,6 +17,11 @@ class TryoutSignupForm(forms.ModelForm):
     rows after the main instance is saved.
     """
 
+    team = forms.ModelChoiceField(
+        queryset=Team.objects.filter(accepting_tryouts=True).order_by("-season_year", "division"),
+        label="Which team are you trying out for?",
+        empty_label="Select a team",
+    )
     positions = forms.MultipleChoiceField(
         choices=Position.choices,
         required=False,
@@ -27,6 +32,7 @@ class TryoutSignupForm(forms.ModelForm):
     class Meta:
         model = TryoutSignup
         fields = [
+            "team",
             "player_first_name",
             "player_last_name",
             "date_of_birth",

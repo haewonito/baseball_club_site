@@ -13,6 +13,7 @@
       <thead>
         <tr>
           <th>Player</th>
+          <th>Team</th>
           <th>Positions</th>
           <th>Parent</th>
           <th>Phone</th>
@@ -25,6 +26,7 @@
         {% for signup in signups %}
           <tr>
             <td>{{ signup.player_full_name }}</td>
+            <td>{{ signup.team.name }}</td>
             <td>{{ signup.positions_display }}</td>
             <td>{{ signup.parent_full_name }}</td>
             <td>{{ signup.parent_phone }}</td>

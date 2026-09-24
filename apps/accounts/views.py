@@ -66,16 +66,18 @@ def admin_tryouts_list(request):
     if not request.user.is_admin:
         raise PermissionDenied
 
-    signups = TryoutSignup.objects.prefetch_related("positions").order_by("-submitted_at")
+    signups = TryoutSignup.objects.select_related("team").prefetch_related("positions").order_by(
+        "-submitted_at"
+    )
     years = [
         (year, f"{year - 1}-{year}")
-        for year in TryoutSignup.objects.order_by("-tryout_year")
-        .values_list("tryout_year", flat=True)
+        for year in TryoutSignup.objects.order_by("-team__season_year")
+        .values_list("team__season_year", flat=True)
         .distinct()
     ]
     selected_year = request.GET.get("year", "")
     if selected_year:
-        signups = signups.filter(tryout_year=selected_year)
+        signups = signups.filter(team__season_year=selected_year)
 
     return render(
         request,
@@ -94,7 +96,9 @@ def admin_tryout_detail(request, pk):
     if not request.user.is_admin:
         raise PermissionDenied
 
-    signup = get_object_or_404(TryoutSignup.objects.prefetch_related("positions"), pk=pk)
+    signup = get_object_or_404(
+        TryoutSignup.objects.select_related("team").prefetch_related("positions"), pk=pk
+    )
     status_changes = signup.status_changes.select_related("changed_by").order_by("-changed_at")
 
     return render(
@@ -449,7 +453,9 @@ def coach_tournaments(request, team_id):
 def coach_tryouts(request):
     if not request.user.is_coach:
         raise PermissionDenied
-    signups = TryoutSignup.objects.prefetch_related("positions").order_by("-submitted_at")
+    signups = TryoutSignup.objects.select_related("team").prefetch_related("positions").order_by(
+        "-submitted_at"
+    )
     return render(request, "accounts/coach_tryouts.html", {"signups": signups})
 
 

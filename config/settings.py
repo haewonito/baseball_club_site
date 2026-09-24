@@ -146,8 +146,3 @@ else:
     MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# --- Try-out year cutoff (admin-configurable; see apps.tryouts) -------------
-
-DEFAULT_TRYOUT_YEAR_CUTOFF_MONTH = 9  # September
-DEFAULT_TRYOUT_YEAR_CUTOFF_DAY = 1

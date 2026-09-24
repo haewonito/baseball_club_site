@@ -13,41 +13,47 @@
   </section>
 
   <section class="form-section">
-    <form method="post" class="signup-form" novalidate>
-      {% csrf_token %}
+    {% if not accepting_tryouts %}
+      <p>There are no try-outs currently open. Check back soon, or see the Home page for upcoming dates.</p>
+    {% else %}
+      <form method="post" class="signup-form" novalidate>
+        {% csrf_token %}
 
-      {% if form.non_field_errors %}
-        <div class="form-errors">
-          {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-          {% endfor %}
-        </div>
-      {% endif %}
+        {% if form.non_field_errors %}
+          <div class="form-errors">
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
 
-      <fieldset>
-        <legend>Player</legend>
-        <div class="form-row">
-          {% include "partials/_form_field.html" with field=form.player_first_name %}
-          {% include "partials/_form_field.html" with field=form.player_last_name %}
-        </div>
-        {% include "partials/_form_field.html" with field=form.date_of_birth %}
-        {% include "partials/_form_field.html" with field=form.positions %}
-        {% include "partials/_form_field.html" with field=form.years_experience %}
-        {% include "partials/_form_field.html" with field=form.previous_team %}
-        {% include "partials/_form_field.html" with field=form.notes %}
-      </fieldset>
+        {% include "partials/_form_field.html" with field=form.team %}
 
-      <fieldset>
-        <legend>Parent / guardian</legend>
-        <div class="form-row">
-          {% include "partials/_form_field.html" with field=form.parent_first_name %}
-          {% include "partials/_form_field.html" with field=form.parent_last_name %}
-        </div>
-        {% include "partials/_form_field.html" with field=form.parent_phone %}
-        {% include "partials/_form_field.html" with field=form.parent_email %}
-      </fieldset>
+        <fieldset>
+          <legend>Player</legend>
+          <div class="form-row">
+            {% include "partials/_form_field.html" with field=form.player_first_name %}
+            {% include "partials/_form_field.html" with field=form.player_last_name %}
+          </div>
+          {% include "partials/_form_field.html" with field=form.date_of_birth %}
+          {% include "partials/_form_field.html" with field=form.positions %}
+          {% include "partials/_form_field.html" with field=form.years_experience %}
+          {% include "partials/_form_field.html" with field=form.previous_team %}
+          {% include "partials/_form_field.html" with field=form.notes %}
+        </fieldset>
 
-      <button type="submit" class="btn btn--primary">Submit sign-up</button>
-    </form>
+        <fieldset>
+          <legend>Parent / guardian</legend>
+          <div class="form-row">
+            {% include "partials/_form_field.html" with field=form.parent_first_name %}
+            {% include "partials/_form_field.html" with field=form.parent_last_name %}
+          </div>
+          {% include "partials/_form_field.html" with field=form.parent_phone %}
+          {% include "partials/_form_field.html" with field=form.parent_email %}
+        </fieldset>
+
+        <button type="submit" class="btn btn--primary">Submit sign-up</button>
+      </form>
+    {% endif %}
   </section>
 {% endblock %}

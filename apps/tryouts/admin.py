@@ -21,10 +21,10 @@ class TryoutSignupAdmin(admin.ModelAdmin):
         "parent_full_name",
         "parent_phone",
         "submitted_at",
-        "tryout_year",
+        "team",
         "status",
     )
-    list_filter = ("tryout_year", "status")
+    list_filter = ("team", "status")
     search_fields = (
         "player_first_name",
         "player_last_name",
@@ -33,7 +33,7 @@ class TryoutSignupAdmin(admin.ModelAdmin):
         "parent_email",
     )
     ordering = ["-submitted_at"]
-    readonly_fields = ("submitted_at", "tryout_year")
+    readonly_fields = ("submitted_at",)
     inlines = [TryoutSignupPositionInline]
     # Coaches get view-only access to this same list via a custom
     # permission check in a coach-facing view, not through this
@@ -42,7 +42,7 @@ class TryoutSignupAdmin(admin.ModelAdmin):
 
 @admin.register(TryoutYearSettings)
 class TryoutYearSettingsAdmin(admin.ModelAdmin):
-    list_display = ("cutoff_month", "cutoff_day", "next_tryout_date")
+    list_display = ("next_tryout_date",)
 
 
 @admin.register(TryoutStatusChange)

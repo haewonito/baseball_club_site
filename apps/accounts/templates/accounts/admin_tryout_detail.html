@@ -5,7 +5,14 @@
 {% block content %}
   <section class="page-hero">
     <h1>{{ signup.player_full_name }}</h1>
-    <p>Try-out season {{ signup.season_label }} &middot; Submitted {{ signup.submitted_at|date:"M j, Y g:i A" }}</p>
+    {# Not linked -- the team may still be a draft (Team.is_public=False),
+       which would 404 on the public team page, and this page is reachable
+       by business-Admin-role users who may not have Django-admin access
+       either. #}
+    <p>
+      Trying out for {{ signup.team.name }}
+      &middot; Submitted {{ signup.submitted_at|date:"M j, Y g:i A" }}
+    </p>
   </section>
 
   <section class="team-section">

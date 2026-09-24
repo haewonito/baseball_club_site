@@ -31,9 +31,7 @@ TEAMS = [
     {
         "name": "Choice Select 10U",
         "division": "10U",
-        # 2027 -> displays as "2026-2027" (Team.season_label) -- the
-        # current season given tryouts' fall cutoff (see
-        # compute_tryout_year), not the season before it.
+        # 2027 -> displays as "2026-2027" (Team.season_label).
         "season_year": 2027,
         "birth_year": 2016,
     },
@@ -128,24 +126,34 @@ PARENT_FIRST_NAMES = [
     "Sarah",
 ]
 
+# (first, last, birth_year, positions, status, team_name)
 TRYOUT_SIGNUPS = [
-    ("Carter", "Mills", 2016, [Position.SHORTSTOP], TryoutStatus.NEW),
-    ("Grace", "Nolan", 2015, [Position.CATCHER], TryoutStatus.CONTACTED),
+    ("Carter", "Mills", 2016, [Position.SHORTSTOP], TryoutStatus.NEW, "Choice Select 10U"),
+    ("Grace", "Nolan", 2015, [Position.CATCHER], TryoutStatus.CONTACTED, "Choice Select 10U"),
     (
         "Henry",
         "Ortiz",
         2014,
         [Position.RIGHT_PITCHER, Position.FIRST_BASE],
         TryoutStatus.ATTENDED,
+        "Choice Select 12U",
     ),
-    ("Ella", "Pierce", 2016, [Position.CENTER_FIELD], TryoutStatus.NEW),
-    ("Sebastian", "Quinn", 2014, [Position.THIRD_BASE], TryoutStatus.CONTACTED),
+    ("Ella", "Pierce", 2016, [Position.CENTER_FIELD], TryoutStatus.NEW, "Choice Select 10U"),
+    (
+        "Sebastian",
+        "Quinn",
+        2014,
+        [Position.THIRD_BASE],
+        TryoutStatus.CONTACTED,
+        "Choice Select 12U",
+    ),
     (
         "Zoey",
         "Rhodes",
         2015,
         [Position.LEFT_FIELD, Position.SECOND_BASE],
         TryoutStatus.ATTENDED,
+        "Choice Select 12U",
     ),
 ]
 
@@ -278,7 +286,11 @@ class Command(BaseCommand):
             team, _ = Team.objects.get_or_create(
                 name=t["name"],
                 season_year=t["season_year"],
-                defaults={"division": t["division"]},
+                # accepting_tryouts=True so the public sign-up form has real
+                # options to test against locally; is_public stays at its
+                # model default (True) -- these are the club's existing,
+                # already-public teams, not a pre-created draft.
+                defaults={"division": t["division"], "accepting_tryouts": True},
             )
             teams[t["name"]] = team
         return teams
@@ -432,7 +444,7 @@ class Command(BaseCommand):
 
     def _seed_tryouts(self):
         admin_user = self.coaches["ryan.rickard@example.com"]
-        for i, (first, last, birth_year, positions, status) in enumerate(
+        for i, (first, last, birth_year, positions, status, team_name) in enumerate(
             TRYOUT_SIGNUPS
         ):
             parent_first = PARENT_FIRST_NAMES[i]
@@ -440,13 +452,13 @@ class Command(BaseCommand):
                 player_first_name=first,
                 player_last_name=last,
                 defaults={
+                    "team": self.teams[team_name],
                     "date_of_birth": datetime.date(birth_year, 6, 1),
                     "years_experience": 2,
                     "parent_first_name": parent_first,
                     "parent_last_name": last,
                     "parent_phone": "555-0100",
                     "parent_email": f"{parent_first.lower()}.{last.lower()}.tryout@example.com",
-                    "tryout_year": 2027,
                     "status": status,
                 },
             )
