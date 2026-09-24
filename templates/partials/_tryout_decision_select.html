@@ -1,0 +1,16 @@
+{# Usage: {% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %} -- also the htmx swap target/response fragment for the decision-change POST. Only render this for a coach who's actually assigned to signup.team; the view enforces that too, but callers should gate on my_team_ids first so ineligible rows show plain text instead. #}
+<span class="status-cell" id="decision-cell-{{ signup.pk }}">
+  <select
+    name="coach_decision"
+    class="status-select"
+    hx-post="{% url 'accounts:coach_tryout_decision_change' signup.pk %}"
+    hx-trigger="change"
+    hx-confirm="Change this sign-up's decision? This will be recorded in the audit history."
+    hx-target="#decision-cell-{{ signup.pk }}"
+    hx-swap="outerHTML"
+  >
+    {% for value, label in decision_choices %}
+      <option value="{{ value }}" {% if value == signup.coach_decision %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</span>

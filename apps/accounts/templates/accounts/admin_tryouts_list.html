@@ -31,6 +31,7 @@
           <th>Submitted</th>
           <th>Season</th>
           <th>Status</th>
+          <th>Decision</th>
         </tr>
       </thead>
       <tbody>
@@ -44,6 +45,8 @@
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
             <td>{{ signup.season_label }}</td>
             <td>{% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}</td>
+            {# Set by the assigned coach, not editable from here -- see coach_tryout_decision_change. #}
+            <td>{{ signup.get_coach_decision_display }}</td>
           </tr>
         {% endfor %}
       </tbody>

@@ -38,6 +38,23 @@ class TryoutStatus(models.TextChoices):
     ATTENDED = "attended", "Attended"
 
 
+class TryoutDecision(models.TextChoices):
+    """
+    Separate axis from TryoutStatus above -- status tracks contact/
+    attendance logistics, this tracks the actual roster call. MAYBE is
+    internal-only: a coach's placeholder while still deciding, never shown
+    to the family. Once a family-facing reveal page exists, it must
+    resolve every signup to INVITE/NOT_SELECTED before that team's
+    decisions_finalized flag can be set (see CLAUDE.md's roster-promotion
+    plan) -- MAYBE should never be visible past that point.
+    """
+
+    UNDECIDED = "undecided", "Undecided"
+    INVITE = "invite", "Invite"
+    MAYBE = "maybe", "Maybe"
+    NOT_SELECTED = "not_selected", "Not Selected"
+
+
 class TryoutSignup(models.Model):
     """Public, no-login submission from a prospective family."""
 
@@ -70,6 +87,14 @@ class TryoutSignup(models.Model):
         max_length=20, choices=TryoutStatus.choices, default=TryoutStatus.NEW
     )
     admin_notes = models.TextField(blank=True)
+
+    # Set by whichever coach is assigned to `team` -- see
+    # apps.accounts.views.coach_tryout_decision_change, which enforces that
+    # scoping (the existing coach_assignments__coach=user pattern, same as
+    # roster/practice editing). Admins can see it but don't set it here.
+    coach_decision = models.CharField(
+        max_length=20, choices=TryoutDecision.choices, default=TryoutDecision.UNDECIDED
+    )
 
     class Meta:
         ordering = ["-submitted_at"]
@@ -146,3 +171,23 @@ class TryoutStatusChange(models.Model):
     class Meta:
         verbose_name = "Try-Out Status Change"
         verbose_name_plural = "Try-Out Status Changes"
+
+
+class TryoutDecisionChange(models.Model):
+    """
+    Audit trail for coach_decision changes -- same append-only pattern as
+    TryoutStatusChange above, just on the coach-driven axis instead of the
+    admin-driven one.
+    """
+
+    signup = models.ForeignKey(
+        TryoutSignup, on_delete=models.CASCADE, related_name="decision_changes"
+    )
+    old_decision = models.CharField(max_length=20, choices=TryoutDecision.choices)
+    new_decision = models.CharField(max_length=20, choices=TryoutDecision.choices)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Try-Out Decision Change"
+        verbose_name_plural = "Try-Out Decision Changes"

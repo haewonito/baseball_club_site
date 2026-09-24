@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    TryoutDecisionChange,
     TryoutSignup,
     TryoutSignupPosition,
     TryoutStatusChange,
@@ -23,8 +24,9 @@ class TryoutSignupAdmin(admin.ModelAdmin):
         "submitted_at",
         "team",
         "status",
+        "coach_decision",
     )
-    list_filter = ("team", "status")
+    list_filter = ("team", "status", "coach_decision")
     search_fields = (
         "player_first_name",
         "player_last_name",
@@ -55,6 +57,22 @@ class TryoutStatusChangeAdmin(admin.ModelAdmin):
     """
 
     list_display = ("signup", "old_status", "new_status", "changed_by", "changed_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(TryoutDecisionChange)
+class TryoutDecisionChangeAdmin(admin.ModelAdmin):
+    """Read-only, same reasoning as TryoutStatusChangeAdmin above."""
+
+    list_display = ("signup", "old_decision", "new_decision", "changed_by", "changed_at")
 
     def has_add_permission(self, request):
         return False

@@ -5,7 +5,10 @@
 {% block content %}
   <section class="page-hero">
     <h1>Try-Out Sign-Ups</h1>
-    <p>All teams, all years. View-only.</p>
+    <p>
+      All teams, all years. You can set the Decision for your own team's
+      sign-ups; everything else here is view-only.
+    </p>
   </section>
 
   {% if signups %}
@@ -20,6 +23,7 @@
           <th>Submitted</th>
           <th>Season</th>
           <th>Status</th>
+          <th>Decision</th>
         </tr>
       </thead>
       <tbody>
@@ -33,6 +37,13 @@
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
             <td>{{ signup.season_label }}</td>
             <td>{{ signup.get_status_display }}</td>
+            <td>
+              {% if signup.team_id in my_team_ids %}
+                {% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}
+              {% else %}
+                {{ signup.get_coach_decision_display }}
+              {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>

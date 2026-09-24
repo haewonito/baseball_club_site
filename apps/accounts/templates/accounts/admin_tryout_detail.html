@@ -21,6 +21,12 @@
   </section>
 
   <section class="team-section">
+    <h2>Coach Decision</h2>
+    {# Set by the coach assigned to this signup's team, not from here. #}
+    <p>{{ signup.get_coach_decision_display }}</p>
+  </section>
+
+  <section class="team-section">
     <h2>Player</h2>
     <p>Date of birth: {{ signup.date_of_birth|default:"—" }}</p>
     <p>Positions: {{ signup.positions_display|default:"—" }}</p>
@@ -56,6 +62,23 @@
       </ul>
     {% else %}
       <p>No status changes yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="team-section">
+    <h2>Decision History</h2>
+    {% if decision_changes %}
+      <ul class="coach-list">
+        {% for change in decision_changes %}
+          <li>
+            {{ change.changed_at|date:"M j, Y g:i A" }} &mdash;
+            {{ change.get_old_decision_display }} &rarr; {{ change.get_new_decision_display }}
+            by {{ change.changed_by|default:"—" }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No decision changes yet.</p>
     {% endif %}
   </section>
 

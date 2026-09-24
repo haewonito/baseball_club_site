@@ -11,7 +11,13 @@ from django.views.decorators.http import require_POST
 from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, Team, TeamCoach
-from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
+from apps.tryouts.models import (
+    TryoutDecision,
+    TryoutDecisionChange,
+    TryoutSignup,
+    TryoutStatus,
+    TryoutStatusChange,
+)
 
 from .forms import (
     CoachProfileForm,
@@ -100,6 +106,7 @@ def admin_tryout_detail(request, pk):
         TryoutSignup.objects.select_related("team").prefetch_related("positions"), pk=pk
     )
     status_changes = signup.status_changes.select_related("changed_by").order_by("-changed_at")
+    decision_changes = signup.decision_changes.select_related("changed_by").order_by("-changed_at")
 
     return render(
         request,
@@ -108,6 +115,7 @@ def admin_tryout_detail(request, pk):
             "signup": signup,
             "status_choices": TryoutStatus.choices,
             "status_changes": status_changes,
+            "decision_changes": decision_changes,
         },
     )
 
@@ -456,7 +464,53 @@ def coach_tryouts(request):
     signups = TryoutSignup.objects.select_related("team").prefetch_related("positions").order_by(
         "-submitted_at"
     )
-    return render(request, "accounts/coach_tryouts.html", {"signups": signups})
+    # Decision-making is scoped to the coach's own team(s) -- viewing every
+    # signup stays "all teams, all years" per the coach dashboard's design,
+    # but the decision dropdown itself only renders as editable for the
+    # rows this coach is actually allowed to decide on.
+    my_team_ids = set(
+        TeamCoach.objects.filter(coach=request.user).values_list("team_id", flat=True)
+    )
+    return render(
+        request,
+        "accounts/coach_tryouts.html",
+        {
+            "signups": signups,
+            "decision_choices": TryoutDecision.choices,
+            "my_team_ids": my_team_ids,
+        },
+    )
+
+
+@login_required
+@require_POST
+def coach_tryout_decision_change(request, pk):
+    if not request.user.is_coach:
+        raise PermissionDenied
+
+    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
+    if not TeamCoach.objects.filter(coach=request.user, team=signup.team).exists():
+        raise PermissionDenied
+
+    new_decision = request.POST.get("coach_decision", "")
+    if new_decision not in dict(TryoutDecision.choices):
+        return HttpResponseBadRequest("Invalid decision")
+
+    if new_decision != signup.coach_decision:
+        TryoutDecisionChange.objects.create(
+            signup=signup,
+            old_decision=signup.coach_decision,
+            new_decision=new_decision,
+            changed_by=request.user,
+        )
+        signup.coach_decision = new_decision
+        signup.save(update_fields=["coach_decision"])
+
+    return render(
+        request,
+        "partials/_tryout_decision_select.html",
+        {"signup": signup, "decision_choices": TryoutDecision.choices},
+    )
 
 
 @login_required

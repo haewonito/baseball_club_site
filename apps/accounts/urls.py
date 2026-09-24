@@ -34,6 +34,11 @@ urlpatterns = [
     ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
+    path(
+        "dashboard/coach/tryouts/<int:pk>/decision/",
+        views.coach_tryout_decision_change,
+        name="coach_tryout_decision_change",
+    ),
     path("dashboard/coach/teams/<int:team_id>/roster/", views.coach_roster, name="coach_roster"),
     path(
         "dashboard/coach/teams/<int:team_id>/roster/add/",
