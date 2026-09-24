@@ -41,6 +41,12 @@ TEAMS = [
         "season_year": 2027,
         "birth_year": 2014,
     },
+    {
+        "name": "Choice Select 11U",
+        "division": "11U",
+        "season_year": 2027,
+        "birth_year": 2015,
+    },
 ]
 
 # (first, last, email, roles, coach assignments as list of (team_name, TeamCoachRole))
@@ -56,20 +62,6 @@ COACHES = [
         ],
     ),
     (
-        "Travis",
-        "Roth",
-        "travis.roth@example.com",
-        [Role.COACH],
-        [("Choice Select 10U", TeamCoachRole.ASSISTANT)],
-    ),
-    (
-        "Sean",
-        "Morris",
-        "sean.morris@example.com",
-        [Role.COACH],
-        [("Choice Select 12U", TeamCoachRole.ASSISTANT)],
-    ),
-    (
         "Tom",
         "Nguyen",
         "tom.nguyen@example.com",
@@ -78,6 +70,45 @@ COACHES = [
             ("Choice Select 10U", TeamCoachRole.HEAD),
             ("Choice Select 12U", TeamCoachRole.HEAD),
         ],
+    ),
+    # Choice Select 11U's parent-coaches -- each also holds Role.PARENT and
+    # is linked to their own kid on the roster (see ELEVEN_U_PARENT_LINKS
+    # and _seed_eleven_u_families below). Everyone's an assistant except
+    # Shawn, who's head coach.
+    (
+        "Travis",
+        "Roth",
+        "travis.roth@example.com",
+        [Role.PARENT, Role.COACH],
+        [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
+    ),
+    (
+        "Mo",
+        "Sifuentes",
+        "mo.sifuentes@example.com",
+        [Role.PARENT, Role.COACH],
+        [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
+    ),
+    (
+        "Sean",
+        "Morris",
+        "sean.morris@example.com",
+        [Role.PARENT, Role.COACH],
+        [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
+    ),
+    (
+        "Shawn",
+        "Lewis",
+        "shawn.lewis@example.com",
+        [Role.PARENT, Role.COACH],
+        [("Choice Select 11U", TeamCoachRole.HEAD)],
+    ),
+    (
+        "Ryan",
+        "Richard",
+        "ryan.richard@example.com",
+        [Role.PARENT, Role.COACH],
+        [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
     ),
 ]
 
@@ -105,6 +136,28 @@ PLAYERS_BY_TEAM = {
         ("Harper", "Jansen", 18, [Position.RIGHT_FIELD]),
         ("Evelyn", "Kowalski", 23, [Position.LEFT_PITCHER, Position.FIRST_BASE]),
     ],
+    "Choice Select 11U": [
+        # Pitcher handedness wasn't specified for this team -- defaulted to
+        # right-handed (Position.RIGHT_PITCHER) throughout.
+        ("Jack", "Roth", 24, [Position.SHORTSTOP, Position.CATCHER, Position.RIGHT_PITCHER]),
+        ("Carson", "Helstein", 28, [Position.FIRST_BASE, Position.RIGHT_PITCHER]),
+        ("Charlie", "Barror", 13, [Position.THIRD_BASE, Position.SHORTSTOP]),
+        ("Elijah", "Sifuentes", 99, [Position.CATCHER, Position.RIGHT_PITCHER]),
+        ("Everett", "Haggard", 5, [Position.RIGHT_PITCHER, Position.FIRST_BASE]),
+        ("Kellen", "Lewis", 8, [Position.LEFT_FIELD, Position.SECOND_BASE]),
+        (
+            "Lucas",
+            "Richard",
+            4,
+            [Position.RIGHT_FIELD, Position.CENTER_FIELD, Position.RIGHT_PITCHER],
+        ),
+        (
+            "John",
+            "Morris",
+            66,
+            [Position.RIGHT_PITCHER, Position.THIRD_BASE, Position.LEFT_FIELD],
+        ),
+    ],
 }
 
 PARENT_FIRST_NAMES = [
@@ -125,6 +178,22 @@ PARENT_FIRST_NAMES = [
     "Thomas",
     "Sarah",
 ]
+
+# Choice Select 11U player -> (parent first name, parent email). Linked
+# explicitly here rather than via the generic auto-generated-parent cycle
+# in _seed_parents. Travis/Mo/Sean/Shawn/Ryan are also coaches for this team
+# (see COACHES above); Katie is parent-only, so she isn't in self.coaches
+# and _seed_eleven_u_families creates her user directly. Charlie Barror and
+# Everett Haggard weren't given a named parent, so they still fall through
+# to the generic auto-generated-parent cycle like every other player.
+ELEVEN_U_PARENT_LINKS = {
+    ("Jack", "Roth"): ("Travis", "travis.roth@example.com"),
+    ("Carson", "Helstein"): ("Katie", "katie.helstein@example.com"),
+    ("Elijah", "Sifuentes"): ("Mo", "mo.sifuentes@example.com"),
+    ("John", "Morris"): ("Sean", "sean.morris@example.com"),
+    ("Kellen", "Lewis"): ("Shawn", "shawn.lewis@example.com"),
+    ("Lucas", "Richard"): ("Ryan", "ryan.richard@example.com"),
+}
 
 # (first, last, birth_year, positions, status, team_name)
 TRYOUT_SIGNUPS = [
@@ -198,6 +267,7 @@ class Command(BaseCommand):
             self.admin = self._seed_admin_only()
             self.players = self._seed_players()
             self._seed_parents()
+            self._seed_eleven_u_families()
             self._seed_fees()
             self._seed_schedule()
             self._seed_tryouts()
@@ -320,6 +390,9 @@ class Command(BaseCommand):
         admin_user = self.coaches["ryan.rickard@example.com"]
 
         for i, ((first, last), player) in enumerate(self.players.items()):
+            if (first, last) in ELEVEN_U_PARENT_LINKS:
+                # Handled explicitly by _seed_eleven_u_families instead.
+                continue
             parent_first = next(name_cycle)
             email = f"{parent_first.lower()}.{last.lower()}@example.com"
             parent, _ = User.objects.get_or_create(
@@ -356,6 +429,26 @@ class Command(BaseCommand):
                     claimed_at=None,
                     defaults={},
                 )
+
+    def _seed_eleven_u_families(self):
+        admin_user = self.coaches["ryan.rickard@example.com"]
+        for (p_first, p_last), (parent_first, email) in ELEVEN_U_PARENT_LINKS.items():
+            player = self.players[(p_first, p_last)]
+            parent = self.coaches.get(email)
+            if parent is None:
+                # Katie Helstein -- parent only, not a coach.
+                parent, _ = User.objects.get_or_create(
+                    email=email,
+                    defaults={"first_name": parent_first, "last_name": p_last},
+                )
+                parent.set_password(self.password)
+                parent.first_name, parent.last_name = parent_first, p_last
+                parent.save()
+                parent.roles.set([self.roles[Role.PARENT]])
+
+            ParentPlayerLink.objects.get_or_create(
+                parent=parent, player=player, defaults={"created_by": admin_user}
+            )
 
     # -- fees -----------------------------------------------------------------
 
