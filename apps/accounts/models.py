@@ -83,6 +83,10 @@ class UserRole(models.Model):
 
     role = models.CharField(max_length=20, choices=Role.choices, unique=True)
 
+    class Meta:
+        verbose_name = "User Role"
+        verbose_name_plural = "User Roles"
+
     def __str__(self):
         return self.get_role_display()
 
@@ -121,6 +125,8 @@ class ParentPlayerLink(models.Model):
     )
 
     class Meta:
+        verbose_name = "Parent-Player Link"
+        verbose_name_plural = "Parent-Player Links"
         constraints = [
             models.UniqueConstraint(
                 fields=["parent", "player"],
@@ -155,6 +161,10 @@ class ParentInvite(models.Model):
     claimed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+
+    class Meta:
+        verbose_name = "Parent Invite"
+        verbose_name_plural = "Parent Invites"
 
     @property
     def is_valid(self) -> bool:

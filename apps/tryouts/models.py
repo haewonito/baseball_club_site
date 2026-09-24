@@ -22,6 +22,10 @@ class TryoutYearSettings(models.Model):
         help_text="Drives the public home page banner -- shown when this date is within 30 days.",
     )
 
+    class Meta:
+        verbose_name = "Try-Out Year Settings"
+        verbose_name_plural = "Try-Out Year Settings"
+
     def __str__(self):
         return f"Cutoff: {self.cutoff_month}/{self.cutoff_day}"
 
@@ -90,11 +94,20 @@ class TryoutSignup(models.Model):
 
     class Meta:
         ordering = ["-submitted_at"]
+        verbose_name = "Try-Out Sign-Up"
+        verbose_name_plural = "Try-Out Sign-Ups"
 
     def save(self, *args, **kwargs):
         if not self.tryout_year:
             submitted_date = self.submitted_at.date() if self.submitted_at else date.today()
             self.tryout_year = compute_tryout_year(submitted_date)
+        # Public form, no input validation on casing -- normalize names so
+        # "john smith" / "JOHN SMITH" / "john SMITH" all store consistently
+        # rather than however each family happened to type it.
+        self.player_first_name = self.player_first_name.strip().title()
+        self.player_last_name = self.player_last_name.strip().title()
+        self.parent_first_name = self.parent_first_name.strip().title()
+        self.parent_last_name = self.parent_last_name.strip().title()
         super().save(*args, **kwargs)
 
     @property
@@ -155,3 +168,7 @@ class TryoutStatusChange(models.Model):
     new_status = models.CharField(max_length=20, choices=TryoutStatus.choices)
     changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Try-Out Status Change"
+        verbose_name_plural = "Try-Out Status Changes"

@@ -61,6 +61,10 @@ class CoachProfile(models.Model):
     photo = models.ImageField(upload_to="coach_photos/", blank=True, null=True)
     contact_email = models.EmailField(blank=True)  # optional; may route through admins instead
 
+    class Meta:
+        verbose_name = "Coach Profile"
+        verbose_name_plural = "Coach Profiles"
+
     def save(self, *args, **kwargs):
         if not self.contact_email:
             self.contact_email = self.coach.email
@@ -77,16 +81,16 @@ class Position(models.TextChoices):
     so a position is never spelled/named two different ways in two places.
     """
 
-    LEFT_PITCHER = "LP", "Left-handed pitcher"
-    RIGHT_PITCHER = "RP", "Right-handed pitcher"
+    LEFT_PITCHER = "LP", "LH Pitcher"
+    RIGHT_PITCHER = "RP", "RH Pitcher"
     CATCHER = "C", "Catcher"
-    FIRST_BASE = "B1", "First baseman"
-    SECOND_BASE = "B2", "Second baseman"
-    THIRD_BASE = "B3", "Third baseman"
+    FIRST_BASE = "B1", "First Base"
+    SECOND_BASE = "B2", "Second Base"
+    THIRD_BASE = "B3", "Third Base"
     SHORTSTOP = "SS", "Shortstop"
-    LEFT_FIELD = "LF", "Left fielder"
-    CENTER_FIELD = "CF", "Center fielder"
-    RIGHT_FIELD = "RF", "Right fielder"
+    LEFT_FIELD = "LF", "Left Field"
+    CENTER_FIELD = "CF", "Center Field"
+    RIGHT_FIELD = "RF", "Right Field"
 
 
 class PlayerPosition(models.Model):
