@@ -22,9 +22,24 @@ from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
 
 DEMO_PASSWORD = "demopass123"
 
+
+def _demo_email(local_part):
+    """
+    Every seeded email routes through Haewon's own Gmail alias instead of an
+    unreachable @example.com, so --force-seeding a real deployment (see
+    seed_demo_data --force) lands every demo email in one inbox via Gmail's
+    "+" addressing -- e.g. "ryan.rickard" -> "haewon201+ryan.rickard@gmail.com".
+    """
+    return f"haewon201+{local_part}@gmail.com"
+
+
+# The admin+head-coach account is looked up by email repeatedly below --
+# named once here instead of repeating the literal string at each call site.
+ADMIN_HEAD_COACH_EMAIL = _demo_email("ryan.rickard")
+
 # Fun, not real -- see seed_photos/README (none of these are photos of the
-# actual named coaches). Keyed by the local part of each coach's email with
-# "." replaced by "_", e.g. ryan.rickard@example.com -> ryan_rickard.jpg.
+# actual named coaches). Keyed by the coach's name, lowercased with a "_"
+# separator, e.g. Ryan Rickard -> ryan_rickard.jpg.
 SEED_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_photos"
 
 TEAMS = [
@@ -54,7 +69,7 @@ COACHES = [
     (
         "Ryan",
         "Rickard",
-        "ryan.rickard@example.com",
+        ADMIN_HEAD_COACH_EMAIL,
         [Role.ADMIN, Role.COACH],
         [
             ("Choice Select 10U", TeamCoachRole.ASSISTANT),
@@ -64,7 +79,7 @@ COACHES = [
     (
         "Tom",
         "Nguyen",
-        "tom.nguyen@example.com",
+        _demo_email("tom.nguyen"),
         [Role.COACH],
         [
             ("Choice Select 10U", TeamCoachRole.HEAD),
@@ -78,41 +93,41 @@ COACHES = [
     (
         "Travis",
         "Roth",
-        "travis.roth@example.com",
+        _demo_email("travis.roth"),
         [Role.PARENT, Role.COACH],
         [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
     ),
     (
         "Mo",
         "Sifuentes",
-        "mo.sifuentes@example.com",
+        _demo_email("mo.sifuentes"),
         [Role.PARENT, Role.COACH],
         [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
     ),
     (
         "Sean",
         "Morris",
-        "sean.morris@example.com",
+        _demo_email("sean.morris"),
         [Role.PARENT, Role.COACH],
         [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
     ),
     (
         "Shawn",
         "Lewis",
-        "shawn.lewis@example.com",
+        _demo_email("shawn.lewis"),
         [Role.PARENT, Role.COACH],
         [("Choice Select 11U", TeamCoachRole.HEAD)],
     ),
     (
         "Ryan",
         "Richard",
-        "ryan.richard@example.com",
+        _demo_email("ryan.richard"),
         [Role.PARENT, Role.COACH],
         [("Choice Select 11U", TeamCoachRole.ASSISTANT)],
     ),
 ]
 
-ADMIN_ONLY = ("Sandra", "Lee", "sandra.lee@example.com")
+ADMIN_ONLY = ("Sandra", "Lee", _demo_email("sandra.lee"))
 
 # (first, last, jersey_number, positions) per team
 PLAYERS_BY_TEAM = {
@@ -187,12 +202,12 @@ PARENT_FIRST_NAMES = [
 # Everett Haggard weren't given a named parent, so they still fall through
 # to the generic auto-generated-parent cycle like every other player.
 ELEVEN_U_PARENT_LINKS = {
-    ("Jack", "Roth"): ("Travis", "travis.roth@example.com"),
-    ("Carson", "Helstein"): ("Katie", "katie.helstein@example.com"),
-    ("Elijah", "Sifuentes"): ("Mo", "mo.sifuentes@example.com"),
-    ("John", "Morris"): ("Sean", "sean.morris@example.com"),
-    ("Kellen", "Lewis"): ("Shawn", "shawn.lewis@example.com"),
-    ("Lucas", "Richard"): ("Ryan", "ryan.richard@example.com"),
+    ("Jack", "Roth"): ("Travis", _demo_email("travis.roth")),
+    ("Carson", "Helstein"): ("Katie", _demo_email("katie.helstein")),
+    ("Elijah", "Sifuentes"): ("Mo", _demo_email("mo.sifuentes")),
+    ("John", "Morris"): ("Sean", _demo_email("sean.morris")),
+    ("Kellen", "Lewis"): ("Shawn", _demo_email("shawn.lewis")),
+    ("Lucas", "Richard"): ("Ryan", _demo_email("ryan.richard")),
 }
 
 # (first, last, birth_year, positions, status, team_name)
@@ -275,7 +290,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\nDemo data seeded."))
         self.stdout.write(f"All seeded users share the password: {self.password}")
         self.stdout.write(
-            f"Admin+head coach (dual role): {self.coaches['ryan.rickard@example.com'].email}"
+            f"Admin+head coach (dual role): {self.coaches[ADMIN_HEAD_COACH_EMAIL].email}"
         )
         self.stdout.write(f"Admin-only: {self.admin.email}")
 
@@ -306,7 +321,7 @@ class Command(BaseCommand):
                     "bio_text": f"{first} has been coaching with the club for several seasons."
                 },
             )
-            self._seed_coach_photo(profile, email)
+            self._seed_coach_photo(profile, first, last)
 
             for team_name, coach_role in assignments:
                 TeamCoach.objects.get_or_create(
@@ -318,10 +333,10 @@ class Command(BaseCommand):
             coaches[email] = user
         return coaches
 
-    def _seed_coach_photo(self, profile, email):
+    def _seed_coach_photo(self, profile, first, last):
         if profile.photo:
             return
-        filename = email.split("@")[0].replace(".", "_") + ".jpg"
+        filename = f"{first.lower()}_{last.lower()}.jpg"
         photo_path = SEED_PHOTOS_DIR / filename
         if not photo_path.exists():
             return
@@ -387,14 +402,14 @@ class Command(BaseCommand):
 
     def _seed_parents(self):
         name_cycle = iter(PARENT_FIRST_NAMES * 2)
-        admin_user = self.coaches["ryan.rickard@example.com"]
+        admin_user = self.coaches[ADMIN_HEAD_COACH_EMAIL]
 
         for i, ((first, last), player) in enumerate(self.players.items()):
             if (first, last) in ELEVEN_U_PARENT_LINKS:
                 # Handled explicitly by _seed_eleven_u_families instead.
                 continue
             parent_first = next(name_cycle)
-            email = f"{parent_first.lower()}.{last.lower()}@example.com"
+            email = _demo_email(f"{parent_first.lower()}.{last.lower()}")
             parent, _ = User.objects.get_or_create(
                 email=email, defaults={"first_name": parent_first, "last_name": last}
             )
@@ -411,7 +426,7 @@ class Command(BaseCommand):
             # and one still pending via invite -- exercises both flows.
             if i in (0, len(PLAYERS_BY_TEAM["Choice Select 10U"])):
                 second_first = next(name_cycle)
-                second_email = f"{second_first.lower()}.{last.lower()}@example.com"
+                second_email = _demo_email(f"{second_first.lower()}.{last.lower()}")
                 second_parent, _ = User.objects.get_or_create(
                     email=second_email,
                     defaults={"first_name": second_first, "last_name": last},
@@ -431,7 +446,7 @@ class Command(BaseCommand):
                 )
 
     def _seed_eleven_u_families(self):
-        admin_user = self.coaches["ryan.rickard@example.com"]
+        admin_user = self.coaches[ADMIN_HEAD_COACH_EMAIL]
         for (p_first, p_last), (parent_first, email) in ELEVEN_U_PARENT_LINKS.items():
             player = self.players[(p_first, p_last)]
             parent = self.coaches.get(email)
@@ -453,7 +468,7 @@ class Command(BaseCommand):
     # -- fees -----------------------------------------------------------------
 
     def _seed_fees(self):
-        admin_user = self.coaches["ryan.rickard@example.com"]
+        admin_user = self.coaches[ADMIN_HEAD_COACH_EMAIL]
         for i, ((first, last), player) in enumerate(self.players.items()):
             fee, _ = Fee.objects.get_or_create(
                 player=player,
@@ -490,7 +505,7 @@ class Command(BaseCommand):
     # -- schedule ---------------------------------------------------------------
 
     def _seed_schedule(self):
-        admin_user = self.coaches["ryan.rickard@example.com"]
+        admin_user = self.coaches[ADMIN_HEAD_COACH_EMAIL]
         today = timezone.localdate()
         next_tuesday = today + datetime.timedelta(days=(1 - today.weekday()) % 7 or 7)
 
@@ -536,7 +551,7 @@ class Command(BaseCommand):
     # -- tryouts ------------------------------------------------------------------
 
     def _seed_tryouts(self):
-        admin_user = self.coaches["ryan.rickard@example.com"]
+        admin_user = self.coaches[ADMIN_HEAD_COACH_EMAIL]
         for i, (first, last, birth_year, positions, status, team_name) in enumerate(
             TRYOUT_SIGNUPS
         ):
@@ -551,7 +566,7 @@ class Command(BaseCommand):
                     "parent_first_name": parent_first,
                     "parent_last_name": last,
                     "parent_phone": "555-0100",
-                    "parent_email": f"{parent_first.lower()}.{last.lower()}.tryout@example.com",
+                    "parent_email": _demo_email(f"{parent_first.lower()}.{last.lower()}.tryout"),
                     "status": status,
                 },
             )
