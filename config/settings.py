@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_htmx",
     "storages",
+    "anymail",
     # project apps
     "apps.accounts",
     "apps.teams",
@@ -164,17 +165,23 @@ SITE_BASIC_AUTH_PASSWORD = config("SITE_BASIC_AUTH_PASSWORD", default="")
 # --- Email ------------------------------------------------------------------
 # Defaults to printing to stdout (same "off by default" convention as USE_R2
 # and SITE_BASIC_AUTH_ENABLED) so local dev never sends a real email by
-# accident. Set EMAIL_BACKEND to the SMTP backend plus the EMAIL_HOST_* vars
-# on Railway to actually send.
+# accident. NOT SMTP on Railway -- confirmed by testing directly from inside
+# the deployed container that Railway blocks all outbound SMTP ports
+# (25/465/587) at the network level, so smtp.gmail.com (or any SMTP relay)
+# can never connect from there regardless of credentials. Instead, Railway
+# is set to django-anymail's Resend backend, which sends over a plain HTTPS
+# API call -- not blocked -- to https://api.resend.com.
 
 EMAIL_BACKEND = config(
     "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
 )
-EMAIL_HOST = config("EMAIL_HOST", default="")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 # Same placeholder address as config.context_processors.GENERAL_CONTACT_EMAIL
-# -- update both together once the club's real inbox is set up.
+# -- update both together once the club's real inbox is set up. Must be
+# onboarding@resend.dev (Resend's shared test sender) until a real sending
+# domain is verified with Resend -- an unverified custom address will be
+# rejected by their API.
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectbaseball.com")
+
+ANYMAIL = {
+    "RESEND_API_KEY": config("RESEND_API_KEY", default=""),
+}

@@ -7,3 +7,4 @@ django-storages[s3]>=1.14
 django-htmx>=1.17
 python-decouple>=3.8
 Pillow>=10.0
+django-anymail>=11.0
