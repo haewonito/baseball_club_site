@@ -23,10 +23,12 @@ from apps.tryouts.models import (
     TryoutStatusChange,
 )
 
+from .emails import send_parent_invite_email
 from .forms import (
     CoachProfileForm,
     FeeForm,
     InviteClaimSignupForm,
+    ParentInviteEmailForm,
     PaymentForm,
     PlayerRosterForm,
     PracticeEventForm,
@@ -779,14 +781,62 @@ def parent_invite_player(request, player_id):
         invite = ParentInvite.objects.create(player=player, created_by=request.user)
 
     invite_url = None
+    email_form = None
     if invite:
         invite_url = request.build_absolute_uri(reverse("accounts:invite_claim", args=[invite.token]))
+        # The link itself is always shown (below); this is just the extra
+        # "email it" option alongside it -- prefill with whoever it was
+        # last sent to, so a resend doesn't need retyping the address.
+        email_form = ParentInviteEmailForm(initial={"email": invite.invitee_email})
 
     return render(
         request,
         "accounts/parent_invite.html",
-        {"player": player, "invite": invite, "invite_url": invite_url},
+        {"player": player, "invite": invite, "invite_url": invite_url, "email_form": email_form},
     )
+
+
+@login_required
+@require_POST
+def parent_invite_send_email(request, player_id):
+    """The optional "email it" action layered on top of parent_invite_player's copy/paste link -- doesn't replace it."""
+    if not request.user.is_parent:
+        raise PermissionDenied
+
+    link = get_object_or_404(
+        ParentPlayerLink.objects.select_related("player"),
+        parent=request.user,
+        player_id=player_id,
+        removed_at__isnull=True,
+    )
+    player = link.player
+
+    invite = (
+        ParentInvite.objects.filter(player=player, created_by=request.user, claimed_at__isnull=True)
+        .order_by("-created_at")
+        .first()
+    )
+    if not invite or not invite.is_valid:
+        raise PermissionDenied
+
+    email_form = ParentInviteEmailForm(request.POST)
+    if not email_form.is_valid():
+        messages.error(request, "Enter a valid email address.")
+        return redirect("accounts:parent_invite_player", player_id=player.pk)
+
+    invite.invitee_email = email_form.cleaned_data["email"]
+    invite.save(update_fields=["invitee_email"])
+
+    try:
+        send_parent_invite_email(invite, request)
+    except Exception:
+        messages.error(request, "Couldn't send the email -- check the email configuration.")
+    else:
+        invite.emailed_at = timezone.now()
+        invite.save(update_fields=["emailed_at"])
+        messages.success(request, f"Emailed the invite link to {invite.invitee_email}.")
+
+    return redirect("accounts:parent_invite_player", player_id=player.pk)
 
 
 def invite_claim(request, token):

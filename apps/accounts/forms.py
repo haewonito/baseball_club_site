@@ -188,3 +188,10 @@ class InviteClaimSignupForm(forms.Form):
             first_name=self.cleaned_data["first_name"],
             last_name=self.cleaned_data["last_name"],
         )
+
+
+class ParentInviteEmailForm(forms.Form):
+    """The optional "email this link" action on parent_invite_player -- ParentInvite itself
+    doesn't carry a pre-set invitee email, so this is where one gets typed in."""
+
+    email = forms.EmailField(label="Email address")

@@ -1,0 +1,15 @@
+Hi,
+
+{{ invite.created_by.first_name }} {{ invite.created_by.last_name }} has invited you to connect
+with {{ invite.player }}'s account on the Choice Select site.
+
+Important: whoever uses this link will be able to see {{ invite.player.first_name }}'s private
+information, including fee and payment history.
+
+Use this link to accept the invite and set up your login:
+{{ invite_url }}
+
+This link expires {{ invite.expires_at|date:"M j, Y" }}.
+
+Thanks,
+Choice Select

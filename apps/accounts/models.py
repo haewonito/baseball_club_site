@@ -161,6 +161,11 @@ class ParentInvite(models.Model):
     claimed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    # Both blank until the primary parent uses the "email it" option (see
+    # accounts.views.parent_invite_send_email) -- the link itself never
+    # requires an email address, this is purely for the optional send.
+    invitee_email = models.EmailField(blank=True)
+    emailed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Parent Invite"

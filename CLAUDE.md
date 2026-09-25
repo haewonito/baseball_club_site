@@ -277,8 +277,10 @@ per-player ledger rows is an open decision.
   testing directly from inside the deployed container, so raw SMTP can never work there regardless of
   credentials. Resend's free tier only sends to the account owner's own verified address until a
   domain is verified (`resend.com/domains`) -- worth knowing before assuming a "failed send" is a bug.
-  `ParentInvite`'s second-parent claim flow still has no automated send -- unlike `TryoutSignup`,
-  `ParentInvite` has no email field to send *to* at all, so wiring that up needs a model change first.
+  `ParentInvite` now also has this: `ParentInvite.invitee_email`/`emailed_at` (added since it had no
+  email field originally) let the primary parent optionally email the link from
+  `parent_invite_player` -- this is additive, not a replacement, the copy/paste link is still always
+  shown too.
 
 - **Splitting a division into multiple teams reactively, based on tryout turnout.** The design above
   assumes one team per division/season, decided *before* tryouts open (nothing stops creating two

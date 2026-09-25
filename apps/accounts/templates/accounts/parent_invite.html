@@ -21,6 +21,17 @@
       <input type="text" id="id_invite_url" readonly value="{{ invite_url }}" onclick="this.select()">
     </div>
     <p>Expires {{ invite.expires_at|date:"M j, Y" }}.</p>
+
+    {% if invite.emailed_at %}
+      <p>Last emailed to {{ invite.invitee_email }} on {{ invite.emailed_at|date:"M j, Y g:i A" }}.</p>
+    {% endif %}
+    <form method="post" action="{% url 'accounts:parent_invite_send_email' player.pk %}">
+      {% csrf_token %}
+      {% include "partials/_form_field.html" with field=email_form.email %}
+      <button class="btn btn--primary" type="submit">
+        {% if invite.emailed_at %}Resend Email{% else %}Send Email{% endif %}
+      </button>
+    </form>
   {% else %}
     <form method="post">
       {% csrf_token %}
