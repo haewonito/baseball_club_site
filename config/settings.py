@@ -160,3 +160,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SITE_BASIC_AUTH_ENABLED = config("SITE_BASIC_AUTH_ENABLED", default=False, cast=bool)
 SITE_BASIC_AUTH_USER = config("SITE_BASIC_AUTH_USER", default="")
 SITE_BASIC_AUTH_PASSWORD = config("SITE_BASIC_AUTH_PASSWORD", default="")
+
+# --- Email ------------------------------------------------------------------
+# Defaults to printing to stdout (same "off by default" convention as USE_R2
+# and SITE_BASIC_AUTH_ENABLED) so local dev never sends a real email by
+# accident. Set EMAIL_BACKEND to the SMTP backend plus the EMAIL_HOST_* vars
+# on Railway to actually send.
+
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+# Same placeholder address as config.context_processors.GENERAL_CONTACT_EMAIL
+# -- update both together once the club's real inbox is set up.
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectbaseball.com")

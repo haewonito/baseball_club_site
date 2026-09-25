@@ -263,6 +263,10 @@ class TryoutResponseInvite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(default=_default_response_expiry)
     responded_at = models.DateTimeField(null=True, blank=True)
+    # Set by apps.tryouts.emails.send_response_invite_email -- lets the
+    # admin page show "already sent" instead of silently re-sending, and
+    # doubles as the only record of whether this ever went out.
+    emailed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Try-Out Response Invite"

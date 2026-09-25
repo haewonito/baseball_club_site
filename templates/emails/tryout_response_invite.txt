@@ -1,0 +1,17 @@
+Hi {{ signup.parent_first_name }},
+{% if signup.coach_decision == "invite" %}
+{{ signup.player_first_name }} has been invited to join {{ signup.team.name }} this season!
+
+Please let us know whether you'll be accepting the spot:
+{{ invite_url }}
+
+This link expires {{ invite.expires_at|date:"M j, Y" }}.
+{% else %}
+Thank you for trying out for {{ signup.team.name }}. {{ signup.player_first_name }} wasn't
+selected for this season's team.
+
+You can view the try-out outcome here:
+{{ invite_url }}
+{% endif %}
+Thanks,
+{{ signup.team.name }} Coaching Staff

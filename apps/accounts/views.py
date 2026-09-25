@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Team, TeamCoach
+from apps.tryouts.emails import send_response_invite_email
 from apps.tryouts.models import (
     TryoutDecision,
     TryoutDecisionChange,
@@ -162,8 +163,9 @@ def admin_tryout_response_invite(request, pk):
     Generate/display the public Accept-Decline link for one signup. Only
     once the signup's team has finalized decisions -- this is the "reveal"
     step (CLAUDE.md's roster-promotion plan, step 6): every signup in a
-    finalized team gets its own link, and the admin sends it manually
-    (there's no email infra yet). Mirrors parent_invite_player's pattern.
+    finalized team gets its own link. The admin can still send it manually
+    (text, phone) or use admin_tryout_response_invite_send_email below.
+    Mirrors parent_invite_player's pattern.
     """
     if not request.user.is_admin:
         raise PermissionDenied
@@ -192,6 +194,29 @@ def admin_tryout_response_invite(request, pk):
         "accounts/admin_tryout_response_invite.html",
         {"signup": signup, "invite": invite, "invite_url": invite_url},
     )
+
+
+@login_required
+@require_POST
+def admin_tryout_response_invite_send_email(request, pk):
+    """The automated "send" action CLAUDE.md's plan describes as purely additive on top of the copy-link flow above."""
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
+    invite = get_object_or_404(
+        TryoutResponseInvite, signup=signup, responded_at__isnull=True
+    )
+    if not invite.is_valid:
+        raise PermissionDenied
+
+    try:
+        send_response_invite_email(invite, request)
+    except Exception:
+        messages.error(request, "Couldn't send the email -- check the email configuration.")
+    else:
+        messages.success(request, f"Emailed the response link to {signup.parent_email}.")
+    return redirect("accounts:admin_tryout_response_invite", pk=signup.pk)
 
 
 @login_required

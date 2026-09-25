@@ -23,6 +23,11 @@ urlpatterns = [
         name="admin_tryout_response_invite",
     ),
     path(
+        "dashboard/admin/tryouts/<int:pk>/response-invite/send/",
+        views.admin_tryout_response_invite_send_email,
+        name="admin_tryout_response_invite_send_email",
+    ),
+    path(
         "dashboard/admin/tryouts/<int:pk>/promote/",
         views.admin_tryout_promote,
         name="admin_tryout_promote",
