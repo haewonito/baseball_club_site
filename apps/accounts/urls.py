@@ -66,6 +66,11 @@ urlpatterns = [
         name="coach_roster_remove_player",
     ),
     path(
+        "dashboard/coach/teams/<int:team_id>/roster/bulk-move/",
+        views.coach_roster_bulk_move,
+        name="coach_roster_bulk_move",
+    ),
+    path(
         "dashboard/coach/teams/<int:team_id>/practices/",
         views.coach_practices,
         name="coach_practices",

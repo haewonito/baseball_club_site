@@ -443,6 +443,13 @@ legend {
   color: var(--color-gray-text);
 }
 
+.roster-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
 .roster-table {
   width: 100%;
   border-collapse: collapse;

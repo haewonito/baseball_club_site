@@ -394,6 +394,16 @@ def _get_coach_team_or_404(user, team_id):
     return get_object_or_404(Team, pk=team_id, coach_assignments__coach=user)
 
 
+def _get_roster_team_or_404(user, team_id):
+    # Roster views (unlike the rest of the coach dashboard) are also open to
+    # admins -- an admin isn't necessarily assigned to the team via
+    # TeamCoach, so they get any team rather than _get_coach_team_or_404's
+    # coach_assignments filter.
+    if user.is_admin:
+        return get_object_or_404(Team, pk=team_id)
+    return _get_coach_team_or_404(user, team_id)
+
+
 @login_required
 def dashboard_coach(request):
     if not request.user.is_coach:
@@ -422,18 +432,26 @@ def dashboard_coach(request):
 
 @login_required
 def coach_roster(request, team_id):
-    if not request.user.is_coach:
+    if not (request.user.is_coach or request.user.is_admin):
         raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
+    team = _get_roster_team_or_404(request.user, team_id)
     players = team.players.prefetch_related("positions").order_by("last_name", "first_name")
-    return render(request, "accounts/coach_roster.html", {"team": team, "players": players})
+    # Destination options for the bulk "move to team" action below -- every
+    # other team, not just public ones, since the age-up case is moving
+    # players onto a newly pre-created team that isn't public yet.
+    other_teams = Team.objects.exclude(pk=team.pk).order_by("-season_year", "name")
+    return render(
+        request,
+        "accounts/coach_roster.html",
+        {"team": team, "players": players, "other_teams": other_teams},
+    )
 
 
 @login_required
 def coach_roster_add(request, team_id):
-    if not request.user.is_coach:
+    if not (request.user.is_coach or request.user.is_admin):
         raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
+    team = _get_roster_team_or_404(request.user, team_id)
     if request.method == "POST":
         form = PlayerRosterForm(request.POST, instance=Player(team=team))
         if form.is_valid():
@@ -450,9 +468,9 @@ def coach_roster_add(request, team_id):
 
 @login_required
 def coach_roster_edit_player(request, team_id, player_id):
-    if not request.user.is_coach:
+    if not (request.user.is_coach or request.user.is_admin):
         raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
+    team = _get_roster_team_or_404(request.user, team_id)
     player = get_object_or_404(Player, pk=player_id, team=team)
     if request.method == "POST":
         form = PlayerRosterForm(request.POST, instance=player)
@@ -471,14 +489,39 @@ def coach_roster_edit_player(request, team_id, player_id):
 @login_required
 @require_POST
 def coach_roster_remove_player(request, team_id, player_id):
-    if not request.user.is_coach:
+    if not (request.user.is_coach or request.user.is_admin):
         raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
+    team = _get_roster_team_or_404(request.user, team_id)
     player = get_object_or_404(Player, pk=player_id, team=team)
     # Removes from this roster, doesn't delete the Player -- preserves fee
     # history and keeps the record around for reassignment elsewhere.
     player.team = None
     player.save()
+    return redirect("accounts:coach_roster", team_id=team.pk)
+
+
+@login_required
+@require_POST
+def coach_roster_bulk_move(request, team_id):
+    """
+    Age-up promotion (roster-promotion plan step 8): move a checked batch of
+    existing players from this team onto another team in one action.
+    PlayerPosition rows carry over automatically -- they key off the
+    player, not the team, so reassigning Player.team doesn't touch them.
+    """
+    if not (request.user.is_coach or request.user.is_admin):
+        raise PermissionDenied
+    team = _get_roster_team_or_404(request.user, team_id)
+
+    player_ids = request.POST.getlist("player_ids")
+    destination_id = request.POST.get("destination_team")
+    if not player_ids or not destination_id:
+        messages.error(request, "Select at least one player and a destination team.")
+        return redirect("accounts:coach_roster", team_id=team.pk)
+
+    destination = get_object_or_404(Team, pk=destination_id)
+    moved = Player.objects.filter(pk__in=player_ids, team=team).update(team=destination)
+    messages.success(request, f"Moved {moved} player(s) to {destination.name}.")
     return redirect("accounts:coach_roster", team_id=team.pk)
 
 
