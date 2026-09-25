@@ -18,16 +18,6 @@ urlpatterns = [
         name="admin_tryout_status_change",
     ),
     path(
-        "dashboard/admin/tryouts/<int:pk>/response-invite/",
-        views.admin_tryout_response_invite,
-        name="admin_tryout_response_invite",
-    ),
-    path(
-        "dashboard/admin/tryouts/<int:pk>/response-invite/send/",
-        views.admin_tryout_response_invite_send_email,
-        name="admin_tryout_response_invite_send_email",
-    ),
-    path(
         "dashboard/admin/tryouts/<int:pk>/promote/",
         views.admin_tryout_promote,
         name="admin_tryout_promote",
@@ -53,6 +43,11 @@ urlpatterns = [
         "dashboard/coach/tryouts/<int:pk>/decision/",
         views.coach_tryout_decision_change,
         name="coach_tryout_decision_change",
+    ),
+    path(
+        "dashboard/coach/tryouts/<int:pk>/send-email/",
+        views.coach_tryout_send_email,
+        name="coach_tryout_send_email",
     ),
     path("dashboard/coach/teams/<int:team_id>/roster/", views.coach_roster, name="coach_roster"),
     path(

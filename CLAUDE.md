@@ -241,14 +241,19 @@ per-player ledger rows is an open decision.
      once every signup is explicitly tied to a team -- `tryout_year` becomes simply
      `signup.team.season_year`, no heuristic needed.
   5. **Coach decides, per signup**: add `TryoutSignup.coach_decision` (`undecided` default →
-     `invite` / `maybe` / `not_selected`), with an audit trail model `TryoutDecisionChange` mirroring
-     `TryoutStatusChange`. Separate axis from `status` (contact/attendance logistics). `maybe` is
-     internal-only -- never shown to the family; must resolve to `invite`/`not_selected` before
-     reveal. Since every signup now has an explicit `team`, "who's allowed to decide" reuses the
-     existing `coach_assignments__coach=user` permission pattern already used for roster/practice
-     editing -- no new permission model needed.
-  6. **Batch reveal, not per-player auto-send.** `decisions_finalized` flag, scoped per team (not
-     per tryout year overall) so e.g. 11U families aren't held up by 13U's evaluation running long.
+     `invite` / `not_selected`), with an audit trail model `TryoutDecisionChange` mirroring
+     `TryoutStatusChange`. Separate axis from `status` (contact/attendance logistics). Never shown to
+     the family until it resolves to `invite`/`not_selected`. Since every signup now has an explicit
+     `team`, "who's allowed to decide" reuses the existing `coach_assignments__coach=user` permission
+     pattern already used for roster/practice editing -- no new permission model needed. (A third
+     `maybe` state was tried and then dropped -- see git history -- so the coach dashboard's decision
+     dropdown only ever has these two live choices plus the undecided default.)
+  6. **Per-signup send, not a team-wide batch reveal.** Simpler than originally planned: no
+     `Team.decisions_finalized` gate. The coach's own Try-Out Sign-Ups page
+     (`coach_tryouts`/`coach_tryout_send_email`) shows a "Send Acceptance/Rejection Email" button next
+     to each signup the moment its `coach_decision` is set, independent of every other signup on the
+     team. `TryoutSignup.decision_emailed_at` tracks whether/when it went out -- the button locks and
+     shows a "Sent" badge once it has, and resets if the coach later changes that signup's decision.
   7. **Family responds without logging in.** Reuse `ParentInvite`'s pattern (UUID token, expiring,
      single-use) for a new public page `/try-outs/respond/<token>/` with Accept/Decline. Add
      `TryoutSignup.family_response` (`pending` → `accepted`/`declined`). On accept, let them set a
@@ -266,13 +271,14 @@ per-player ledger rows is an open decision.
   starts, so this workflow doesn't need to touch `Fee`/`Payment` at all. Whether a player's
   `PlayerPosition` rows carry over or reset on age-up promotion is still an open call.
 
-  **Email sending is deliberately deferred and does NOT block building the rest of this** --
-  `config/settings.py` has no `EMAIL_BACKEND`/SMTP configured yet, and this feature (plus
-  `ParentInvite`'s claim flow) is what will eventually need it. Until that infra exists, step 6's
-  "reveal" just displays each response link (e.g. a copy-link button) once `decisions_finalized` is
-  set, and the admin sends it manually (text, personal email, phone call) -- same token/schema, no
-  rework needed. Adding automated email later is purely additive: a "send" action that emails the
-  already-existing link, on top of the manual flow rather than replacing it.
+  **Email sending is built**: `config/settings.py`'s `EMAIL_BACKEND` defaults to the console backend
+  locally; Railway is configured for `anymail.backends.resend.EmailBackend` (django-anymail + Resend),
+  not SMTP -- Railway blocks all outbound SMTP ports (25/465/587) at the network level, confirmed by
+  testing directly from inside the deployed container, so raw SMTP can never work there regardless of
+  credentials. Resend's free tier only sends to the account owner's own verified address until a
+  domain is verified (`resend.com/domains`) -- worth knowing before assuming a "failed send" is a bug.
+  `ParentInvite`'s second-parent claim flow still has no automated send -- unlike `TryoutSignup`,
+  `ParentInvite` has no email field to send *to* at all, so wiring that up needs a model change first.
 
 - **Splitting a division into multiple teams reactively, based on tryout turnout.** The design above
   assumes one team per division/season, decided *before* tryouts open (nothing stops creating two

@@ -29,12 +29,14 @@
   <section class="team-section">
     <h2>Family Response</h2>
     <p>{{ signup.get_family_response_display }}</p>
-    {% if signup.team.decisions_finalized %}
-      <p>
-        <a href="{% url 'accounts:admin_tryout_response_invite' signup.pk %}">Get response link</a>
-      </p>
+    {# Sending happens from the coach's own Try-Out Sign-Ups page now, not
+       from here -- this is read-only status for admin visibility. #}
+    {% if signup.decision_emailed_at %}
+      <p>Decision email sent {{ signup.decision_emailed_at|date:"M j, Y g:i A" }}.</p>
+    {% elif signup.coach_decision == "undecided" %}
+      <p>Available once the assigned coach sets a decision.</p>
     {% else %}
-      <p>Available once {{ signup.team.name }}'s try-out decisions are finalized.</p>
+      <p>Decision set, not yet emailed -- sent from the coach's Try-Out Sign-Ups page.</p>
     {% endif %}
 
     {% if signup.family_response == "accepted" %}

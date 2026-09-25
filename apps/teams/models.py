@@ -21,19 +21,6 @@ class Team(models.Model):
         default=False,
         help_text="Whether this team appears as a choice on the public try-out sign-up form.",
     )
-    # Batch reveal for this team's try-out results -- see apps.tryouts'
-    # TryoutSignup.coach_decision. Scoped per team (not per tryout year
-    # overall) so one team's evaluation running long doesn't hold up
-    # another's families. Flipping this to True is only meant to happen
-    # once every one of this team's signups has resolved off undecided --
-    # see TeamAdmin.finalize_decisions_view.
-    decisions_finalized = models.BooleanField(
-        default=False,
-        help_text=(
-            "Locks in this team's try-out decisions for reveal. Only flip this once every "
-            "signup for this team has a final coach decision (not Undecided)."
-        ),
-    )
 
     class Meta:
         ordering = ["-season_year", "division"]

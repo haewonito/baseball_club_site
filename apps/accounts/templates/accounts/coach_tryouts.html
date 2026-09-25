@@ -6,10 +6,25 @@
   <section class="page-hero">
     <h1>Try-Out Sign-Ups</h1>
     <p>
-      All teams, all years. You can set the Decision for your own team's
-      sign-ups; everything else here is view-only.
+      All teams, all years. You can set the Decision and send its email for your own
+      team's sign-ups; everything else here is view-only.
     </p>
   </section>
+
+  {% if teams %}
+    <div class="team-filter">
+      <a
+        href="{% url 'accounts:coach_tryouts' %}"
+        class="team-filter__pill{% if not selected_team_id %} team-filter__pill--active{% endif %}"
+      >All Teams</a>
+      {% for team in teams %}
+        <a
+          href="?team={{ team.pk }}"
+          class="team-filter__pill{% if selected_team_id == team.pk|stringformat:'s' %} team-filter__pill--active{% endif %}"
+        >{{ team.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
 
   {% if signups %}
     <table class="roster-table">
@@ -24,6 +39,7 @@
           <th>Season</th>
           <th>Status</th>
           <th>Decision</th>
+          <th>Email</th>
         </tr>
       </thead>
       <tbody>
@@ -44,12 +60,21 @@
                 {{ signup.get_coach_decision_display }}
               {% endif %}
             </td>
+            <td>
+              {% if signup.team_id in my_team_ids %}
+                {% include "partials/_tryout_email_action.html" with signup=signup %}
+              {% elif signup.decision_emailed_at %}
+                <span class="status-badge">&#10003; Sent</span>
+              {% else %}
+                <span class="email-action__hint">&mdash;</span>
+              {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p>No try-out sign-ups yet.</p>
+    <p>No try-out sign-ups{% if selected_team_id %} for that team{% endif %}.</p>
   {% endif %}
 
   <p><a href="{% url 'accounts:dashboard_coach' %}">&larr; Back to dashboard</a></p>

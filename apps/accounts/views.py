@@ -3,7 +3,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -155,68 +155,6 @@ def admin_tryout_status_change(request, pk):
         "partials/_tryout_status_select.html",
         {"signup": signup, "status_choices": TryoutStatus.choices},
     )
-
-
-@login_required
-def admin_tryout_response_invite(request, pk):
-    """
-    Generate/display the public Accept-Decline link for one signup. Only
-    once the signup's team has finalized decisions -- this is the "reveal"
-    step (CLAUDE.md's roster-promotion plan, step 6): every signup in a
-    finalized team gets its own link. The admin can still send it manually
-    (text, phone) or use admin_tryout_response_invite_send_email below.
-    Mirrors parent_invite_player's pattern.
-    """
-    if not request.user.is_admin:
-        raise PermissionDenied
-
-    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
-    if not signup.team.decisions_finalized:
-        raise PermissionDenied
-
-    invite = (
-        TryoutResponseInvite.objects.filter(signup=signup, responded_at__isnull=True)
-        .order_by("-created_at")
-        .first()
-    )
-    if invite and not invite.is_valid:
-        invite = None
-
-    if request.method == "POST" and not invite:
-        invite = TryoutResponseInvite.objects.create(signup=signup, created_by=request.user)
-
-    invite_url = None
-    if invite:
-        invite_url = request.build_absolute_uri(reverse("tryouts:respond", args=[invite.token]))
-
-    return render(
-        request,
-        "accounts/admin_tryout_response_invite.html",
-        {"signup": signup, "invite": invite, "invite_url": invite_url},
-    )
-
-
-@login_required
-@require_POST
-def admin_tryout_response_invite_send_email(request, pk):
-    """The automated "send" action CLAUDE.md's plan describes as purely additive on top of the copy-link flow above."""
-    if not request.user.is_admin:
-        raise PermissionDenied
-
-    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
-    invite = get_object_or_404(
-        TryoutResponseInvite, signup=signup, responded_at__isnull=True
-    )
-    if not invite.is_valid:
-        raise PermissionDenied
-
-    try:
-        send_response_invite_email(invite, request)
-    except Exception:
-        messages.error(request, "Couldn't send the email -- check the email configuration.")
-    else:
-        messages.success(request, f"Emailed the response link to {signup.parent_email}.")
-    return redirect("accounts:admin_tryout_response_invite", pk=signup.pk)
 
 
 @login_required
@@ -631,10 +569,21 @@ def coach_tryouts(request):
     signups = TryoutSignup.objects.select_related("team").prefetch_related("positions").order_by(
         "-submitted_at"
     )
-    # Decision-making is scoped to the coach's own team(s) -- viewing every
-    # signup stays "all teams, all years" per the coach dashboard's design,
-    # but the decision dropdown itself only renders as editable for the
-    # rows this coach is actually allowed to decide on.
+    # "All teams, all years" stays the coach dashboard's baseline view --
+    # the team filter below narrows what's *shown*, it's not a permission
+    # boundary (that's still my_team_ids, for the decision/email actions).
+    teams = Team.objects.filter(
+        pk__in=signups.values_list("team_id", flat=True)
+    ).distinct().order_by("-season_year", "name")
+    selected_team_id = request.GET.get("team")
+    if selected_team_id:
+        signups = signups.filter(team_id=selected_team_id)
+
+    # Decision-making (and now, sending its email) is scoped to the coach's
+    # own team(s) -- viewing every signup stays "all teams, all years" per
+    # the coach dashboard's design, but the decision dropdown and send
+    # button only render as editable for the rows this coach is actually
+    # allowed to act on.
     my_team_ids = set(
         TeamCoach.objects.filter(coach=request.user).values_list("team_id", flat=True)
     )
@@ -645,6 +594,8 @@ def coach_tryouts(request):
             "signups": signups,
             "decision_choices": TryoutDecision.choices,
             "my_team_ids": my_team_ids,
+            "teams": teams,
+            "selected_team_id": selected_team_id,
         },
     )
 
@@ -671,13 +622,76 @@ def coach_tryout_decision_change(request, pk):
             changed_by=request.user,
         )
         signup.coach_decision = new_decision
-        signup.save(update_fields=["coach_decision"])
+        # A changed decision needs its own new email -- clear any earlier
+        # send so the button/"Sent" badge (see _tryout_email_action.html)
+        # reflects the current decision, not a stale one.
+        signup.decision_emailed_at = None
+        signup.save(update_fields=["coach_decision", "decision_emailed_at"])
 
-    return render(
+    decision_html = render(
         request,
         "partials/_tryout_decision_select.html",
         {"signup": signup, "decision_choices": TryoutDecision.choices},
+    ).content
+    # The email action depends on coach_decision, which just changed --
+    # sent out-of-band (hx-swap-oob) alongside the decision fragment above
+    # so both cells update from this one request.
+    email_html = render(
+        request,
+        "partials/_tryout_email_action.html",
+        {"signup": signup, "oob": True},
+    ).content
+    return HttpResponse(decision_html + email_html)
+
+
+@login_required
+@require_POST
+def coach_tryout_send_email(request, pk):
+    """
+    The simplified send flow: no admin "finalize" step (see CLAUDE.md) --
+    a coach can send this one signup's acceptance/rejection email the
+    moment its decision is set, independent of every other signup on the
+    team. Creates the TryoutResponseInvite on demand (same token/expiry
+    pattern the old admin-driven flow used) and marks
+    TryoutSignup.decision_emailed_at so the button locks and shows "Sent".
+    """
+    if not request.user.is_coach:
+        raise PermissionDenied
+
+    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
+    if not TeamCoach.objects.filter(coach=request.user, team=signup.team).exists():
+        raise PermissionDenied
+
+    if signup.coach_decision not in (TryoutDecision.INVITE, TryoutDecision.NOT_SELECTED):
+        return HttpResponseBadRequest("Set a decision before sending an email")
+    if signup.decision_emailed_at:
+        # Already sent for the current decision -- no-op rather than
+        # double-send (the button is disabled client-side too, but the
+        # decision could've changed back via another tab/request).
+        return render(request, "partials/_tryout_email_action.html", {"signup": signup})
+
+    invite = (
+        TryoutResponseInvite.objects.filter(signup=signup, responded_at__isnull=True)
+        .order_by("-created_at")
+        .first()
     )
+    if not invite or not invite.is_valid:
+        invite = TryoutResponseInvite.objects.create(signup=signup, created_by=request.user)
+
+    try:
+        send_response_invite_email(invite, request)
+    except Exception:
+        # Rendered inline rather than via the messages framework -- this
+        # response only ever replaces the email-cell fragment (hx-swap
+        # outerHTML), never a full page load, so a top-of-page message
+        # would never actually be seen.
+        return render(
+            request, "partials/_tryout_email_action.html", {"signup": signup, "send_failed": True}
+        )
+
+    signup.decision_emailed_at = timezone.now()
+    signup.save(update_fields=["decision_emailed_at"])
+    return render(request, "partials/_tryout_email_action.html", {"signup": signup})
 
 
 @login_required
