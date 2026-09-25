@@ -41,7 +41,7 @@ def respond(request, token):
     claim flow -- same UUID-token/single-response pattern via
     TryoutResponseInvite. A NOT_SELECTED signup's page is purely
     informational; there's no action to take, so no form/login handling
-    applies there. UNDECIDED/MAYBE can't reach here -- see
+    applies there. UNDECIDED can't reach here -- see
     TryoutResponseInvite's docstring.
     """
     invite = get_object_or_404(

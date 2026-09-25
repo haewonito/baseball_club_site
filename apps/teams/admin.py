@@ -74,13 +74,13 @@ class TeamAdmin(admin.ModelAdmin):
             return redirect("admin:teams_team_change", object_id)
 
         unresolved = team.tryout_signups.filter(
-            coach_decision__in=[TryoutDecision.UNDECIDED, TryoutDecision.MAYBE]
+            coach_decision=TryoutDecision.UNDECIDED
         ).count()
         if unresolved:
             messages.error(
                 request,
                 f'Can\'t finalize "{team}" -- {unresolved} sign-up(s) still need a final '
-                "coach decision (not Undecided/Maybe).",
+                "coach decision (not Undecided).",
             )
             return redirect("admin:teams_team_change", object_id)
 
@@ -159,12 +159,12 @@ class TeamAdmin(admin.ModelAdmin):
             )
 
         unresolved = obj.tryout_signups.filter(
-            coach_decision__in=[TryoutDecision.UNDECIDED, TryoutDecision.MAYBE]
+            coach_decision=TryoutDecision.UNDECIDED
         ).count()
         if unresolved:
             return format_html(
                 '<p style="color: #a50d26; margin: 0;">'
-                "{} sign-up(s) still need a final coach decision (not Undecided/Maybe) "
+                "{} sign-up(s) still need a final coach decision (not Undecided) "
                 "before this team&rsquo;s decisions can be finalized."
                 "</p>",
                 unresolved,

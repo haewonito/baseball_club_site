@@ -45,17 +45,14 @@ class TryoutStatus(models.TextChoices):
 class TryoutDecision(models.TextChoices):
     """
     Separate axis from TryoutStatus above -- status tracks contact/
-    attendance logistics, this tracks the actual roster call. MAYBE is
-    internal-only: a coach's placeholder while still deciding, never shown
-    to the family. Once a family-facing reveal page exists, it must
-    resolve every signup to INVITE/NOT_SELECTED before that team's
-    decisions_finalized flag can be set (see CLAUDE.md's roster-promotion
-    plan) -- MAYBE should never be visible past that point.
+    attendance logistics, this tracks the actual roster call. Never shown
+    to the family until a signup resolves to INVITE/NOT_SELECTED, which is
+    also required before that team's decisions_finalized flag can be set
+    (see CLAUDE.md's roster-promotion plan).
     """
 
     UNDECIDED = "undecided", "Undecided"
     INVITE = "invite", "Invite"
-    MAYBE = "maybe", "Maybe"
     NOT_SELECTED = "not_selected", "Not Selected"
 
 
@@ -249,8 +246,8 @@ class TryoutResponseInvite(models.Model):
     signup's team has finalized decisions (Team.decisions_finalized); the
     public response page (apps.tryouts.views.respond) branches on
     coach_decision -- INVITE gets Accept/Decline, NOT_SELECTED is purely
-    informational. UNDECIDED/MAYBE can't reach here, since finalizing a
-    team already requires every signup to be resolved off those.
+    informational. UNDECIDED can't reach here, since finalizing a team
+    already requires every signup to be resolved off it.
     """
 
     token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

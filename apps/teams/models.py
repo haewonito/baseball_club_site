@@ -25,13 +25,13 @@ class Team(models.Model):
     # TryoutSignup.coach_decision. Scoped per team (not per tryout year
     # overall) so one team's evaluation running long doesn't hold up
     # another's families. Flipping this to True is only meant to happen
-    # once every one of this team's signups has resolved off
-    # undecided/maybe -- see TeamAdmin.finalize_decisions_view.
+    # once every one of this team's signups has resolved off undecided --
+    # see TeamAdmin.finalize_decisions_view.
     decisions_finalized = models.BooleanField(
         default=False,
         help_text=(
             "Locks in this team's try-out decisions for reveal. Only flip this once every "
-            "signup for this team has a final coach decision (not Undecided/Maybe)."
+            "signup for this team has a final coach decision (not Undecided)."
         ),
     )
 
