@@ -159,6 +159,14 @@ considered but deferred: it needs the actual source assets (the background/dust 
 own file, and the specific bold-italic display font used) to reproduce the existing design, not just
 approximate it — revisit once those are available.
 
+The two real club posters are also in `seed_demo_data` now (`_seed_tryout_posters`, images in
+`apps/accounts/management/commands/seed_posters/`) — they were only ever uploaded once by hand through
+the admin UI, and a later unrelated `flush` silently wiped them since nothing re-created them. Any
+future manually-uploaded content (posters, player photos an admin adds outside the seed flow, etc.)
+has the same risk: a `flush` for an unrelated reseed takes it out too unless it's also in the seed
+command. Worth deliberately deciding, next time something gets uploaded through the app rather than
+seeded, whether it should be added to `seed_demo_data` too.
+
 **Player detail is built as one tiered page, not three separate ones** (`apps.teams.views.player_detail`,
 at `/teams/players/<pk>/`, template `apps/teams/templates/teams/player_detail.html`). A single view
 computes the requesting user's tier via `_player_viewer_info` and reveals sections accordingly: tier 1

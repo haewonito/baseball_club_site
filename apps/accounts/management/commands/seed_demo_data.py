@@ -20,6 +20,8 @@ from apps.fees.models import Fee, Payment, PaymentMethod
 from apps.schedule.models import Event, EventStatus, EventType
 from apps.teams.models import CoachProfile, Position, Team, TeamCoach, TeamCoachRole
 from apps.tryouts.models import (
+    TryoutPoster,
+    TryoutPosterType,
     TryoutSignup,
     TryoutStatus,
     TryoutStatusChange,
@@ -55,6 +57,18 @@ SEED_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_photos"
 # just demo data standing in for "a parent uploaded a photo".
 SEED_PLAYER_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_player_photos"
 SEED_PLAYER_PHOTOS = sorted(SEED_PLAYER_PHOTOS_DIR.glob("*.jpg"))
+
+# The real club posters (the ones this feature was designed around) --
+# committed here so a flush + reseed always brings them back instead of
+# leaving TryoutPoster empty until someone remembers to re-upload by hand
+# (that's exactly what happened once already: a later flush for an
+# unrelated reseed silently wiped the two posters that had only ever been
+# uploaded manually through the admin UI, not seeded).
+SEED_POSTERS_DIR = Path(__file__).resolve().parent / "seed_posters"
+SEED_POSTERS = [
+    ("initial_tryouts.jpg", TryoutPosterType.INITIAL, "2027 Tryouts", 0),
+    ("supplemental_tryouts.jpg", TryoutPosterType.SUPPLEMENTAL, "2027 Make-Up Tryouts", 1),
+]
 
 PLAYER_DESCRIPTIONS = [
     "Loves playing shortstop and eating popsicles after practice.",
@@ -312,6 +326,7 @@ class Command(BaseCommand):
             self._seed_schedule()
             self._seed_tryouts()
             self._seed_tryout_year_settings()
+            self._seed_tryout_posters()
 
         self.stdout.write(self.style.SUCCESS("\nDemo data seeded."))
         self.stdout.write(f"All seeded users share the password: {self.password}")
@@ -636,3 +651,23 @@ class Command(BaseCommand):
         settings_row, _ = TryoutYearSettings.objects.get_or_create(pk=1)
         settings_row.next_tryout_date = timezone.localdate() + datetime.timedelta(days=14)
         settings_row.save(update_fields=["next_tryout_date"])
+
+    def _seed_tryout_posters(self):
+        admin_user = self.coaches[ADMIN_HEAD_COACH_EMAIL]
+        for filename, poster_type, title, order in SEED_POSTERS:
+            poster, created = TryoutPoster.objects.get_or_create(
+                title=title,
+                defaults={
+                    "poster_type": poster_type,
+                    "is_active": True,
+                    "display_order": order,
+                    "uploaded_by": admin_user,
+                },
+            )
+            if not created:
+                continue
+            source = SEED_POSTERS_DIR / filename
+            if not source.exists():
+                continue
+            with open(source, "rb") as f:
+                poster.image.save(filename, File(f), save=True)
