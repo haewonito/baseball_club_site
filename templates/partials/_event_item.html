@@ -1,4 +1,4 @@
-{# One <li> in a .schedule-list. Usage: {% include "partials/_event_item.html" with event=event show_team=True %} -- show_team defaults to hidden. #}
+{# One <li> in a .schedule-list. Usage: {% include "partials/_event_item.html" with event=event show_team=True can_edit=True %} -- both default to hidden. can_edit adds an Edit link that returns to the current page after saving; the caller is responsible for only passing it to the team's coaches/admins. #}
 <li class="schedule-item">
   <div class="schedule-item__date">
     <span class="schedule-item__day">{{ event.start_datetime|date:"D, M j" }}</span>
@@ -15,4 +15,9 @@
       {% if show_team %}{{ event.team.name }}{% if event.location_name %} &middot; {% endif %}{% endif %}{{ event.location_name }}
     </div>
   </div>
+  {% if can_edit %}
+    <div class="schedule-item__actions">
+      <a href="{% url 'accounts:coach_event_edit' event.team_id event.event_type|add:'s' event.pk %}?next={{ request.path|urlencode }}">Edit</a>
+    </div>
+  {% endif %}
 </li>

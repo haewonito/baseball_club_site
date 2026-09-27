@@ -55,10 +55,11 @@ class PlayerRosterForm(forms.ModelForm):
         )
 
 
-class PracticeEventForm(forms.ModelForm):
-    """`team` and `event_type` aren't form fields -- set on the instance by
-    the view before binding, so a coach can't reassign a practice to a
-    different team or relabel it as a tournament through this form."""
+class EventForm(forms.ModelForm):
+    """Practices and tournaments both. `team` and `event_type` aren't form
+    fields -- set on the instance by the view before binding, so a coach
+    can't reassign an event to a different team or relabel a practice as a
+    tournament (or vice versa) through this form."""
 
     # HTML5 datetime-local inputs submit "YYYY-MM-DDTHH:MM" (T-separated),
     # which isn't in Django's default DATETIME_INPUT_FORMATS (space-
@@ -128,7 +129,7 @@ class FeeForm(forms.ModelForm):
 
 class PaymentForm(forms.ModelForm):
     """`fee` and `recorded_by` aren't form fields -- set on the instance by
-    the view, the same pattern as PracticeEventForm's team/event_type."""
+    the view, the same pattern as EventForm's team/event_type."""
 
     class Meta:
         model = Payment

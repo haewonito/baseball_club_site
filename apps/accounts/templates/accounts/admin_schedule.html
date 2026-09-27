@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule Management · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Schedule Management</h1>
+  </section>
+
+  {% if teams %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>Season</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+          <tr>
+            <td>{{ team.name }}{% if not team.is_public %} <span class="status-badge">Not public</span>{% endif %}</td>
+            <td>{{ team.season_label }}</td>
+            <td>
+              <a href="{% url 'accounts:coach_events' team.pk 'practices' %}">Practices</a>
+              &middot;
+              <a href="{% url 'accounts:coach_events' team.pk 'tournaments' %}">Tournaments</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No teams yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

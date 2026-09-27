@@ -132,7 +132,7 @@ second parent · Schedule (pre-filtered to their team)
 
 **Coach (logged in):** Dashboard with a **team switcher** if linked to multiple teams (shows role —
 head/assistant — per team, though permissions don't differ by role) · Roster (view/edit, incl.
-positions) · Practice Schedule (edit) · Tournament Schedule (view-only) · Try-Out Sign-Ups
+positions) · Practice Schedule (edit) · Tournament Schedule (edit) · Try-Out Sign-Ups
 (view-only, all teams, all years)
 
 **Admin (logged in):** Dashboard · Try-Out Sign-Ups — list w/ year filter, status change as a
@@ -229,7 +229,10 @@ year. The cutoff comes from the `TryoutYearSettings` singleton row if one exists
 pairs with a confirmation dialog in the intended UX — status edits should write a row, not just
 mutate `status`.
 
-**schedule** — one `Event` model covers both practices and tournaments via `event_type`. Recurring
+**schedule** — one `Event` model covers both practices and tournaments via `event_type`. Both are
+managed through one shared set of views (`accounts.coach_events`/`_add`/`_edit`/`_delete`, URL
+segment `practices|tournaments` → `EVENT_KINDS`): coaches for their own teams, admins for any team
+(entry point `/dashboard/admin/schedule/`), same scoping as the roster. Recurring
 practices are materialized as individual rows by bulk-create; there is no series/recurrence-rule
 concept. `status` drives a cancellation banner on the public schedule.
 
@@ -244,8 +247,8 @@ per-player ledger rows is an open decision.
 
 ## Known gaps to build
 
-- No permission layer yet. The rules to enforce: a coach edits their own team's roster, is view-only
-  on tournaments, and never sees fees unless they also hold the Admin role. One specific head coach
+- No permission layer yet. The rules to enforce: a coach edits their own team's roster, practices,
+  and tournaments (tournaments were originally view-only for coaches; changed by request), and never sees fees unless they also hold the Admin role. One specific head coach
   (the league owner) holds both Coach and Admin roles for exactly this reason — don't special-case him
   in code, the many-to-many roles model already covers it.
 - `django-htmx` is installed and middleware-wired but unused. The flows designed for it are the

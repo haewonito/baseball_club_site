@@ -7,6 +7,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from apps.fees.models import FEE_STATUS_LABELS, Fee, Payment
@@ -27,13 +28,13 @@ from apps.tryouts.models import (
 from .emails import send_parent_invite_email
 from .forms import (
     CoachProfileForm,
+    EventForm,
     FeeForm,
     InviteClaimSignupForm,
     ParentInviteEmailForm,
     PaymentForm,
     PlayerProfileForm,
     PlayerRosterForm,
-    PracticeEventForm,
     TryoutPosterForm,
 )
 from .models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
@@ -362,6 +363,17 @@ def admin_coaches_list(request):
 
 
 @login_required
+def admin_schedule(request):
+    """Entry point into every team's practice/tournament pages -- an admin
+    isn't necessarily on any team's staff, so the coach dashboard's team
+    switcher doesn't reach them. Includes not-yet-public teams."""
+    if not request.user.is_admin:
+        raise PermissionDenied
+    teams = Team.objects.order_by("-season_year", "name")
+    return render(request, "accounts/admin_schedule.html", {"teams": teams})
+
+
+@login_required
 def admin_coach_bio_edit(request, user_id):
     if not request.user.is_admin:
         raise PermissionDenied
@@ -584,78 +596,117 @@ def coach_roster_bulk_move(request, team_id):
     return redirect("accounts:coach_roster", team_id=team.pk)
 
 
-@login_required
-def coach_practices(request, team_id):
-    if not request.user.is_coach:
+# URL `kind` segment -> Event.event_type. Coaches manage both kinds for
+# their own team(s); admins for any team (same scoping as the roster).
+EVENT_KINDS = {"practices": EventType.PRACTICE, "tournaments": EventType.TOURNAMENT}
+
+
+def _get_event_team_or_404(request, team_id):
+    if not (request.user.is_coach or request.user.is_admin):
         raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
-    events = team.events.filter(event_type=EventType.PRACTICE).order_by("start_datetime")
-    return render(request, "accounts/coach_practices.html", {"team": team, "events": events})
+    return _get_roster_team_or_404(request.user, team_id)
+
+
+def _event_next_url(request):
+    # Set when the add/edit link came from the public team page, so saving
+    # returns there instead of to this list. The form posts back to its own
+    # URL (query string included), so this reads the same on GET and POST.
+    next_url = request.GET.get("next", "")
+    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return next_url
+    return ""
+
+
+def _event_back_url(user, team):
+    # An admin who isn't on this team's staff came from the admin Schedule
+    # page -- the coach dashboard wouldn't show them this team.
+    if TeamCoach.objects.filter(coach=user, team=team).exists():
+        return f"{reverse('accounts:dashboard_coach')}?team={team.pk}"
+    return reverse("accounts:admin_schedule")
 
 
 @login_required
-def coach_practice_add(request, team_id):
-    if not request.user.is_coach:
-        raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
-    if request.method == "POST":
-        form = PracticeEventForm(
-            request.POST, instance=Event(team=team, event_type=EventType.PRACTICE)
-        )
-        if form.is_valid():
-            event = form.save(commit=False)
-            event.created_by = request.user
-            event.save()
-            return redirect("accounts:coach_practices", team_id=team.pk)
-    else:
-        form = PracticeEventForm()
+def coach_events(request, team_id, kind):
+    team = _get_event_team_or_404(request, team_id)
+    event_type = EVENT_KINDS[kind]
+    events = team.events.filter(event_type=event_type).order_by("start_datetime")
     return render(
         request,
-        "accounts/coach_practice_form.html",
-        {"team": team, "form": form, "heading": "Add Practice"},
+        "accounts/coach_events.html",
+        {
+            "team": team,
+            "events": events,
+            "kind": kind,
+            "event_type_label": event_type.label,
+            "back_url": _event_back_url(request.user, team),
+        },
     )
 
 
 @login_required
-def coach_practice_edit(request, team_id, event_id):
-    if not request.user.is_coach:
-        raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
-    event = get_object_or_404(Event, pk=event_id, team=team, event_type=EventType.PRACTICE)
+def coach_event_add(request, team_id, kind):
+    team = _get_event_team_or_404(request, team_id)
+    event_type = EVENT_KINDS[kind]
     if request.method == "POST":
-        form = PracticeEventForm(request.POST, instance=event)
+        form = EventForm(request.POST, instance=Event(team=team, event_type=event_type))
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.created_by = request.user
+            event.save()
+            return redirect(
+                _event_next_url(request) or reverse("accounts:coach_events", args=[team.pk, kind])
+            )
+    else:
+        form = EventForm()
+    return render(
+        request,
+        "accounts/coach_event_form.html",
+        {
+            "team": team,
+            "form": form,
+            "kind": kind,
+            "heading": f"Add {event_type.label}",
+            "next_url": _event_next_url(request),
+        },
+    )
+
+
+@login_required
+def coach_event_edit(request, team_id, kind, event_id):
+    team = _get_event_team_or_404(request, team_id)
+    event_type = EVENT_KINDS[kind]
+    event = get_object_or_404(Event, pk=event_id, team=team, event_type=event_type)
+    if request.method == "POST":
+        form = EventForm(request.POST, instance=event)
         if form.is_valid():
             updated = form.save(commit=False)
             updated.updated_by = request.user
             updated.save()
-            return redirect("accounts:coach_practices", team_id=team.pk)
+            return redirect(
+                _event_next_url(request) or reverse("accounts:coach_events", args=[team.pk, kind])
+            )
     else:
-        form = PracticeEventForm(instance=event)
+        form = EventForm(instance=event)
     return render(
         request,
-        "accounts/coach_practice_form.html",
-        {"team": team, "form": form, "heading": "Edit Practice"},
+        "accounts/coach_event_form.html",
+        {
+            "team": team,
+            "form": form,
+            "kind": kind,
+            "heading": f"Edit {event_type.label}",
+            "next_url": _event_next_url(request),
+        },
     )
 
 
 @login_required
 @require_POST
-def coach_practice_delete(request, team_id, event_id):
-    if not request.user.is_coach:
-        raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
-    event = get_object_or_404(Event, pk=event_id, team=team, event_type=EventType.PRACTICE)
+def coach_event_delete(request, team_id, kind, event_id):
+    team = _get_event_team_or_404(request, team_id)
+    event = get_object_or_404(Event, pk=event_id, team=team, event_type=EVENT_KINDS[kind])
     event.delete()
-    return redirect("accounts:coach_practices", team_id=team.pk)
-
-
-@login_required
-def coach_tournaments(request, team_id):
-    if not request.user.is_coach:
-        raise PermissionDenied
-    team = _get_coach_team_or_404(request.user, team_id)
-    events = team.events.filter(event_type=EventType.TOURNAMENT).order_by("start_datetime")
-    return render(request, "accounts/coach_tournaments.html", {"team": team, "events": events})
+    return redirect("accounts:coach_events", team_id=team.pk, kind=kind)
 
 
 @login_required

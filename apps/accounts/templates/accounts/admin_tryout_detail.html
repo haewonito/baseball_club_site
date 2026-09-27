@@ -5,10 +5,10 @@
 {% block content %}
   <section class="page-hero">
     <h1>{{ signup.player_full_name }}</h1>
-    {# Not linked -- the team may still be a draft (Team.is_public=False),
+    {% comment %} Not linked -- the team may still be a draft (Team.is_public=False),
        which would 404 on the public team page, and this page is reachable
        by business-Admin-role users who may not have Django-admin access
-       either. #}
+       either. {% endcomment %}
     <p>
       Trying out for {{ signup.team.name }}
       &middot; Submitted {{ signup.submitted_at|date:"M j, Y g:i A" }}
@@ -28,8 +28,8 @@
   <section class="team-section">
     <h2>Family Response</h2>
     <p>{{ signup.get_family_response_display }}</p>
-    {# Sending happens from the coach's own Try-Out Sign-Ups page now, not
-       from here -- this is read-only status for admin visibility. #}
+    {% comment %} Sending happens from the coach's own Try-Out Sign-Ups page now, not
+       from here -- this is read-only status for admin visibility. {% endcomment %}
     {% if signup.decision_emailed_at %}
       <p>Decision email sent {{ signup.decision_emailed_at|date:"M j, Y g:i A" }}.</p>
     {% elif signup.coach_decision == "undecided" %}
@@ -40,8 +40,8 @@
 
     {% if signup.family_response == "accepted" %}
       {% if signup.promoted_player %}
-        {# Not linked -- same reasoning as the team name above: a
-           business-Admin-role user may not have Django-admin access. #}
+        {% comment %} Not linked -- same reasoning as the team name above: a
+           business-Admin-role user may not have Django-admin access. {% endcomment %}
         <p>Promoted to roster: {{ signup.promoted_player }}</p>
       {% else %}
         <form

@@ -1,5 +1,5 @@
 from django.contrib.auth.views import LogoutView
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
@@ -32,6 +32,7 @@ urlpatterns = [
         name="admin_fee_record_payment",
     ),
     path("dashboard/admin/coaches/", views.admin_coaches_list, name="admin_coaches_list"),
+    path("dashboard/admin/schedule/", views.admin_schedule, name="admin_schedule"),
     path(
         "dashboard/admin/coaches/<int:user_id>/bio/",
         views.admin_coach_bio_edit,
@@ -90,30 +91,25 @@ urlpatterns = [
         views.coach_roster_bulk_move,
         name="coach_roster_bulk_move",
     ),
-    path(
-        "dashboard/coach/teams/<int:team_id>/practices/",
-        views.coach_practices,
-        name="coach_practices",
+    re_path(
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/$",
+        views.coach_events,
+        name="coach_events",
     ),
-    path(
-        "dashboard/coach/teams/<int:team_id>/practices/add/",
-        views.coach_practice_add,
-        name="coach_practice_add",
+    re_path(
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/add/$",
+        views.coach_event_add,
+        name="coach_event_add",
     ),
-    path(
-        "dashboard/coach/teams/<int:team_id>/practices/<int:event_id>/edit/",
-        views.coach_practice_edit,
-        name="coach_practice_edit",
+    re_path(
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/(?P<event_id>\d+)/edit/$",
+        views.coach_event_edit,
+        name="coach_event_edit",
     ),
-    path(
-        "dashboard/coach/teams/<int:team_id>/practices/<int:event_id>/delete/",
-        views.coach_practice_delete,
-        name="coach_practice_delete",
-    ),
-    path(
-        "dashboard/coach/teams/<int:team_id>/tournaments/",
-        views.coach_tournaments,
-        name="coach_tournaments",
+    re_path(
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/(?P<event_id>\d+)/delete/$",
+        views.coach_event_delete,
+        name="coach_event_delete",
     ),
     path("dashboard/parent/", views.dashboard_parent, name="dashboard_parent"),
     path(

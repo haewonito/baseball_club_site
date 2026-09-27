@@ -5,58 +5,84 @@
 {% block content %}
   <section class="page-hero">
     <h1>{{ team.name }} &mdash; Roster</h1>
-    <a class="btn btn--primary" href="{% url 'accounts:coach_roster_add' team.pk %}">Add Player</a>
+  </section>
+
+  <section class="team-section">
+    <h2>Manage Player Details</h2>
+    {% if players %}
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Positions</th>
+            <th>#</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in players %}
+            <tr>
+              <td><a href="{% url 'teams:player_detail' player.pk %}">{{ player }}</a></td>
+              <td>
+                {% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}
+              </td>
+              <td>{{ player.jersey_number|default:"—" }}</td>
+              <td>
+                <a href="{% url 'accounts:coach_roster_edit_player' team.pk player.pk %}">Edit</a>
+                <form method="post" action="{% url 'accounts:coach_roster_remove_player' team.pk player.pk %}" class="inline-form">
+                  {% csrf_token %}
+                  <button type="submit" class="link-button">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No players on the roster yet.</p>
+    {% endif %}
+    <a class="btn btn--small roster-add" href="{% url 'accounts:coach_roster_add' team.pk %}">+ Add Player</a>
   </section>
 
   {% if players %}
-    {# Empty form, its inputs live in the table below via form="bulk-move-form"
-       -- keeps this out of the per-row Remove <form>s so nothing nests. #}
-    <form id="bulk-move-form" method="post" action="{% url 'accounts:coach_roster_bulk_move' team.pk %}" onsubmit="return confirm('Move the checked players to the selected team?');">
-      {% csrf_token %}
-    </form>
+    <section class="team-section">
+      <h2>Promote Players to a Different Team</h2>
+      <form id="bulk-move-form" method="post" action="{% url 'accounts:coach_roster_bulk_move' team.pk %}" onsubmit="return confirm('Move the checked players to the selected team?');">
+        {% csrf_token %}
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" aria-label="Select all" onclick="this.form.querySelectorAll('input[name=player_ids]').forEach(function(cb) { cb.checked = this.checked; }, this)"></th>
+              <th>Player</th>
+              <th>Positions</th>
+              <th>#</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in players %}
+              <tr>
+                <td><input type="checkbox" name="player_ids" value="{{ player.pk }}" aria-label="Select {{ player }}"></td>
+                <td>{{ player }}</td>
+                <td>
+                  {% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </td>
+                <td>{{ player.jersey_number|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
 
-    <div class="roster-bulk-actions">
-      <select name="destination_team" class="status-select" form="bulk-move-form" required>
-        <option value="">Move checked to…</option>
-        {% for other_team in other_teams %}
-          <option value="{{ other_team.pk }}">{{ other_team.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" form="bulk-move-form" class="btn">Move Selected</button>
-    </div>
-
-    <table class="roster-table">
-      <thead>
-        <tr>
-          <th><input type="checkbox" onclick="document.querySelectorAll('input[name=player_ids]').forEach(function(cb) { cb.checked = this.checked; }, this)"></th>
-          <th>Player</th>
-          <th>Positions</th>
-          <th>#</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for player in players %}
-          <tr>
-            <td><input type="checkbox" name="player_ids" value="{{ player.pk }}" form="bulk-move-form"></td>
-            <td><a href="{% url 'teams:player_detail' player.pk %}">{{ player }}</a></td>
-            <td>
-              {% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}
-            </td>
-            <td>{{ player.jersey_number|default:"—" }}</td>
-            <td>
-              <a href="{% url 'accounts:coach_roster_edit_player' team.pk player.pk %}">Edit</a>
-              <form method="post" action="{% url 'accounts:coach_roster_remove_player' team.pk player.pk %}" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="link-button">Remove</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>No players on the roster yet.</p>
+        <div class="roster-bulk-actions roster-bulk-actions--below">
+          <select name="destination_team" class="status-select" required>
+            <option value="">Move checked to…</option>
+            {% for other_team in other_teams %}
+              <option value="{{ other_team.pk }}">{{ other_team.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn">Move Selected</button>
+        </div>
+      </form>
+    </section>
   {% endif %}
 
   <p><a href="{% url 'accounts:dashboard_coach' %}">&larr; Back to dashboard</a></p>

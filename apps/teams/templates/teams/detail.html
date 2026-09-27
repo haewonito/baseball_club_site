@@ -60,10 +60,16 @@
 
   <section class="team-section">
     <h2>Schedule</h2>
+    {% if can_manage_schedule %}
+      <div class="dashboard-links team-section__actions">
+        <a class="btn" href="{% url 'accounts:coach_event_add' team.pk 'practices' %}?next={{ request.path|urlencode }}">Add Practice</a>
+        <a class="btn" href="{% url 'accounts:coach_event_add' team.pk 'tournaments' %}?next={{ request.path|urlencode }}">Add Tournament</a>
+      </div>
+    {% endif %}
     {% if upcoming_events %}
       <ul class="schedule-list">
         {% for event in upcoming_events %}
-          {% include "partials/_event_item.html" with event=event %}
+          {% include "partials/_event_item.html" with event=event can_edit=can_manage_schedule %}
         {% endfor %}
       </ul>
     {% else %}

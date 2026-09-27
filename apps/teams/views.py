@@ -39,10 +39,20 @@ def team_detail(request, pk):
         pk=pk,
     )
     upcoming_events = team.events.filter(start_datetime__gte=timezone.now())
+    # Same rule as the coach/admin schedule pages this links into
+    # (accounts.coach_events): this team's coaches, or any admin.
+    user = request.user
+    can_manage_schedule = user.is_authenticated and (
+        user.is_admin or TeamCoach.objects.filter(coach=user, team=team).exists()
+    )
     return render(
         request,
         "teams/detail.html",
-        {"team": team, "upcoming_events": upcoming_events},
+        {
+            "team": team,
+            "upcoming_events": upcoming_events,
+            "can_manage_schedule": can_manage_schedule,
+        },
     )
 
 
