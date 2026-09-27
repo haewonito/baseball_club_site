@@ -149,6 +149,16 @@ field to get label/help/error markup consistently), and `static/css/main.css` im
 design direction above — reuse these for the next page rather than duplicating field/error markup.
 Everything else in the site map is still unbuilt.
 
+**Try-out posters** (`apps.tryouts.TryoutPoster`) are also built: the home page's "Upcoming
+Try-Outs" section (`config/views.py:home`) shows every `is_active` poster, ordered by
+`display_order`. Admin uploads/manages them at `/dashboard/admin/tryout-posters/`
+(`admin_tryout_posters_list`/`_add`/`_edit`/`_delete` in `apps/accounts/views.py`) — manual image
+upload only for now (`poster_type` is `initial` or `supplemental`, matching the two poster designs
+the club already uses). Auto-generating a poster from a background photo + logo + time/location was
+considered but deferred: it needs the actual source assets (the background/dust stock photo as its
+own file, and the specific bold-italic display font used) to reproduce the existing design, not just
+approximate it — revisit once those are available.
+
 ## Domain model
 
 Five apps under `apps/` (note the package prefix: `INSTALLED_APPS` uses `apps.accounts`, etc., and

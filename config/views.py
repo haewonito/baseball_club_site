@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.shortcuts import render
 from django.utils import timezone
 
-from apps.tryouts.models import TryoutYearSettings
+from apps.tryouts.models import TryoutPoster, TryoutYearSettings
 
 HOME_FIELD_ADDRESS = "1833 E Harmony Rd, Fort Collins, CO, United States, 80528"
 
@@ -15,12 +15,15 @@ def home(request):
         today = timezone.localdate()
         show_tryout_banner = today <= next_tryout_date <= today + timedelta(days=30)
 
+    tryout_posters = TryoutPoster.objects.filter(is_active=True)
+
     return render(
         request,
         "home.html",
         {
             "next_tryout_date": next_tryout_date,
             "show_tryout_banner": show_tryout_banner,
+            "tryout_posters": tryout_posters,
         },
     )
 

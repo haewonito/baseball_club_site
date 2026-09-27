@@ -17,6 +17,7 @@ from apps.tryouts.models import (
     TryoutDecision,
     TryoutDecisionChange,
     TryoutFamilyResponse,
+    TryoutPoster,
     TryoutResponseInvite,
     TryoutSignup,
     TryoutStatus,
@@ -32,6 +33,7 @@ from .forms import (
     PaymentForm,
     PlayerRosterForm,
     PracticeEventForm,
+    TryoutPosterForm,
 )
 from .models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
 
@@ -355,6 +357,67 @@ def admin_coach_bio_edit(request, user_id):
     return render(
         request, "accounts/admin_coach_bio_form.html", {"form": form, "coach": coach}
     )
+
+
+@login_required
+def admin_tryout_posters_list(request):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    posters = TryoutPoster.objects.all()
+    return render(request, "accounts/admin_tryout_posters_list.html", {"posters": posters})
+
+
+@login_required
+def admin_tryout_poster_add(request):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = TryoutPosterForm(request.POST, request.FILES)
+        if form.is_valid():
+            poster = form.save(commit=False)
+            poster.uploaded_by = request.user
+            poster.save()
+            return redirect("accounts:admin_tryout_posters_list")
+    else:
+        form = TryoutPosterForm()
+    return render(
+        request,
+        "accounts/admin_tryout_poster_form.html",
+        {"form": form, "heading": "Add Try-Out Poster"},
+    )
+
+
+@login_required
+def admin_tryout_poster_edit(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    poster = get_object_or_404(TryoutPoster, pk=pk)
+    if request.method == "POST":
+        form = TryoutPosterForm(request.POST, request.FILES, instance=poster)
+        if form.is_valid():
+            form.save()
+            return redirect("accounts:admin_tryout_posters_list")
+    else:
+        form = TryoutPosterForm(instance=poster)
+    return render(
+        request,
+        "accounts/admin_tryout_poster_form.html",
+        {"form": form, "heading": f"Edit: {poster.title}", "poster": poster},
+    )
+
+
+@login_required
+@require_POST
+def admin_tryout_poster_delete(request, pk):
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    poster = get_object_or_404(TryoutPoster, pk=pk)
+    poster.delete()
+    return redirect("accounts:admin_tryout_posters_list")
 
 
 def _get_coach_team_or_404(user, team_id):

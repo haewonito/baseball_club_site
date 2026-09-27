@@ -680,3 +680,43 @@ legend {
   height: 400px;
   border: 0;
 }
+
+/* --- Try-out posters ---------------------------------------------------- */
+
+.poster-thumb {
+  width: 100%;
+  max-width: 140px;
+  object-fit: contain;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-gray-line);
+  display: block;
+}
+
+.tryout-posters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.tryout-poster-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tryout-poster-card img {
+  width: 100%;
+  display: block;
+}
+
+.tryout-poster-card__label {
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-gray-text);
+  border-top: 1px solid var(--color-gray-line);
+}

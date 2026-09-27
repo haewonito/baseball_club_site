@@ -20,6 +20,20 @@
     </p>
   </section>
 
+  {% if tryout_posters %}
+    <section class="team-section" id="tryouts">
+      <h2>Upcoming Try-Outs</h2>
+      <div class="tryout-posters">
+        {% for poster in tryout_posters %}
+          <a class="tryout-poster-card" href="{% url 'tryouts:signup' %}">
+            <img src="{{ poster.image.url }}" alt="{{ poster.title }}">
+            <div class="tryout-poster-card__label">{{ poster.get_poster_type_display }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
   <section class="team-section" id="contact">
     <h2>Contact</h2>
     {# TODO: placeholder contact info -- replace with the club's real details #}

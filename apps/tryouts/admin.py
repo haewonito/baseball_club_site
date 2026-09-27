@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     TryoutDecisionChange,
+    TryoutPoster,
     TryoutResponseInvite,
     TryoutSignup,
     TryoutSignupPosition,
@@ -89,3 +90,14 @@ class TryoutDecisionChangeAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(TryoutPoster)
+class TryoutPosterAdmin(admin.ModelAdmin):
+    # Secondary access point for Django-admin superusers -- the primary
+    # upload/edit flow is the custom accounts dashboard page
+    # (admin_tryout_posters_list etc.), since a business-Admin-role user
+    # may not have Django-admin access at all (same reasoning as
+    # CoachProfile's admin_coach_bio_edit).
+    list_display = ("title", "poster_type", "is_active", "display_order", "created_at")
+    list_filter = ("poster_type", "is_active")

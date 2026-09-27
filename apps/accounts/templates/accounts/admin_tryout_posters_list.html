@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Try-Out Posters · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Try-Out Posters</h1>
+    <a class="btn btn--primary" href="{% url 'accounts:admin_tryout_poster_add' %}">Add Poster</a>
+  </section>
+
+  <p>Active posters show on the home page, ordered by "Order" (lower first).</p>
+
+  {% if posters %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Active</th>
+          <th>Order</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for poster in posters %}
+          <tr>
+            <td><img src="{{ poster.image.url }}" alt="{{ poster.title }}" class="poster-thumb"></td>
+            <td>{{ poster.title }}</td>
+            <td>{{ poster.get_poster_type_display }}</td>
+            <td>{{ poster.is_active|yesno:"Yes,No" }}</td>
+            <td>{{ poster.display_order }}</td>
+            <td>
+              <a href="{% url 'accounts:admin_tryout_poster_edit' poster.pk %}">Edit</a>
+              <form
+                method="post"
+                action="{% url 'accounts:admin_tryout_poster_delete' poster.pk %}"
+                class="inline-form"
+                onsubmit="return confirm('Delete &#39;{{ poster.title }}&#39;? This can&#39;t be undone.');"
+              >
+                {% csrf_token %}
+                <button type="submit" class="link-button">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No posters yet.</p>
+  {% endif %}
+
+  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

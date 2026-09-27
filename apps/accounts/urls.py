@@ -37,6 +37,26 @@ urlpatterns = [
         views.admin_coach_bio_edit,
         name="admin_coach_bio_edit",
     ),
+    path(
+        "dashboard/admin/tryout-posters/",
+        views.admin_tryout_posters_list,
+        name="admin_tryout_posters_list",
+    ),
+    path(
+        "dashboard/admin/tryout-posters/add/",
+        views.admin_tryout_poster_add,
+        name="admin_tryout_poster_add",
+    ),
+    path(
+        "dashboard/admin/tryout-posters/<int:pk>/edit/",
+        views.admin_tryout_poster_edit,
+        name="admin_tryout_poster_edit",
+    ),
+    path(
+        "dashboard/admin/tryout-posters/<int:pk>/delete/",
+        views.admin_tryout_poster_delete,
+        name="admin_tryout_poster_delete",
+    ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
     path(

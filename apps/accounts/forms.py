@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from apps.fees.models import Fee, Payment
 from apps.schedule.models import Event
 from apps.teams.models import CoachProfile, PlayerPosition, Position, Team
+from apps.tryouts.models import TryoutPoster
 
 from .models import User
 
@@ -144,6 +145,12 @@ class CoachProfileForm(forms.ModelForm):
         widgets = {
             "bio_text": forms.Textarea(attrs={"rows": 6}),
         }
+
+
+class TryoutPosterForm(forms.ModelForm):
+    class Meta:
+        model = TryoutPoster
+        fields = ["poster_type", "title", "image", "is_active", "display_order"]
 
 
 class InviteClaimSignupForm(forms.Form):

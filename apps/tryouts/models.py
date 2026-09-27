@@ -275,3 +275,44 @@ class TryoutResponseInvite(models.Model):
     @property
     def is_valid(self) -> bool:
         return self.responded_at is None and timezone.now() < self.expires_at
+
+
+class TryoutPosterType(models.TextChoices):
+    INITIAL = "initial", "Initial Tryouts"
+    SUPPLEMENTAL = "supplemental", "Supplemental / Make-Up Tryouts"
+
+
+class TryoutPoster(models.Model):
+    """
+    A ready-made poster image an admin uploads for the home page's
+    upcoming-tryouts section (see config.views.home). Manual upload only
+    for now -- auto-generating one from a background photo/logo/time/
+    location is a planned follow-up once the source assets (the exact
+    background photo and font used) are available; see CLAUDE.md.
+    """
+
+    poster_type = models.CharField(max_length=20, choices=TryoutPosterType.choices)
+    # Not rendered on the poster (all its info is already baked into the
+    # image) -- used as the <img alt> text and in the admin list, since a
+    # flattened image has no other way to be described for accessibility.
+    title = models.CharField(max_length=200)
+    image = models.ImageField(upload_to="tryout_posters/")
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this poster currently shows on the home page.",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0, help_text="Lower numbers show first, on the home page and in this list."
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["display_order", "-created_at"]
+        verbose_name = "Try-Out Poster"
+        verbose_name_plural = "Try-Out Posters"
+
+    def __str__(self):
+        return f"{self.title} ({self.get_poster_type_display()})"
