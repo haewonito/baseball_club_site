@@ -20,13 +20,21 @@
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
         <a href="{% url 'location' %}">Location</a>
         {% if user.is_authenticated %}
-          <a href="{% url 'accounts:dashboard' %}">
-            {% if user.is_admin %}Admin Dashboard
-            {% elif user.is_coach %}Coach Dashboard
-            {% elif user.is_parent %}Parent Dashboard
-            {% else %}Dashboard
-            {% endif %}
-          </a>
+          {# One link per role the user actually holds -- a dual-role user
+             (e.g. the league owner, both Admin and Coach) needs to reach
+             both dashboards, not just whichever one login prioritized. #}
+          {% if user.is_admin %}
+            <a href="{% url 'accounts:dashboard_admin' %}">Admin Dashboard</a>
+          {% endif %}
+          {% if user.is_coach %}
+            <a href="{% url 'accounts:dashboard_coach' %}">Coach Dashboard</a>
+          {% endif %}
+          {% if user.is_parent %}
+            <a href="{% url 'accounts:dashboard_parent' %}">Parent Dashboard</a>
+          {% endif %}
+          {% if not user.is_admin and not user.is_coach and not user.is_parent %}
+            <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+          {% endif %}
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
             <button type="submit">Log Out</button>
