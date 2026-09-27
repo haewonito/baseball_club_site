@@ -159,6 +159,26 @@ considered but deferred: it needs the actual source assets (the background/dust 
 own file, and the specific bold-italic display font used) to reproduce the existing design, not just
 approximate it — revisit once those are available.
 
+**Player detail is built as one tiered page, not three separate ones** (`apps.teams.views.player_detail`,
+at `/teams/players/<pk>/`, template `apps/teams/templates/teams/player_detail.html`). A single view
+computes the requesting user's tier via `_player_viewer_info` and reveals sections accordingly: tier 1
+(public — name, photo, jersey number, position, team, a free-text `description`) is shown to anyone only
+if both `Player.is_public_profile` (default `False`, opt-in) and the player's team are public; tier 2 adds
+date of birth and linked-parent contact info, for that player's coach or linked parent; tier 3 adds the fee/
+payment ledger, full parent-link history, and a link back to the original try-out sign-up if the player was
+promoted from one, for admin only. `photo`/`description`/`is_public_profile` are edited from a *separate*
+parent-facing page (`accounts.parent_player_profile_edit`, linked from the parent dashboard and from the
+detail page itself when `can_edit_profile` is true) — deliberately not by coaches, unlike the rest of the
+roster fields (name/DOB/jersey/position), which stay on the existing `PlayerRosterForm`/coach-roster flow.
+Entry points link in from the public team roster, the coach roster page, and the parent dashboard.
+
+Seed data note: `seed_demo_data` randomly assigns each seeded player a photo from
+`apps/accounts/management/commands/seed_player_photos/` (real photos, consented, downsized to ~20KB each
+specifically to stay well inside Cloudflare R2's free tier even after repeated `--force` reseeds against
+the deployed DB) plus a placeholder `description` and a random `is_public_profile`. This only ever runs
+once per player (gated on `created`, mirroring how `date_of_birth`/`jersey_number` are seeded) — it won't
+clobber a profile edited later through the app.
+
 ## Domain model
 
 Five apps under `apps/` (note the package prefix: `INSTALLED_APPS` uses `apps.accounts`, etc., and

@@ -116,6 +116,22 @@ class Player(models.Model):
     team = models.ForeignKey(
         "teams.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="players"
     )
+    # Profile "flair" -- distinct from the roster fields above (name/DOB/
+    # jersey/position), which stay coach/admin-only. These three are the
+    # parent's own domain: editable by the player's linked parent (or
+    # admin) via apps.accounts.views.parent_player_profile_edit, never by
+    # a coach. See apps.teams.views.player_detail for the tiered
+    # public/coach-parent/admin page these feed.
+    photo = models.ImageField(upload_to="player_photos/", null=True, blank=True)
+    description = models.TextField(blank=True)
+    is_public_profile = models.BooleanField(
+        default=False,
+        help_text=(
+            "Whether this player's public-tier info (name, photo, jersey number, "
+            "position, team) is visible on the public site. Off by default -- the "
+            "parent (or admin) opts in."
+        ),
+    )
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

@@ -1,4 +1,5 @@
 import datetime
+import random
 from pathlib import Path
 
 from django.conf import settings
@@ -46,6 +47,25 @@ ADMIN_HEAD_COACH_EMAIL = _demo_email("ryan.rickard")
 # actual named coaches). Keyed by the coach's name, lowercased with a "_"
 # separator, e.g. Ryan Rickard -> ryan_rickard.jpg.
 SEED_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_photos"
+
+# Real (but consented, family-shared) kid photos, downsized to ~400px/~20KB
+# each specifically so repeatedly re-seeding a deployed environment doesn't
+# eat into Cloudflare R2's free tier. Randomly assigned across players --
+# the same photo can land on more than one player, that's fine, this is
+# just demo data standing in for "a parent uploaded a photo".
+SEED_PLAYER_PHOTOS_DIR = Path(__file__).resolve().parent / "seed_player_photos"
+SEED_PLAYER_PHOTOS = sorted(SEED_PLAYER_PHOTOS_DIR.glob("*.jpg"))
+
+PLAYER_DESCRIPTIONS = [
+    "Loves playing shortstop and eating popsicles after practice.",
+    "Been with the club for a few seasons now -- always brings great energy to the dugout.",
+    "Favorite part of the game: sliding into home plate.",
+    "Working on a wicked curveball this season.",
+    "Team spirit MVP -- always cheering teammates on from the dugout.",
+    "Big fan of post-game snacks and pre-game stretches.",
+    "Started out scared of the ball, now can't get enough of batting practice.",
+    "Collects baseball cards and dreams of a walk-off home run.",
+]
 
 TEAMS = [
     {
@@ -392,7 +412,7 @@ class Command(BaseCommand):
             team_name = team_data["name"]
             birth_year = team_data["birth_year"]
             for first, last, jersey, positions in PLAYERS_BY_TEAM[team_name]:
-                player, _ = Player.objects.get_or_create(
+                player, created = Player.objects.get_or_create(
                     first_name=first,
                     last_name=last,
                     team=self.teams[team_name],
@@ -403,8 +423,27 @@ class Command(BaseCommand):
                 )
                 for position in positions:
                     player.positions.get_or_create(position=position)
+                if created:
+                    self._seed_player_profile(player, first, last)
                 players[(first, last)] = player
         return players
+
+    def _seed_player_profile(self, player, first, last):
+        # Only ever runs once per player (see the `created` check above) --
+        # a re-seed shouldn't clobber a profile a "parent" already edited
+        # through the app, and re-randomizing the photo/description on
+        # every run would also mean needlessly re-uploading to R2 each time.
+        if SEED_PLAYER_PHOTOS:
+            filename = f"{first.lower()}_{last.lower()}.jpg"
+            target = f"player_photos/{filename}"
+            if player.photo.storage.exists(target):
+                player.photo.storage.delete(target)
+            source = random.choice(SEED_PLAYER_PHOTOS)
+            with open(source, "rb") as f:
+                player.photo.save(filename, File(f), save=False)
+        player.description = random.choice(PLAYER_DESCRIPTIONS)
+        player.is_public_profile = random.random() < 0.5
+        player.save(update_fields=["photo", "description", "is_public_profile"])
 
     def _seed_parents(self):
         name_cycle = iter(PARENT_FIRST_NAMES * 2)

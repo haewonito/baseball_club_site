@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ player }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ player }}</h1>
+    <p>
+      {% if player.team %}{{ player.team.name }}{% endif %}
+      {% if player.jersey_number %} &middot; #{{ player.jersey_number }}{% endif %}
+    </p>
+    {% if can_edit_profile %}
+      <a class="btn btn--primary" href="{% url 'accounts:parent_player_profile_edit' player.pk %}">Edit Profile</a>
+    {% endif %}
+  </section>
+
+  {% if player.photo %}
+    <p><img src="{{ player.photo.url }}" alt="{{ player }}" class="coach-photo-preview"></p>
+  {% endif %}
+
+  {% if player.description %}
+    <section class="team-section">
+      <p>{{ player.description|linebreaks }}</p>
+    </section>
+  {% endif %}
+
+  <section class="team-section">
+    <h2>Positions</h2>
+    {% if player.positions.all %}
+      <p>{% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+    {% else %}
+      <p>No positions listed.</p>
+    {% endif %}
+  </section>
+
+  {% if tier >= 2 %}
+    <section class="team-section">
+      <h2>Player Info</h2>
+      <p>Date of birth: {{ player.date_of_birth }}</p>
+    </section>
+
+    <section class="team-section">
+      <h2>Parent Contact</h2>
+      {% if parent_links %}
+        <ul class="coach-list">
+          {% for link in parent_links %}
+            <li>{{ link.parent }} &mdash; {{ link.parent.email }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No parent linked yet.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if tier >= 3 %}
+    <section class="team-section">
+      <h2>Fees &amp; Payments</h2>
+      {% if fee_rows %}
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Due</th>
+              <th>Amount Due</th>
+              <th>Balance</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in fee_rows %}
+              <tr>
+                <td>{{ row.fee.description }}</td>
+                <td>{{ row.fee.due_date|default:"—" }}</td>
+                <td>${{ row.fee.amount_due }}</td>
+                <td>${{ row.balance }}</td>
+                <td>{{ row.status_label }}</td>
+                <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">Manage</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No fees on record.</p>
+      {% endif %}
+    </section>
+
+    <section class="team-section">
+      <h2>Parent-Player Link History</h2>
+      {% if link_history %}
+        <ul class="coach-list">
+          {% for link in link_history %}
+            <li>
+              {{ link.parent }} &mdash; linked {{ link.created_at|date:"M j, Y" }}
+              {% if link.created_by %}by {{ link.created_by }}{% endif %}
+              {% if link.removed_at %}
+                &middot; removed {{ link.removed_at|date:"M j, Y" }}{% if link.removed_by %} by {{ link.removed_by }}{% endif %}
+              {% else %}
+                &middot; <span class="status-badge">Active</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No parent links on record.</p>
+      {% endif %}
+    </section>
+
+    {% if tryout_signup %}
+      <section class="team-section">
+        <h2>Try-Out Origin</h2>
+        <p>Promoted from a try-out sign-up.
+          <a href="{% url 'accounts:admin_tryout_detail' tryout_signup.pk %}">View original sign-up</a>
+        </p>
+      </section>
+    {% endif %}
+  {% endif %}
+{% endblock %}

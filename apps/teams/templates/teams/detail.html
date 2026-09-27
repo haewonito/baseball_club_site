@@ -38,7 +38,13 @@
         <tbody>
           {% for player in team.players.all %}
             <tr>
-              <td>{{ player }}</td>
+              <td>
+                {% if player.is_public_profile %}
+                  <a href="{% url 'teams:player_detail' player.pk %}">{{ player }}</a>
+                {% else %}
+                  {{ player }}
+                {% endif %}
+              </td>
               <td>
                 {% for pp in player.positions.all %}{{ pp.get_position_display }}{% if not forloop.last %}, {% endif %}{% endfor %}
               </td>

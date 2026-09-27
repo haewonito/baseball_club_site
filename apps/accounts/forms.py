@@ -150,6 +150,21 @@ class CoachProfileForm(forms.ModelForm):
         }
 
 
+class PlayerProfileForm(forms.ModelForm):
+    """
+    The parent's own editable subset of Player -- name/DOB/jersey/position
+    stay coach-or-admin-only via PlayerRosterForm; this is only ever used
+    from parent_player_profile_edit (parent, or admin as an override).
+    """
+
+    class Meta:
+        model = Player
+        fields = ["photo", "description", "is_public_profile"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 5}),
+        }
+
+
 class TryoutPosterForm(forms.ModelForm):
     class Meta:
         model = TryoutPoster

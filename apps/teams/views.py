@@ -1,8 +1,10 @@
 from django.db.models import Case, IntegerField, Prefetch, Value, When
+from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
-from apps.accounts.models import Role, User
+from apps.accounts.models import ParentPlayerLink, Player, Role, User
+from apps.fees.models import FEE_STATUS_LABELS
 
 from .models import Team, TeamCoach, TeamCoachRole
 
@@ -73,3 +75,63 @@ def coach_detail(request, pk):
         pk=pk,
     )
     return render(request, "teams/coach_detail.html", {"coach": coach})
+
+
+def _player_viewer_info(request, player):
+    """
+    One player_detail page, three visibility tiers -- this decides which
+    one a given request gets. 0 = no access (404), 1 = public tier only,
+    2 = tier 1 + DOB/parent-contact (a coach of the player's team, or a
+    parent linked to the player), 3 = tier 2 + fees/links/everything
+    (admin). can_edit_profile is separate from tier: only admin or the
+    specific linked parent may edit photo/description/is_public_profile
+    (apps.accounts.views.parent_player_profile_edit) -- a coach can be
+    tier 2 without ever getting edit rights.
+    """
+    user = request.user
+    if user.is_authenticated:
+        if user.is_admin:
+            return 3, True
+        if ParentPlayerLink.objects.filter(
+            parent=user, player=player, removed_at__isnull=True
+        ).exists():
+            return 2, True
+        if player.team and TeamCoach.objects.filter(coach=user, team=player.team).exists():
+            return 2, False
+    if player.is_public_profile and player.team and player.team.is_public:
+        return 1, False
+    return 0, False
+
+
+def player_detail(request, pk):
+    """
+    Public URL, but not necessarily public content -- see
+    _player_viewer_info. A private player 404s for anyone who isn't
+    their coach/parent/an admin, rather than confirming the player
+    exists at all.
+    """
+    player = get_object_or_404(
+        Player.objects.select_related("team").prefetch_related("positions"), pk=pk
+    )
+    tier, can_edit_profile = _player_viewer_info(request, player)
+    if tier == 0:
+        raise Http404
+
+    context = {"player": player, "tier": tier, "can_edit_profile": can_edit_profile}
+    if tier >= 2:
+        context["parent_links"] = player.parent_links.filter(
+            removed_at__isnull=True
+        ).select_related("parent")
+    if tier >= 3:
+        context["fee_rows"] = [
+            {"fee": fee, "balance": fee.balance, "status_label": FEE_STATUS_LABELS.get(fee.status, fee.status)}
+            for fee in player.fees.prefetch_related("payments")
+        ]
+        # Full history (including removed links), not just the active
+        # ones tier 2 gets above -- matches CLAUDE.md's admin capability
+        # "parent-player link management/history".
+        context["link_history"] = player.parent_links.select_related(
+            "parent", "created_by", "removed_by"
+        ).order_by("-created_at")
+        context["tryout_signup"] = getattr(player, "tryout_signup", None)
+    return render(request, "teams/player_detail.html", context)

@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.fees.models import Fee, Payment
+from apps.fees.models import FEE_STATUS_LABELS, Fee, Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Team, TeamCoach
 from apps.tryouts.emails import send_response_invite_email
@@ -31,18 +31,12 @@ from .forms import (
     InviteClaimSignupForm,
     ParentInviteEmailForm,
     PaymentForm,
+    PlayerProfileForm,
     PlayerRosterForm,
     PracticeEventForm,
     TryoutPosterForm,
 )
 from .models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
-
-FEE_STATUS_LABELS = {
-    "paid": "Paid",
-    "partially_paid": "Partially Paid",
-    "overdue": "Overdue",
-    "unpaid": "Unpaid",
-}
 
 
 class LoginView(BaseLoginView):
@@ -852,6 +846,37 @@ def parent_player_payments(request, player_id):
             "total_paid": running_total,
             "balance": total_due - running_total,
         },
+    )
+
+
+@login_required
+def parent_player_profile_edit(request, player_id):
+    """
+    Edits exactly the three "profile flair" fields (photo, description,
+    is_public_profile) -- never name/DOB/jersey/position, which stay
+    coach/admin-only via PlayerRosterForm. Open to the specific linked
+    parent, or admin as an override (same pattern as every other
+    admin-can-do-anything check in this file) -- deliberately not open to
+    coaches, unlike roster editing.
+    """
+    player = get_object_or_404(Player, pk=player_id)
+    is_linked_parent = ParentPlayerLink.objects.filter(
+        parent=request.user, player=player, removed_at__isnull=True
+    ).exists()
+    if not (request.user.is_admin or is_linked_parent):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = PlayerProfileForm(request.POST, request.FILES, instance=player)
+        if form.is_valid():
+            form.save()
+            return redirect("teams:player_detail", pk=player.pk)
+    else:
+        form = PlayerProfileForm(instance=player)
+    return render(
+        request,
+        "accounts/parent_player_profile_form.html",
+        {"form": form, "player": player},
     )
 
 

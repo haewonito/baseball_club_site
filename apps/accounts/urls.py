@@ -122,6 +122,11 @@ urlpatterns = [
         name="parent_player_payments",
     ),
     path(
+        "dashboard/parent/players/<int:player_id>/profile/",
+        views.parent_player_profile_edit,
+        name="parent_player_profile_edit",
+    ),
+    path(
         "dashboard/parent/players/<int:player_id>/invite/",
         views.parent_invite_player,
         name="parent_invite_player",

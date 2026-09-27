@@ -1,6 +1,17 @@
 from django.conf import settings
 from django.db import models
 
+# Fee.status is a plain Python property, not a `choices` field, so there's
+# no model-level get_status_display() -- this is the one shared mapping
+# for it, used anywhere a fee's status needs a human label (admin fees
+# list, the admin-tier player detail page).
+FEE_STATUS_LABELS = {
+    "paid": "Paid",
+    "partially_paid": "Partially Paid",
+    "overdue": "Overdue",
+    "unpaid": "Unpaid",
+}
+
 
 class Fee(models.Model):
     """

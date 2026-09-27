@@ -11,7 +11,7 @@
     <div class="kid-cards">
       {% for card in cards %}
         <div class="kid-card">
-          <h2>{{ card.player }}</h2>
+          <h2><a href="{% url 'teams:player_detail' card.player.pk %}">{{ card.player }}</a></h2>
           {% if card.player.team %}
             <p class="kid-card__team">{{ card.player.team.name }}</p>
           {% endif %}
@@ -32,6 +32,7 @@
             {% endif %}
           </p>
           <a class="btn" href="{% url 'accounts:parent_player_payments' card.player.pk %}">View payment history</a>
+          <a class="btn" href="{% url 'accounts:parent_player_profile_edit' card.player.pk %}">Edit Profile</a>
           <a class="btn" href="{% url 'accounts:parent_invite_player' card.player.pk %}">Invite Another Adult</a>
         </div>
       {% endfor %}
