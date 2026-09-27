@@ -10,6 +10,25 @@
         Thanks! You've accepted {{ signup.player_first_name }}'s spot on {{ signup.team.name }}.
         We'll be in touch with next steps.
       </p>
+      {% if account_created %}
+        <p>
+          We've also created your parent account, and you're now logged in. Next time, log in
+          with <strong>{{ user.email }}</strong> and the password you just chose.
+        </p>
+      {% endif %}
+      {% if signup.promoted_player %}
+        <p>
+          {{ signup.player_first_name }} is now on the {{ signup.team.name }} roster -- you'll see
+          {{ signup.player_first_name }}'s schedule and fees on your
+          <a href="{% url 'accounts:dashboard_parent' %}">Parent Dashboard</a>.
+        </p>
+      {% else %}
+        <p>
+          Once {{ signup.player_first_name }} is added to the team roster, you'll see
+          {{ signup.player_first_name }}'s schedule and fees on your
+          <a href="{% url 'accounts:dashboard_parent' %}">Parent Dashboard</a>.
+        </p>
+      {% endif %}
     {% else %}
       <p>
         Thanks for letting us know. We've recorded that {{ signup.player_first_name }} won't be

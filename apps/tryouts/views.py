@@ -8,6 +8,7 @@ from apps.teams.models import Team
 
 from .forms import TryoutSignupForm
 from .models import TryoutDecision, TryoutFamilyResponse, TryoutPoster, TryoutResponseInvite
+from .roster import promote_signup_to_roster
 
 
 def signup(request):
@@ -82,7 +83,11 @@ def respond(request, token):
                     _complete_response(
                         signup, invite, TryoutFamilyResponse.ACCEPTED, responded_by=user
                     )
-                    return render(request, "tryouts/respond_done.html", {"signup": signup})
+                    return render(
+                        request,
+                        "tryouts/respond_done.html",
+                        {"signup": signup, "account_created": True},
+                    )
         elif not request.user.is_authenticated:
             form = InviteClaimSignupForm(
                 initial={
@@ -108,6 +113,8 @@ def _complete_response(signup, invite, response, responded_by=None):
     signup.save(update_fields=update_fields)
     invite.responded_at = timezone.now()
     invite.save(update_fields=["responded_at"])
+    if response == TryoutFamilyResponse.ACCEPTED:
+        promote_signup_to_roster(signup, created_by=responded_by)
 
 
 def _grant_parent_role(user):

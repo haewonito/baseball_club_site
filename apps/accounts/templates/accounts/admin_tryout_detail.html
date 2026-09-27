@@ -44,6 +44,12 @@
            business-Admin-role user may not have Django-admin access. {% endcomment %}
         <p>Promoted to roster: {{ signup.promoted_player }}</p>
       {% else %}
+        {% if not signup.date_of_birth %}
+          <p>
+            Not added to the roster automatically because the sign-up has no date of birth.
+            Add it in Django admin, then promote here.
+          </p>
+        {% endif %}
         <form
           method="post"
           action="{% url 'accounts:admin_tryout_promote' signup.pk %}"

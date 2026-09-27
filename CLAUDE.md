@@ -308,7 +308,10 @@ per-player ledger rows is an open decision.
      direct copy), links the parent's `User` + `ParentPlayerLink` (created during step 7's accept),
      and bulk-reassigns `Player.team` for existing players moving up from the predecessor team
      (checklist UI, default-checked, per the original season-roll-up idea). No separate "assign the
-     team" step needed -- it was already chosen in step 1/3.
+     team" step needed -- it was already chosen in step 1/3. **Built for new signups:** promotion
+     runs automatically the moment a family accepts (`apps.tryouts.roster.promote_signup_to_roster`,
+     called from `apps.tryouts.views._complete_response`); the admin "Promote to Roster" button is
+     only a fallback for signups with no date of birth, which `Player` requires.
 
   Fees do **not** carry over on promotion -- they're normally paid months before the new season
   starts, so this workflow doesn't need to touch `Fee`/`Payment` at all. Whether a player's

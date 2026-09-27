@@ -16,6 +16,7 @@ from apps.fees.models import FEE_STATUS_LABELS, Fee, Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Team, TeamCoach
 from apps.tryouts.emails import send_response_invite_email
+from apps.tryouts.roster import promote_signup_to_roster
 from apps.tryouts.models import (
     TryoutDecision,
     TryoutDecisionChange,
@@ -170,13 +171,9 @@ def admin_tryout_status_change(request, pk):
 @require_POST
 def admin_tryout_promote(request, pk):
     """
-    Turn an accepted sign-up into a real roster Player -- CLAUDE.md's
-    roster-promotion plan, step 8. No re-entry: Player fields and
-    positions come straight from the sign-up/TryoutSignupPosition rows.
-    The parent link uses signup.responded_by (the account created/
-    confirmed during the accept flow) rather than matching on
-    parent_email, since the family could've entered a different email
-    there. Fees intentionally aren't touched -- see CLAUDE.md.
+    Manual fallback for promote_signup_to_roster -- accepting normally
+    promotes automatically, but not when the sign-up had no date of birth
+    (add it via Django admin, then use this).
     """
     if not request.user.is_admin:
         raise PermissionDenied
@@ -192,23 +189,8 @@ def admin_tryout_promote(request, pk):
         messages.error(request, "Can't promote -- this sign-up is missing a date of birth.")
         return redirect("accounts:admin_tryout_detail", pk=signup.pk)
 
-    player = Player.objects.create(
-        first_name=signup.player_first_name,
-        last_name=signup.player_last_name,
-        date_of_birth=signup.date_of_birth,
-        team=signup.team,
-    )
-    PlayerPosition.objects.bulk_create(
-        PlayerPosition(player=player, position=p.position) for p in signup.positions.all()
-    )
-    signup.promoted_player = player
-    signup.save(update_fields=["promoted_player"])
-
-    if signup.responded_by_id:
-        ParentPlayerLink.objects.get_or_create(
-            parent=signup.responded_by, player=player, defaults={"created_by": request.user}
-        )
-    else:
+    player = promote_signup_to_roster(signup, created_by=request.user)
+    if not signup.responded_by_id:
         messages.warning(
             request,
             f"{player} was added, but no parent account was recorded for this sign-up -- "
