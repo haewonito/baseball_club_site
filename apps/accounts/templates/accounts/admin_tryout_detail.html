@@ -17,7 +17,7 @@
 
   <section class="team-section">
     <h2>Status</h2>
-    {% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}
+    {% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices confirm=True %}
   </section>
 
   <section class="team-section">
@@ -112,5 +112,5 @@
     {% endif %}
   </section>
 
-  <p><a href="{% url 'accounts:admin_tryouts_list' %}">&larr; Back to list</a></p>
+  <p class="back-link"><a href="{% url 'accounts:admin_tryouts_list' %}">&larr; Back to list</a></p>
 {% endblock %}

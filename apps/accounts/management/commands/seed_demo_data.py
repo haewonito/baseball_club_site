@@ -659,7 +659,9 @@ class Command(BaseCommand):
                 title=title,
                 defaults={
                     "poster_type": poster_type,
-                    "is_active": True,
+                    # Only one try-out poster may be active at a time
+                    # (TryoutPoster.clean) -- the first one listed.
+                    "is_active": order == 0,
                     "display_order": order,
                     "uploaded_by": admin_user,
                 },

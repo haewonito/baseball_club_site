@@ -15,7 +15,9 @@ def home(request):
         today = timezone.localdate()
         show_tryout_banner = today <= next_tryout_date <= today + timedelta(days=30)
 
-    tryout_posters = TryoutPoster.objects.filter(is_active=True)
+    # At most one poster is active (TryoutPoster.clean); the slice just
+    # keeps any leftover older data with two active from showing both.
+    tryout_posters = TryoutPoster.objects.filter(is_active=True)[:1]
 
     return render(
         request,

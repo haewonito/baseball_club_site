@@ -2,6 +2,7 @@ import uuid
 from datetime import timedelta
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -297,9 +298,15 @@ class TryoutPoster(models.Model):
     # flattened image has no other way to be described for accessibility.
     title = models.CharField(max_length=200)
     image = models.ImageField(upload_to="tryout_posters/")
+    # Only one poster may be active at a time (see clean() below) -- the
+    # active poster *is* the currently open try-out: it's what the home
+    # page shows, and the public sign-up form is closed without one.
     is_active = models.BooleanField(
         default=True,
-        help_text="Whether this poster currently shows on the home page.",
+        help_text=(
+            "Whether this poster currently shows on the home page. Only one poster "
+            "can be active at a time, and the try-out sign-up form is closed unless one is."
+        ),
     )
     display_order = models.PositiveIntegerField(
         default=0, help_text="Lower numbers show first, on the home page and in this list."
@@ -316,3 +323,24 @@ class TryoutPoster(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_poster_type_display()})"
+
+    def clean(self):
+        # Enforced here rather than as a DB constraint so it applies to both
+        # the dashboard form and Django admin without a migration that would
+        # fail on any existing data with two active posters.
+        if self.is_active:
+            others = TryoutPoster.objects.filter(is_active=True).exclude(pk=self.pk)
+            active = others.first()
+            if active:
+                raise ValidationError(
+                    {
+                        "is_active": (
+                            f"Only one try-out can be active at a time -- "
+                            f"\"{active.title}\" is already active. Deactivate it first."
+                        )
+                    }
+                )
+
+    @classmethod
+    def get_active(cls):
+        return cls.objects.filter(is_active=True).first()

@@ -9,9 +9,6 @@
       {% if player.team %}{{ player.team.name }}{% endif %}
       {% if player.jersey_number %} &middot; #{{ player.jersey_number }}{% endif %}
     </p>
-    {% if can_edit_profile %}
-      <a class="btn btn--primary" href="{% url 'accounts:parent_player_profile_edit' player.pk %}">Edit Profile</a>
-    {% endif %}
   </section>
 
   {% if player.photo %}
@@ -115,5 +112,9 @@
         </p>
       </section>
     {% endif %}
+  {% endif %}
+
+  {% if can_edit_profile %}
+    <p><a class="btn btn--primary" href="{% url 'accounts:parent_player_profile_edit' player.pk %}">Edit Profile</a></p>
   {% endif %}
 {% endblock %}

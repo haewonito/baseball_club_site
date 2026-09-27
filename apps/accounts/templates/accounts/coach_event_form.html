@@ -29,8 +29,8 @@
   </form>
 
   {% if next_url %}
-    <p><a href="{{ next_url }}">&larr; Back</a></p>
+    <p class="back-link"><a href="{{ next_url }}">&larr; Back</a></p>
   {% else %}
-    <p><a href="{% url 'accounts:coach_events' team.pk kind %}">&larr; Back to {{ kind }}</a></p>
+    <p class="back-link"><a href="{% url 'accounts:coach_events' team.pk kind %}">&larr; Back to {{ kind }}</a></p>
   {% endif %}
 {% endblock %}

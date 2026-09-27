@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
@@ -38,6 +40,8 @@ from .forms import (
     TryoutPosterForm,
 )
 from .models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
+
+logger = logging.getLogger(__name__)
 
 
 class LoginView(BaseLoginView):
@@ -154,7 +158,11 @@ def admin_tryout_status_change(request, pk):
     return render(
         request,
         "partials/_tryout_status_select.html",
-        {"signup": signup, "status_choices": TryoutStatus.choices},
+        {
+            "signup": signup,
+            "status_choices": TryoutStatus.choices,
+            "confirm": request.POST.get("confirm") == "1",
+        },
     )
 
 
@@ -826,6 +834,7 @@ def coach_tryout_send_email(request, pk):
     try:
         send_response_invite_email(invite, request)
     except Exception:
+        logger.exception("Try-out decision email failed for signup %s", signup.pk)
         # Rendered inline rather than via the messages framework -- this
         # response only ever replaces the email-cell fragment (hx-swap
         # outerHTML), never a full page load, so a top-of-page message

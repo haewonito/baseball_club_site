@@ -27,5 +27,10 @@
     <button class="btn btn--primary" type="submit">Save</button>
   </form>
 
-  <p><a href="{% url 'accounts:admin_tryout_posters_list' %}">&larr; Back to posters</a></p>
+  {% if form.is_active.errors %}
+    {# Pop-up on top of the inline field error, so a second active try-out can't be missed. #}
+    <script>alert("{{ form.is_active.errors.0|escapejs }}");</script>
+  {% endif %}
+
+  <p class="back-link"><a href="{% url 'accounts:admin_tryout_posters_list' %}">&larr; Back to posters</a></p>
 {% endblock %}

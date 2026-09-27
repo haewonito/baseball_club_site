@@ -47,7 +47,7 @@
             <td>{{ signup.parent_phone }}</td>
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
             <td>{{ signup.season_label }}</td>
-            <td>{% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}</td>
+            <td>{% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices confirm=True %}</td>
             <td>{% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}</td>
             <td>{{ signup.get_family_response_display }}</td>
             <td>{{ signup.promoted_player|yesno:"Promoted,—" }}</td>
@@ -59,5 +59,5 @@
     <p>No try-out sign-ups{% if selected_year %} for that season{% endif %}.</p>
   {% endif %}
 
-  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+  <p class="back-link"><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
 {% endblock %}

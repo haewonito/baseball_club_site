@@ -34,8 +34,8 @@
   </form>
 
   {% if fee %}
-    <p><a href="{% url 'accounts:admin_fee_detail' fee.pk %}">&larr; Back to fee</a></p>
+    <p class="back-link"><a href="{% url 'accounts:admin_fee_detail' fee.pk %}">&larr; Back to fee</a></p>
   {% else %}
-    <p><a href="{% url 'accounts:admin_fees_list' %}">&larr; Back to fees list</a></p>
+    <p class="back-link"><a href="{% url 'accounts:admin_fees_list' %}">&larr; Back to fees list</a></p>
   {% endif %}
 {% endblock %}

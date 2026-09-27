@@ -8,7 +8,10 @@
     <a class="btn btn--primary" href="{% url 'accounts:admin_tryout_poster_add' %}">Add Poster</a>
   </section>
 
-  <p>Active posters show on the home page, ordered by "Order" (lower first).</p>
+  <p>
+    Only one poster can be active at a time. The active poster is the current try-out:
+    it shows on the home page, and the public sign-up form is closed while no poster is active.
+  </p>
 
   {% if posters %}
     <table class="roster-table">
@@ -50,5 +53,5 @@
     <p>No posters yet.</p>
   {% endif %}
 
-  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+  <p class="back-link"><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
 {% endblock %}

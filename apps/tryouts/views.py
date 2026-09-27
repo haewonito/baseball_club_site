@@ -7,12 +7,19 @@ from apps.accounts.models import Role, UserRole
 from apps.teams.models import Team
 
 from .forms import TryoutSignupForm
-from .models import TryoutDecision, TryoutFamilyResponse, TryoutResponseInvite
+from .models import TryoutDecision, TryoutFamilyResponse, TryoutPoster, TryoutResponseInvite
 
 
 def signup(request):
-    """Public try-out sign-up form. No login required."""
-    accepting_tryouts = Team.objects.filter(accepting_tryouts=True).exists()
+    """
+    Public try-out sign-up form. No login required. Open only while a
+    try-out poster is active (the active poster is the current try-out --
+    see TryoutPoster.is_active) and at least one team is accepting.
+    """
+    accepting_tryouts = (
+        TryoutPoster.objects.filter(is_active=True).exists()
+        and Team.objects.filter(accepting_tryouts=True).exists()
+    )
     form = None
     if accepting_tryouts:
         if request.method == "POST":

@@ -22,9 +22,8 @@
             <td>{{ team.name }}{% if not team.is_public %} <span class="status-badge">Not public</span>{% endif %}</td>
             <td>{{ team.season_label }}</td>
             <td>
-              <a href="{% url 'accounts:coach_events' team.pk 'practices' %}">Practices</a>
-              &middot;
-              <a href="{% url 'accounts:coach_events' team.pk 'tournaments' %}">Tournaments</a>
+              <a href="{% url 'accounts:coach_events' team.pk 'practices' %}">Manage Practices</a><br>
+              <a href="{% url 'accounts:coach_events' team.pk 'tournaments' %}">Manage Tournaments</a>
             </td>
           </tr>
         {% endfor %}
@@ -34,5 +33,5 @@
     <p>No teams yet.</p>
   {% endif %}
 
-  <p><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+  <p class="back-link"><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
 {% endblock %}
