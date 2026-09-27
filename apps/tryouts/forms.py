@@ -63,6 +63,13 @@ class TryoutSignupForm(forms.ModelForm):
             "parent_phone": forms.TextInput(attrs={"type": "tel"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Required here but still nullable on the model, since older
+        # sign-ups may lack it -- Player needs it for roster promotion
+        # (apps.tryouts.roster.promote_signup_to_roster).
+        self.fields["date_of_birth"].required = True
+
     def save(self, commit=True):
         # Standard ModelForm only saves TryoutSignup's own fields; `positions`
         # is a related set, so it's handled separately here (mirrors the
