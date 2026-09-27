@@ -322,3 +322,23 @@ per-player ledger rows is an open decision.
   than guessed at: if/when this is actually needed, signups would need to point at something broader
   than a single `Team` (a lightweight "division" or "tryout session" grouping) that gets split into
   one or more teams only after evaluation.
+
+- **Team photo gallery.** A section at the bottom of the team detail page where that team's coaches,
+  linked parents, and admins (never the public) can view/upload team photos -- practices, games,
+  tournaments, etc. Motivation: parents want a central place for this instead of scattered group
+  texts/social posts. Explicitly not being built yet -- deliberately deferred, not just unprioritized
+  -- because of one unresolved question: not every parent may be comfortable with their kid's photo
+  being visible even in this narrower coach/parent-only context, and there's no consent mechanism
+  figured out yet for that. Open questions for whoever picks this up:
+  - Is consent per-parent (a blanket "my kid can appear in team photos" toggle, e.g. alongside
+    `Player.is_public_profile`) or per-photo (tag which players are in it, only show/notify consenting
+    families, maybe blur/exclude non-consenting kids)? Per-parent is far simpler to build; per-photo is
+    what parents probably actually picture when they imagine this feature.
+  - Who moderates uploads -- any parent on the team, or admin-approval-only before a photo becomes
+    visible to the team?
+  - Does declining consent block a parent from *uploading* photos that include other consenting kids,
+    or only from their own kid *appearing* in others' uploads?
+  No design decided here on purpose -- existing patterns worth reusing once it is: the
+  `Player.is_public_profile` opt-in-by-default-off precedent from the player detail page, and the
+  coach/parent/admin tiering already built for that same page (`apps.teams.views._player_viewer_info`)
+  for scoping who can see the gallery at all.
