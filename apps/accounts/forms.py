@@ -94,10 +94,11 @@ class FeeForm(forms.ModelForm):
     """
     Exactly one of `player`/`team` must be set -- a Fee is either for one
     player or team-wide (see the Fee docstring in apps/fees/models.py).
-    The model itself doesn't enforce this with a DB constraint since how
-    a team-wide fee expands into per-player ledger rows is still an open
-    design question, but the form shouldn't let you create a Fee that's
-    ambiguous or orphaned either way.
+    The model itself doesn't enforce this with a DB constraint. On
+    admin_fee_add, choosing `team` doesn't save a team-wide row at all --
+    it fans out into one full-amount Fee per current player on that team
+    (see the view); `team` stays a real, saveable field here mainly so
+    admin_fee_edit can keep editing whatever a Fee instance already has.
     """
 
     class Meta:
@@ -120,6 +121,8 @@ class FeeForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Choose exactly one of Player or Team -- not both, not neither."
             )
+        if team and not team.players.exists():
+            raise forms.ValidationError(f'"{team}" has no players -- nothing to charge.')
         return cleaned_data
 
 

@@ -4,10 +4,12 @@ from django.db import models
 
 class Fee(models.Model):
     """
-    What's owed. Per player, or team-wide (in which case `player` is
-    null and this represents a fee that applies to the whole team --
-    admin UI would still need to generate per-player ledger rows or
-    handle it as a shared line item, decided at build time).
+    What's owed. Per player, or team-wide via the `team` field -- but a
+    team-wide Fee row is only ever a transient input, never actually
+    persisted as such: apps.accounts.views.admin_fee_add fans it out into
+    one full-amount (not split) Fee per current player on that team at
+    creation time, so every other fee/payment view only ever deals in
+    ordinary per-player rows.
 
     No in-house payment processing: if online payment is ever added,
     it goes through a processor (Stripe/Square) rather than storing

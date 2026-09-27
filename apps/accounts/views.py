@@ -256,6 +256,33 @@ def admin_fee_add(request):
     if request.method == "POST":
         form = FeeForm(request.POST)
         if form.is_valid():
+            team = form.cleaned_data["team"]
+            if team:
+                # Team-wide is per-player, full amount each -- not a single
+                # shared row and not split. Fans out here, at creation
+                # time, into ordinary per-player Fees indistinguishable
+                # from one added directly for a single kid, so every other
+                # fee/payment view (admin list, parent dashboard, payment
+                # history) needs no team-fee-aware logic of its own.
+                players = list(team.players.all())
+                Fee.objects.bulk_create(
+                    Fee(
+                        player=player,
+                        description=form.cleaned_data["description"],
+                        amount_due=form.cleaned_data["amount_due"],
+                        due_date=form.cleaned_data["due_date"],
+                        created_by=request.user,
+                    )
+                    for player in players
+                )
+                messages.success(
+                    request,
+                    f"Added a ${form.cleaned_data['amount_due']} "
+                    f"\"{form.cleaned_data['description']}\" fee for "
+                    f"{len(players)} player(s) on {team}.",
+                )
+                return redirect("accounts:admin_fees_list")
+
             fee = form.save(commit=False)
             fee.created_by = request.user
             fee.save()
@@ -784,8 +811,9 @@ def dashboard_parent(request):
         next_event = None
         if player.team:
             next_event = player.team.events.filter(start_datetime__gte=now).order_by("start_datetime").first()
-        # Team-wide fees (Fee.player=None) aren't included here -- per
-        # CLAUDE.md that's an open design question, not yet resolved.
+        # Team-wide fees fan out into per-player Fee rows at creation time
+        # (see admin_fee_add), so a plain player.fees.all() already picks
+        # them up -- no separate team-fee handling needed here.
         balance = sum(fee.balance for fee in player.fees.all())
         cards.append({"player": player, "next_event": next_event, "balance": balance})
 

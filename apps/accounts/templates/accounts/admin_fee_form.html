@@ -20,6 +20,12 @@
       {% include "partials/_form_field.html" with field=form.player %}
       {% include "partials/_form_field.html" with field=form.team %}
     </div>
+    {% if not fee %}
+      <p class="form-field__help">
+        Choosing a team charges every current player on that team this full amount,
+        each as their own separate fee -- not one shared team fee.
+      </p>
+    {% endif %}
     <div class="form-row">
       {% include "partials/_form_field.html" with field=form.amount_due %}
       {% include "partials/_form_field.html" with field=form.due_date %}
