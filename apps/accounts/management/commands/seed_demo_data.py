@@ -18,7 +18,12 @@ from apps.accounts.models import (
 from apps.fees.models import Fee, Payment, PaymentMethod
 from apps.schedule.models import Event, EventStatus, EventType
 from apps.teams.models import CoachProfile, Position, Team, TeamCoach, TeamCoachRole
-from apps.tryouts.models import TryoutSignup, TryoutStatus, TryoutStatusChange
+from apps.tryouts.models import (
+    TryoutSignup,
+    TryoutStatus,
+    TryoutStatusChange,
+    TryoutYearSettings,
+)
 
 DEMO_PASSWORD = "demopass123"
 
@@ -286,6 +291,7 @@ class Command(BaseCommand):
             self._seed_fees()
             self._seed_schedule()
             self._seed_tryouts()
+            self._seed_tryout_year_settings()
 
         self.stdout.write(self.style.SUCCESS("\nDemo data seeded."))
         self.stdout.write(f"All seeded users share the password: {self.password}")
@@ -583,3 +589,11 @@ class Command(BaseCommand):
                     new_status=status,
                     changed_by=admin_user,
                 )
+
+    def _seed_tryout_year_settings(self):
+        # Relative to "now" rather than a fixed date, so re-seeding always
+        # lands inside home()'s 30-day banner window (config/views.py)
+        # instead of going stale a month after this file was written.
+        settings_row, _ = TryoutYearSettings.objects.get_or_create(pk=1)
+        settings_row.next_tryout_date = timezone.localdate() + datetime.timedelta(days=14)
+        settings_row.save(update_fields=["next_tryout_date"])
