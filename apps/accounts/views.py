@@ -101,6 +101,7 @@ def admin_tryouts_list(request):
             "years": years,
             "selected_year": selected_year,
             "status_choices": TryoutStatus.choices,
+            "decision_choices": TryoutDecision.choices,
         },
     )
 
@@ -125,6 +126,7 @@ def admin_tryout_detail(request, pk):
         {
             "signup": signup,
             "status_choices": TryoutStatus.choices,
+            "decision_choices": TryoutDecision.choices,
             "status_changes": status_changes,
             "decision_changes": decision_changes,
         },
@@ -134,10 +136,10 @@ def admin_tryout_detail(request, pk):
 @login_required
 @require_POST
 def admin_tryout_status_change(request, pk):
-    if not request.user.is_admin:
+    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
+    if not _can_manage_tryout_signup(request.user, signup.team):
         raise PermissionDenied
 
-    signup = get_object_or_404(TryoutSignup, pk=pk)
     new_status = request.POST.get("status", "")
     if new_status not in dict(TryoutStatus.choices):
         return HttpResponseBadRequest("Invalid status")
@@ -369,6 +371,14 @@ def _get_roster_team_or_404(user, team_id):
     return _get_coach_team_or_404(user, team_id)
 
 
+def _can_manage_tryout_signup(user, team):
+    # Both Status and Decision are now editable from either dashboard
+    # (admin_tryout_status_change, coach_tryout_decision_change) -- an
+    # admin can act on any signup, a coach only on their own team's, same
+    # scoping as roster/practice editing.
+    return user.is_admin or TeamCoach.objects.filter(coach=user, team=team).exists()
+
+
 @login_required
 def dashboard_coach(request):
     if not request.user.is_coach:
@@ -581,11 +591,11 @@ def coach_tryouts(request):
     if selected_team_id:
         signups = signups.filter(team_id=selected_team_id)
 
-    # Decision-making (and now, sending its email) is scoped to the coach's
-    # own team(s) -- viewing every signup stays "all teams, all years" per
-    # the coach dashboard's design, but the decision dropdown and send
-    # button only render as editable for the rows this coach is actually
-    # allowed to act on.
+    # Editing (status, decision, sending its email) is scoped to the
+    # coach's own team(s) -- viewing every signup stays "all teams, all
+    # years" per the coach dashboard's design, but the status/decision
+    # dropdowns and send button only render as editable for the rows this
+    # coach is actually allowed to act on.
     my_team_ids = set(
         TeamCoach.objects.filter(coach=request.user).values_list("team_id", flat=True)
     )
@@ -595,6 +605,7 @@ def coach_tryouts(request):
         {
             "signups": signups,
             "decision_choices": TryoutDecision.choices,
+            "status_choices": TryoutStatus.choices,
             "my_team_ids": my_team_ids,
             "teams": teams,
             "selected_team_id": selected_team_id,
@@ -605,11 +616,8 @@ def coach_tryouts(request):
 @login_required
 @require_POST
 def coach_tryout_decision_change(request, pk):
-    if not request.user.is_coach:
-        raise PermissionDenied
-
     signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
-    if not TeamCoach.objects.filter(coach=request.user, team=signup.team).exists():
+    if not _can_manage_tryout_signup(request.user, signup.team):
         raise PermissionDenied
 
     new_decision = request.POST.get("coach_decision", "")

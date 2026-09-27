@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 
@@ -17,7 +18,11 @@ class UserManager(BaseUserManager):
     """create_user/create_superuser keyed on email -- there is no username."""
 
     def _create_user(self, email, password, **extra_fields):
-        email = self.normalize_email(email)
+        # Fully lowercased, not just normalize_email's domain-only
+        # lowercasing -- email is the account identifier here (no
+        # username), so "James@x.com" and "james@x.com" must resolve to
+        # the same account rather than silently becoming two.
+        email = self.normalize_email(email).lower()
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -58,6 +63,16 @@ class User(AbstractUser):
     roles = models.ManyToManyField(
         "UserRole", blank=True, related_name="users"
     )
+
+    class Meta:
+        # Belt-and-suspenders on top of the field-level unique=True above --
+        # that's a case-sensitive DB index, so "James@x.com"/"james@x.com"
+        # could otherwise coexist as two rows. Catches any creation path,
+        # not just the ones that remember to check case-insensitively
+        # themselves (see InviteClaimSignupForm.clean_email).
+        constraints = [
+            models.UniqueConstraint(Lower("email"), name="unique_lower_email"),
+        ]
 
     def __str__(self):
         return self.get_full_name() or self.email

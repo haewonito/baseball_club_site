@@ -21,9 +21,8 @@
   </section>
 
   <section class="team-section">
-    <h2>Coach Decision</h2>
-    {# Set by the coach assigned to this signup's team, not from here. #}
-    <p>{{ signup.get_coach_decision_display }}</p>
+    <h2>Decision</h2>
+    {% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}
   </section>
 
   <section class="team-section">

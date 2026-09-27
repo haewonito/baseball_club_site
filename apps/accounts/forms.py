@@ -161,8 +161,10 @@ class InviteClaimSignupForm(forms.Form):
     password2 = forms.CharField(widget=forms.PasswordInput, label="Confirm password")
 
     def clean_email(self):
-        email = self.cleaned_data["email"]
-        if User.objects.filter(email=email).exists():
+        # Case-insensitive: "James@x.com" must collide with an existing
+        # "james@x.com" the same way User's DB constraint requires.
+        email = self.cleaned_data["email"].lower()
+        if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError(
                 "An account with this email already exists -- log in instead."
             )

@@ -5,6 +5,7 @@
 {% block content %}
   <section class="page-hero">
     <h1>Try-Out Sign-Ups</h1>
+    <p>You can set both Status and Decision for any sign-up here.</p>
   </section>
 
   <form class="filter-form" method="get">
@@ -47,8 +48,7 @@
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
             <td>{{ signup.season_label }}</td>
             <td>{% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}</td>
-            {# Set by the assigned coach, not editable from here -- see coach_tryout_decision_change. #}
-            <td>{{ signup.get_coach_decision_display }}</td>
+            <td>{% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}</td>
             <td>{{ signup.get_family_response_display }}</td>
             <td>{{ signup.promoted_player|yesno:"Promoted,—" }}</td>
           </tr>
