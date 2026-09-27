@@ -20,9 +20,11 @@
         <a href="{% url 'tryouts:signup' %}">Try-Outs</a>
         <a href="{% url 'location' %}">Location</a>
         {% if user.is_authenticated %}
-          {# One link per role the user actually holds -- a dual-role user
-             (e.g. the league owner, both Admin and Coach) needs to reach
-             both dashboards, not just whichever one login prioritized. #}
+          {% comment %}
+            One link per role the user actually holds -- a dual-role user
+            (e.g. the league owner, both Admin and Coach) needs to reach
+            both dashboards, not just whichever one login prioritized.
+          {% endcomment %}
           {% if user.is_admin %}
             <a href="{% url 'accounts:dashboard_admin' %}">Admin Dashboard</a>
           {% endif %}
