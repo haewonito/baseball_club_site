@@ -27,7 +27,7 @@ trap 'rm -f "$tmp"' EXIT
 
 echo "Dumping production database..."
 railway ssh --service Postgres -- \
-  sh -c 'set -o pipefail 2>/dev/null; pg_dump --no-owner --no-privileges | gzip -c' > "$tmp"
+  sh -c 'set -o pipefail 2>/dev/null; pg_dump --no-owner --no-privileges | gzip -c' < /dev/null > "$tmp"
 
 # A dropped connection can leave a truncated file that still looks fine at a
 # glance, so check both the gzip stream and pg_dump's own end-of-dump marker.
