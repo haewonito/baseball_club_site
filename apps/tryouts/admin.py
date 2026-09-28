@@ -54,9 +54,13 @@ class TryoutYearSettingsAdmin(admin.ModelAdmin):
 class TryoutStatusChangeAdmin(admin.ModelAdmin):
     """
     Read-only -- this is an append-only audit trail (see CLAUDE.md), so
-    editing/deleting rows here would let an admin falsify history that's
-    meant to be immutable. Rows are written by the status-change flow on
-    the custom admin dashboard, not created here.
+    editing rows here would let an admin falsify history that's meant to be
+    immutable. Rows are written by the status-change flow on the custom
+    admin dashboard, not created here.
+
+    Superusers may delete, though: deleting a TryoutSignup cascades to its
+    audit rows, and Django admin refuses the whole signup deletion unless
+    it may delete those rows too.
     """
 
     list_display = ("signup", "old_status", "new_status", "changed_by", "changed_at")
@@ -68,7 +72,7 @@ class TryoutStatusChangeAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 
 @admin.register(TryoutResponseInvite)
@@ -78,7 +82,7 @@ class TryoutResponseInviteAdmin(admin.ModelAdmin):
 
 @admin.register(TryoutDecisionChange)
 class TryoutDecisionChangeAdmin(admin.ModelAdmin):
-    """Read-only, same reasoning as TryoutStatusChangeAdmin above."""
+    """Read-only except superuser deletes, same reasoning as TryoutStatusChangeAdmin above."""
 
     list_display = ("signup", "old_decision", "new_decision", "changed_by", "changed_at")
 
@@ -89,7 +93,7 @@ class TryoutDecisionChangeAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
 
 @admin.register(TryoutPoster)
