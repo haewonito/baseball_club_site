@@ -389,24 +389,42 @@ legend {
 
 /* --- Copy button (next to the contact email) --------------------------- */
 
-/* color: inherit + currentColor border so it reads on both the white page
-   and the black footer bar. */
+/* Icon-only; color: inherit + stroke currentColor so it reads on both the
+   white page and the black footer bar. */
 .copy-btn {
-  margin-left: 0.4rem;
-  padding: 0.1rem 0.5rem;
-  border: 1px solid currentColor;
-  border-radius: var(--radius);
+  display: inline-flex;
+  margin-left: 0.35rem;
+  padding: 0.15rem;
+  border: none;
   background: none;
   color: inherit;
-  font: inherit;
-  font-size: 0.75rem;
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: pointer;
   vertical-align: middle;
 }
 
-.copy-btn:hover {
+.copy-btn:hover,
+.copy-btn.is-copied {
   opacity: 1;
+}
+
+.copy-btn svg {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.copy-btn__check,
+.copy-btn.is-copied .copy-btn__icon {
+  display: none;
+}
+
+.copy-btn.is-copied .copy-btn__check {
+  display: inline;
 }
 
 /* --- "← Back to ..." links at the bottom of a page ----------------------- */

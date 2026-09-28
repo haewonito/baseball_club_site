@@ -1,3 +1,6 @@
-{# Usage: {% include "partials/_contact_email.html" %} -- the club contact address as plain text plus a Copy button (handled by the data-copy script in base.html). Plain text rather than a mailto link, since mailto does nothing for visitors without a desktop mail app set up. #}
+{# Usage: {% include "partials/_contact_email.html" %} -- the club contact address as plain text plus a copy-icon button (handled by the data-copy script in base.html, which briefly swaps the icon for a checkmark). Plain text rather than a mailto link, since mailto does nothing for visitors without a desktop mail app set up. #}
 <span>{{ general_contact_email }}</span>
-<button type="button" class="copy-btn" data-copy="{{ general_contact_email }}" aria-label="Copy email address">Copy</button>
+<button type="button" class="copy-btn" data-copy="{{ general_contact_email }}" aria-label="Copy email address" title="Copy email address">
+  <svg class="copy-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+  <svg class="copy-btn__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+</button>
