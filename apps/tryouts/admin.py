@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     TryoutDecisionChange,
+    TryoutMassEmail,
     TryoutPoster,
     TryoutResponseInvite,
     TryoutSignup,
@@ -85,6 +86,24 @@ class TryoutDecisionChangeAdmin(admin.ModelAdmin):
     """Read-only except superuser deletes, same reasoning as TryoutStatusChangeAdmin above."""
 
     list_display = ("signup", "old_decision", "new_decision", "changed_by", "changed_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+@admin.register(TryoutMassEmail)
+class TryoutMassEmailAdmin(admin.ModelAdmin):
+    """Read-only history of Email Families sends; they're sent from the
+    dashboard page (accounts.tryout_mass_email), not created here."""
+
+    list_display = ("subject", "sent_by", "team", "decision", "sent_at")
+    readonly_fields = ("sent_by", "sent_at", "team", "decision", "subject", "body", "recipients")
 
     def has_add_permission(self, request):
         return False

@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import login as auth_login
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -6,9 +8,12 @@ from apps.accounts.forms import InviteClaimSignupForm
 from apps.accounts.models import Role, UserRole
 from apps.teams.models import Team
 
+from .emails import send_signup_confirmation_email
 from .forms import TryoutSignupForm
 from .models import TryoutDecision, TryoutFamilyResponse, TryoutPoster, TryoutResponseInvite
 from .roster import promote_signup_to_roster
+
+logger = logging.getLogger(__name__)
 
 
 def signup(request):
@@ -26,7 +31,13 @@ def signup(request):
         if request.method == "POST":
             form = TryoutSignupForm(request.POST)
             if form.is_valid():
-                form.save()
+                signup = form.save()
+                # The sign-up is already saved; a mail failure is only logged,
+                # never shown to the family as a failed sign-up.
+                try:
+                    send_signup_confirmation_email(signup)
+                except Exception:
+                    logger.exception("Try-out sign-up confirmation email failed for signup %s", signup.pk)
                 return redirect("tryouts:signup_success")
         else:
             form = TryoutSignupForm()

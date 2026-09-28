@@ -60,6 +60,7 @@ urlpatterns = [
     ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
+    path("dashboard/tryouts/email/", views.tryout_mass_email, name="tryout_mass_email"),
     path(
         "dashboard/coach/tryouts/<int:pk>/decision/",
         views.coach_tryout_decision_change,

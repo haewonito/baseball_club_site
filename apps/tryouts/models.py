@@ -282,6 +282,38 @@ class TryoutResponseInvite(models.Model):
         return self.responded_at is None and timezone.now() < self.expires_at
 
 
+class TryoutMassEmail(models.Model):
+    """
+    One email a coach or admin sent to every family matching a filter on
+    the Email Families page (apps.accounts.views.tryout_mass_email).
+    Append-only history of what was sent, by whom and to whom.
+    """
+
+    sent_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+    # The filter used. A null team means "all teams the sender could email".
+    team = models.ForeignKey(
+        "teams.Team",
+        on_delete=models.SET(get_deleted_team),
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    decision = models.CharField(max_length=20, choices=TryoutDecision.choices, blank=True)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    # The addresses it actually went to, one copy each.
+    recipients = models.JSONField(default=list)
+
+    class Meta:
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"{self.subject} ({self.sent_at:%Y-%m-%d})"
+
+
 class TryoutPosterType(models.TextChoices):
     INITIAL = "initial", "Initial Tryouts"
     SUPPLEMENTAL = "supplemental", "Supplemental / Make-Up Tryouts"

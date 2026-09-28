@@ -61,6 +61,7 @@ unpaid.
 - [ ] Submitting with required fields blank shows errors inline, next to each field
 - [ ] A valid submission (pick positions from the checkboxes) goes to the thank-you page
 - [ ] The new signup appears in the admin try-out list under the right team/season with status "New"
+- [ ] A **confirmation email** arrives at the parent email you entered. It lists the player, team, season, positions and parent phone, plus the try-out date if one is set and hasn't passed. Locally it's printed to the `runserver` console instead
 - [ ] Deactivate all try-out posters (as admin), and the form shows as closed
 - [ ] Turn off "accepting try-outs" on every team in Django admin, and the form shows as closed
 
@@ -106,6 +107,11 @@ unpaid.
 - [ ] Changing Status shows a confirm dialog and then saves; changing Decision saves right away with no dialog
 - [ ] **No fees** appear anywhere for Tom (and `/accounts/dashboard/admin/fees/` is forbidden)
 - [ ] Travis Roth (an assistant) can do everything Shawn (head coach) can on 11U
+- [ ] **Email Families** (button on Try-Out Sign-Ups, link on the dashboard): the Team dropdown lists only Tom's teams, and the recipient count and list change with the Team and Decision filters
+- [ ] A family with two kids trying out appears once, with both kids listed
+- [ ] Sending asks for confirmation, then shows "Email sent to N families", and the email appears under **Sent Emails** with its recipients
+- [ ] Each family gets its **own** copy (no other parents in To/CC), with a "Sent by …" line at the bottom, and replying goes to the coach's email
+- [ ] Shawn doesn't see Tom's sent email in his history (it wasn't for Shawn's team)
 - [ ] Tom can't open the 11U roster by URL (swap the team ID into the address); it should be forbidden or not found
 
 ## 7. Admin (Sandra Lee, then Ryan Rickard)
@@ -148,6 +154,8 @@ Paste these URLs while logged in as the wrong user. Each should show forbidden o
 - [ ] Admin only (Sandra) → `/accounts/dashboard/coach/`, which should show no coach dashboard, since she has no coach role
 - [ ] Logged out → any `/accounts/dashboard/...` URL redirects to the login page
 - [ ] Coach (Tom) → the 11U practices/roster URLs (a team he doesn't coach)
+- [ ] Coach (Tom) → `/accounts/dashboard/tryouts/email/?team=<11U id>`
+- [ ] Parent (Katie) → `/accounts/dashboard/tryouts/email/`
 
 ## 10. Django admin (`/admin/`, needs a superuser)
 
@@ -156,6 +164,8 @@ Paste these URLs while logged in as the wrong user. Each should show forbidden o
 - [ ] A coach whose only team is unpublished still appears on Coaches, with the team shown as "TBA"
 - [ ] Parent-player links can be managed here, and removed links stay visible as history
 - [ ] Try-out status history is read-only
+- [ ] Deleting a team that has try-out sign-ups shows a warning listing the sign-ups (moving to "Deleted team") and players (left without a team), then works. "Deleted team" never shows in the team list, the sign-up form, or any team dropdown
+- [ ] **Tryout mass emails** lists every Email Families send, read-only
 
 ## 11. Deployed site only
 

@@ -5,6 +5,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -15,12 +16,17 @@ from django.views.decorators.http import require_POST
 from apps.fees.models import FEE_STATUS_LABELS, Fee, Payment
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Team, TeamCoach
-from apps.tryouts.emails import send_response_invite_email
+from apps.tryouts.emails import (
+    MassEmailError,
+    send_response_invite_email,
+    send_tryout_mass_email,
+)
 from apps.tryouts.roster import promote_signup_to_roster
 from apps.tryouts.models import (
     TryoutDecision,
     TryoutDecisionChange,
     TryoutFamilyResponse,
+    TryoutMassEmail,
     TryoutPoster,
     TryoutResponseInvite,
     TryoutSignup,
@@ -39,6 +45,7 @@ from .forms import (
     PlayerGalleryPhotoForm,
     PlayerProfileForm,
     PlayerRosterForm,
+    TryoutMassEmailForm,
     TryoutPosterForm,
     downsize_image,
 )
@@ -843,6 +850,135 @@ def coach_tryout_send_email(request, pk):
     signup.save(update_fields=["decision_emailed_at"])
     return render(request, "partials/_tryout_email_action.html", {"signup": signup})
 
+
+
+def _mass_email_teams(user):
+    """Teams whose sign-ups `user` may email: any team for an admin, a
+    coach's own teams otherwise (head or assistant -- same scoping as the
+    rest of the coach pages). Never the "Deleted team" placeholder."""
+    teams = Team.objects.filter(is_deleted_placeholder=False)
+    if user.is_admin:
+        return teams
+    return teams.filter(coach_assignments__coach=user).distinct()
+
+
+def _mass_email_recipients(signups):
+    """One entry per parent email (case-insensitive), so a family with two
+    kids trying out gets one copy that lists both."""
+    families = {}
+    for signup in signups:
+        key = signup.parent_email.strip().lower()
+        family = families.setdefault(
+            key,
+            {"email": signup.parent_email.strip(), "parent": signup.parent_full_name, "signups": []},
+        )
+        family["signups"].append(signup)
+    return list(families.values())
+
+
+@login_required
+def tryout_mass_email(request):
+    """
+    "Email Families": a coach or admin emails every family that signed up
+    for try-outs, optionally narrowed to one team and/or one decision. The
+    recipient list is shown before sending and recomputed from the filter
+    on POST (never taken from the browser). Each family gets its own copy
+    (apps.tryouts.emails.send_tryout_mass_email), replies go to the sender,
+    and every send is recorded as a TryoutMassEmail.
+    """
+    user = request.user
+    if not (user.is_coach or user.is_admin):
+        raise PermissionDenied
+
+    allowed_teams = _mass_email_teams(user)
+    params = request.POST if request.method == "POST" else request.GET
+    team_id = params.get("team", "")
+    decision = params.get("decision", "")
+    selected_team = None
+    if team_id:
+        selected_team = get_object_or_404(allowed_teams, pk=team_id)
+    if decision and decision not in dict(TryoutDecision.choices):
+        return HttpResponseBadRequest("Invalid decision")
+
+    signups = (
+        TryoutSignup.objects.filter(team__in=[selected_team] if selected_team else allowed_teams)
+        .select_related("team")
+        .order_by("parent_last_name", "parent_first_name", "player_first_name")
+    )
+    if decision:
+        signups = signups.filter(coach_decision=decision)
+    recipients = _mass_email_recipients(signups)
+
+    reply_to = user.email
+    profile = getattr(user, "coach_profile", None)
+    if profile and profile.contact_email:
+        reply_to = profile.contact_email
+
+    filter_query = f"?team={team_id}&decision={decision}"
+    if request.method == "POST":
+        form = TryoutMassEmailForm(request.POST)
+        if not recipients:
+            form.add_error(None, "No families match this filter, so there's no one to email.")
+        if form.is_valid():
+            body = (
+                f"{form.cleaned_data['body'].rstrip()}\n\n"
+                f"--\nSent by {user.get_full_name() or user.email} through Choice Select. "
+                "Reply to this email to reach them directly.\n"
+            )
+            error = None
+            try:
+                sent = send_tryout_mass_email(
+                    form.cleaned_data["subject"], body, [r["email"] for r in recipients], [reply_to]
+                )
+            except MassEmailError as exc:
+                logger.exception("Try-out mass email failed after %s sends", len(exc.sent))
+                sent, error = exc.sent, exc
+            if sent:
+                TryoutMassEmail.objects.create(
+                    sent_by=user,
+                    team=selected_team,
+                    decision=decision,
+                    subject=form.cleaned_data["subject"],
+                    body=body,
+                    recipients=sent,
+                )
+            if error is None:
+                messages.success(request, f"Email sent to {len(sent)} famil{'y' if len(sent) == 1 else 'ies'}.")
+                return redirect(reverse("accounts:tryout_mass_email") + filter_query)
+            form.add_error(
+                None,
+                f"Sending failed after {len(sent)} of {len(recipients)} families. "
+                "Nothing else was sent. Check the history below before trying again.",
+            )
+    else:
+        form = TryoutMassEmailForm()
+
+    # History: everything for an admin; for a coach, their own sends plus
+    # anything sent to one of their teams.
+    history = TryoutMassEmail.objects.select_related("sent_by", "team")
+    if not user.is_admin:
+        history = history.filter(Q(sent_by=user) | Q(team__in=allowed_teams))
+
+    filter_teams = allowed_teams.filter(tryout_signups__isnull=False).distinct().order_by(
+        "-season_year", "name"
+    )
+    return render(
+        request,
+        "accounts/tryout_mass_email.html",
+        {
+            "form": form,
+            "recipients": recipients,
+            "filter_teams": filter_teams,
+            "selected_team": selected_team,
+            "selected_decision": decision,
+            "decision_choices": TryoutDecision.choices,
+            "reply_to": reply_to,
+            "history": history[:25],
+            "back_url": reverse(
+                "accounts:admin_tryouts_list" if user.is_admin else "accounts:coach_tryouts"
+            ),
+        },
+    )
 
 @login_required
 def dashboard_parent(request):

@@ -1,0 +1,15 @@
+Hi {{ signup.parent_first_name }},
+
+Thanks for signing up {{ signup.player_full_name }} for Choice Select try-outs. We've received the sign-up:
+
+Player: {{ signup.player_full_name }}
+Team: {{ signup.team.name }} ({{ signup.season_label }})
+{% if signup.positions_display %}Positions: {{ signup.positions_display }}
+{% endif %}Parent: {{ signup.parent_full_name }}, {{ signup.parent_phone }}
+{% if next_tryout_date %}
+Try-outs are on {{ next_tryout_date|date:"l, F j, Y" }}.
+{% endif %}
+A coach will follow up by phone or email with next steps. If anything above is wrong, or you have questions, email us at {{ contact_email }}.
+
+Thanks,
+Choice Select

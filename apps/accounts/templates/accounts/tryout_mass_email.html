@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Email Try-Out Families · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Email Try-Out Families</h1>
+    <p>
+      Send one email to every family that signed up for try-outs{% if not user.is_admin %} for your teams{% endif %}.
+      Each family gets its own copy and can't see anyone else's address.
+    </p>
+  </section>
+
+  <form class="filter-form" method="get">
+    <div class="form-row">
+      <div class="form-field">
+        <label for="id_team">Team</label>
+        <select id="id_team" name="team" onchange="this.form.submit()">
+          <option value="">{% if user.is_admin %}All teams{% else %}All my teams{% endif %}</option>
+          {% for team in filter_teams %}
+            <option value="{{ team.pk }}" {% if selected_team.pk == team.pk %}selected{% endif %}>{{ team }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="id_decision">Decision</label>
+        <select id="id_decision" name="decision" onchange="this.form.submit()">
+          <option value="">Any decision</option>
+          {% for value, label in decision_choices %}
+            <option value="{{ value }}" {% if selected_decision == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+
+  <section class="team-section">
+    <h2>Recipients ({{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }})</h2>
+    {% if recipients %}
+      <details>
+        <summary>Show who will get this email</summary>
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Parent</th>
+              <th>Email</th>
+              <th>Player</th>
+              <th>Team</th>
+              <th>Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for family in recipients %}
+              {% for signup in family.signups %}
+                <tr>
+                  <td>{% if forloop.first %}{{ family.parent }}{% endif %}</td>
+                  <td>{% if forloop.first %}{{ family.email }}{% endif %}</td>
+                  <td>{{ signup.player_full_name }}</td>
+                  <td>{{ signup.team.name }}</td>
+                  <td>{{ signup.get_coach_decision_display }}</td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    {% else %}
+      <p>No families match this filter.</p>
+    {% endif %}
+  </section>
+
+  <section class="team-section">
+    <h2>Message</h2>
+    {% if form.non_field_errors %}
+      <div class="form-errors">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <form
+      method="post"
+      onsubmit="return confirm('Send this email to {{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }}?');"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="team" value="{{ selected_team.pk|default:'' }}">
+      <input type="hidden" name="decision" value="{{ selected_decision }}">
+      {% include "partials/_form_field.html" with field=form.subject %}
+      {% include "partials/_form_field.html" with field=form.body %}
+      <p class="form-field__help">
+        Replies go to {{ reply_to }}. A line saying who sent it is added at the bottom.
+      </p>
+      <button class="btn btn--primary" type="submit" {% if not recipients %}disabled{% endif %}>
+        Send to {{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }}
+      </button>
+    </form>
+  </section>
+
+  <section class="team-section">
+    <h2>Sent Emails</h2>
+    {% if history %}
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Sent</th>
+            <th>By</th>
+            <th>To</th>
+            <th>Subject</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for email in history %}
+            <tr>
+              <td>{{ email.sent_at|date:"M j, Y g:i A" }}</td>
+              <td>{{ email.sent_by|default:"(deleted user)" }}</td>
+              <td>
+                {{ email.team.name|default:"All teams" }}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
+                ({{ email.recipients|length }})
+              </td>
+              <td>
+                <details>
+                  <summary>{{ email.subject }}</summary>
+                  <p style="white-space: pre-line;">{{ email.body }}</p>
+                  <p class="form-field__help">Sent to: {{ email.recipients|join:", " }}</p>
+                </details>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No emails sent yet.</p>
+    {% endif %}
+  </section>
+
+  <p class="back-link"><a href="{{ back_url }}">&larr; Back to try-out sign-ups</a></p>
+{% endblock %}

@@ -290,3 +290,8 @@ class ParentInviteEmailForm(forms.Form):
     doesn't carry a pre-set invitee email, so this is where one gets typed in."""
 
     email = forms.EmailField(label="Email address")
+
+
+class TryoutMassEmailForm(forms.Form):
+    subject = forms.CharField(max_length=200)
+    body = forms.CharField(label="Message", widget=forms.Textarea(attrs={"rows": 10}))
