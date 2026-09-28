@@ -323,6 +323,15 @@ per-player ledger rows is an open decision.
   testing directly from inside the deployed container, so raw SMTP can never work there regardless of
   credentials. Resend's free tier only sends to the account owner's own verified address until a
   domain is verified (`resend.com/domains`) -- worth knowing before assuming a "failed send" is a bug.
+  The "own address" is the Resend account's, haewon201@gmail.com -- not haewonito@gmail.com.
+  **Sending domain:** `choiceselectleague.org` was registered 2026-09-27 for Resend. **TODO: switch to
+  `choiceselectclub.org`** -- it's a club, not a league; "league" was a naming slip. When switching,
+  re-verify the new domain in Resend, update `DEFAULT_FROM_EMAIL` on Railway, and let the league domain
+  lapse (turn off its auto-renew). The site itself is also served at `choiceselectleague.org`/`www.`
+  (Railway custom domain + `ALLOWED_HOSTS`), and `info@choiceselectleague.org` is the public contact
+  address (`config/context_processors.py:GENERAL_CONTACT_EMAIL`, footer + home page) and the
+  `DEFAULT_FROM_EMAIL` default, forwarded to Gmail via Cloudflare Email Routing -- all of these move
+  to the club domain in the switch too.
   `ParentInvite` now also has this: `ParentInvite.invitee_email`/`emailed_at` (added since it had no
   email field originally) let the primary parent optionally email the link from
   `parent_invite_player` -- this is additive, not a replacement, the copy/paste link is still always

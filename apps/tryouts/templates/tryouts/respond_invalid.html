@@ -11,7 +11,7 @@
       {% else %}
         It has expired.
       {% endif %}
-      Contact us at <a href="mailto:{{ general_contact_email }}">{{ general_contact_email }}</a>
+      Contact us at {% include "partials/_contact_email.html" %}
       if you need a new link.
     </p>
   </section>

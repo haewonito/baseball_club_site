@@ -1,0 +1,3 @@
+{# Usage: {% include "partials/_contact_email.html" %} -- the club contact address as plain text plus a Copy button (handled by the data-copy script in base.html). Plain text rather than a mailto link, since mailto does nothing for visitors without a desktop mail app set up. #}
+<span>{{ general_contact_email }}</span>
+<button type="button" class="copy-btn" data-copy="{{ general_contact_email }}" aria-label="Copy email address">Copy</button>

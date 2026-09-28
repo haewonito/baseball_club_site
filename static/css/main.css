@@ -387,6 +387,28 @@ legend {
   margin-right: 0.5rem;
 }
 
+/* --- Copy button (next to the contact email) --------------------------- */
+
+/* color: inherit + currentColor border so it reads on both the white page
+   and the black footer bar. */
+.copy-btn {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.copy-btn:hover {
+  opacity: 1;
+}
+
 /* --- "← Back to ..." links at the bottom of a page ----------------------- */
 
 .back-link {

@@ -175,12 +175,10 @@ SITE_BASIC_AUTH_PASSWORD = config("SITE_BASIC_AUTH_PASSWORD", default="")
 EMAIL_BACKEND = config(
     "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
 )
-# Same placeholder address as config.context_processors.GENERAL_CONTACT_EMAIL
-# -- update both together once the club's real inbox is set up. Must be
-# onboarding@resend.dev (Resend's shared test sender) until a real sending
-# domain is verified with Resend -- an unverified custom address will be
-# rejected by their API.
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectbaseball.com")
+# Same address as config.context_processors.GENERAL_CONTACT_EMAIL -- update
+# both together. Must be on a domain verified with Resend
+# (choiceselectleague.org is); an unverified address is rejected by their API.
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectleague.org")
 
 ANYMAIL = {
     "RESEND_API_KEY": config("RESEND_API_KEY", default=""),

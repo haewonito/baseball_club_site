@@ -27,7 +27,7 @@
           {% if coach.coach_profile.bio_text %}
             <p>{{ coach.coach_profile.bio_text }}</p>
           {% endif %}
-          {# TODO: mailto: link removed for now -- see home.html's contact section note #}
+          {# Plain text, no mailto: link -- see partials/_contact_email.html #}
           {% if coach.coach_profile.contact_email %}
             <p>{{ coach.coach_profile.contact_email }}</p>
           {% endif %}
