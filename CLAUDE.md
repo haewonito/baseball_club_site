@@ -396,9 +396,13 @@ so this workflow never touches `Fee`/`Payment`.
 Railway is configured for `anymail.backends.resend.EmailBackend` (django-anymail + Resend), not
 SMTP. Railway blocks all outbound SMTP ports (25/465/587) at the network level, confirmed by testing
 directly from inside the deployed container, so raw SMTP can never work there regardless of
-credentials. Until a domain is verified (`resend.com/domains`), Resend's free tier only sends to the
-account owner's own verified address. Keep that in mind before assuming a "failed send" is a bug.
-The "own address" is the Resend account's, haewon201@gmail.com -- not haewonito@gmail.com.
+credentials. `choiceselectleague.org` **is verified** in Resend, so the site can send to any
+recipient, including the `haewon201+<name>@gmail.com` aliases `seed_demo_data` uses (Gmail delivers
+`+` aliases to the base inbox). The Resend account belongs to haewon201@gmail.com, not
+haewonito@gmail.com. If sends suddenly only reach haewon201@gmail.com and nobody else, the domain
+has lost its verification: without a verified domain, Resend's free tier only delivers to the
+account owner's own address. That is especially likely during the club-domain switch below.
+Cloudflare Email Routing only handles *inbound* mail to `info@…` and has no effect on sending.
 **Sending domain:** `choiceselectleague.org` was registered 2026-09-27 for Resend. **TODO: switch to
 `choiceselectclub.org`** -- it's a club, not a league; "league" was a naming slip. When switching,
 re-verify the new domain in Resend, update `DEFAULT_FROM_EMAIL` on Railway, and let the league domain
