@@ -12,3 +12,6 @@ CLAUDE.md
 
 # Local-only demo-data seed command (not published to GitHub)
 apps/accounts/management/commands/seed_demo_data.py
+
+# Local database dumps from scripts/backup_prod.sh (contain personal data)
+/backups/
