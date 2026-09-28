@@ -186,8 +186,12 @@ The bottom of that page has a **"More Pictures of <first name>!" gallery** (`acc
 linked parents add/delete photos inline (`accounts.parent_player_gallery_add`/`_delete`) -- no admin or
 coach editing from the site (Django admin can still remove one); anyone who can view the page sees it.
 Uploads are re-encoded to JPEG, max 1600px, EXIF-rotated (`accounts.forms.downsize_image`), capped at
-`GALLERY_MAX_PHOTOS` per player, to stay inside R2's free tier. Not seeded, so a `flush` wipes them --
-see the seed note below. This is per-player and parent-uploaded, which is why it sidesteps the consent
+`GALLERY_MAX_PHOTOS` per player, to stay inside R2's free tier. `seed_demo_data` gives each seeded player
+0-4 gallery photos from the same `seed_player_photos/` pool (`_seed_player_gallery`, once per player like
+the profile photo); photos parents upload through the app are *not* seeded, so a `flush` wipes those. Players
+that predate gallery seeding can be backfilled without a flush via `seed_demo_data --galleries-only`
+(add `--force` on prod): it only adds photos to name-matched demo players with none, never resets
+passwords, and is idempotent. This is per-player and parent-uploaded, which is why it sidesteps the consent
 question blocking the team-wide gallery idea under Future ideas.
 
 Seed data note: `seed_demo_data` randomly assigns each seeded player a photo from

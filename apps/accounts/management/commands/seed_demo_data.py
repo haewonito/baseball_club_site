@@ -12,6 +12,7 @@ from apps.accounts.models import (
     ParentInvite,
     ParentPlayerLink,
     Player,
+    PlayerGalleryPhoto,
     Role,
     User,
     UserRole,
@@ -291,6 +292,15 @@ class Command(BaseCommand):
             help="Allow running even when settings.DEBUG is False (e.g. against a deployed database).",
         )
         parser.add_argument(
+            "--galleries-only",
+            action="store_true",
+            help=(
+                "Only give gallery photos to already-seeded demo players that have none. "
+                "Touches nothing else -- no passwords, no other rows -- so it's safe to run "
+                "against a live database without a flush. No --password needed."
+            ),
+        )
+        parser.add_argument(
             "--password",
             default=None,
             help=(
@@ -306,6 +316,9 @@ class Command(BaseCommand):
                 "settings.DEBUG is False -- refusing to seed demo data (looks like a production "
                 "database). Pass --force if you really mean to."
             )
+        if options["galleries_only"]:
+            self._seed_missing_galleries()
+            return
         if options["force"] and not options["password"]:
             raise CommandError(
                 "Refusing to seed a non-local database with the default password (it's public, "
@@ -459,6 +472,44 @@ class Command(BaseCommand):
         player.description = random.choice(PLAYER_DESCRIPTIONS)
         player.is_public_profile = random.random() < 0.5
         player.save(update_fields=["photo", "description", "is_public_profile"])
+        self._seed_player_gallery(player, first, last)
+
+    def _seed_missing_galleries(self):
+        # Backfill for --galleries-only: players that predate gallery seeding
+        # (created before _seed_player_gallery existed) never got any, since
+        # gallery seeding normally only runs when a player is first created.
+        # Matched by name against the seed roster so a real family's player
+        # never gets demo photos.
+        seeded = 0
+        for team_name, roster in PLAYERS_BY_TEAM.items():
+            for first, last, _jersey, _positions in roster:
+                for player in Player.objects.filter(
+                    first_name=first, last_name=last, team__name=team_name
+                ):
+                    if player.gallery_photos.exists():
+                        continue
+                    # At least one, so a re-run finds nothing left to do.
+                    self._seed_player_gallery(player, first, last, minimum=1)
+                    seeded += 1
+        self.stdout.write(self.style.SUCCESS(f"Seeded gallery photos for {seeded} player(s)."))
+
+    def _seed_player_gallery(self, player, first, last, minimum=0):
+        # 0-4 "More Pictures" gallery photos per player, drawn from the same
+        # small consented pool as the profile photo. Same once-per-player
+        # gating as _seed_player_profile (called only when `created`), and
+        # the same delete-before-save so a flush + reseed reuses the stored
+        # filename instead of piling up suffixed copies in R2.
+        if not SEED_PLAYER_PHOTOS:
+            return
+        count = random.randint(minimum, 4)
+        for n, source in enumerate(random.sample(SEED_PLAYER_PHOTOS, count), start=1):
+            filename = f"{first.lower()}_{last.lower()}_{n}.jpg"
+            target = f"player_gallery/{filename}"
+            photo = PlayerGalleryPhoto(player=player)
+            if photo.image.storage.exists(target):
+                photo.image.storage.delete(target)
+            with open(source, "rb") as f:
+                photo.image.save(filename, File(f), save=True)
 
     def _seed_parents(self):
         name_cycle = iter(PARENT_FIRST_NAMES * 2)

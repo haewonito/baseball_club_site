@@ -146,7 +146,8 @@ class PlayerGalleryPhoto(models.Model):
     remove one). Visible to whoever can see the player page at all, so it's
     public exactly when the rest of the profile is (is_public_profile).
     Images are downsized on upload (see PlayerGalleryPhotoForm) to keep R2
-    storage small. Not in seed_demo_data, so a flush wipes these.
+    storage small. seed_demo_data seeds a few per demo player; real
+    parent uploads aren't seeded, so a flush wipes those.
     """
 
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="gallery_photos")
