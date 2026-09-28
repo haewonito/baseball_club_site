@@ -137,6 +137,34 @@ class Player(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
+class PlayerGalleryPhoto(models.Model):
+    """
+    Extra photos for the "More Pictures" gallery at the bottom of the
+    player detail page (apps.teams.views.player_detail). Added/deleted only
+    by the player's linked parents (parent_player_gallery_add/_delete) --
+    not coaches, and not admins from the site UI (Django admin can still
+    remove one). Visible to whoever can see the player page at all, so it's
+    public exactly when the rest of the profile is (is_public_profile).
+    Images are downsized on upload (see PlayerGalleryPhotoForm) to keep R2
+    storage small. Not in seed_demo_data, so a flush wipes these.
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="gallery_photos")
+    image = models.ImageField(upload_to="player_gallery/")
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Player Gallery Photo"
+        verbose_name_plural = "Player Gallery Photos"
+
+    def __str__(self):
+        return f"Gallery photo of {self.player}"
+
+
 class ParentPlayerLink(models.Model):
     """
     Links a Parent-role User to a Player. Admin-created by default;

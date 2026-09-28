@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from apps.teams.models import PlayerPosition
 
-from .models import ParentInvite, ParentPlayerLink, Player, User, UserRole
+from .models import ParentInvite, ParentPlayerLink, Player, PlayerGalleryPhoto, User, UserRole
 
 
 @admin.register(User)
@@ -86,3 +86,10 @@ class ParentPlayerLinkAdmin(admin.ModelAdmin):
 @admin.register(ParentInvite)
 class ParentInviteAdmin(admin.ModelAdmin):
     list_display = ("player", "created_by", "created_at", "expires_at", "claimed_at")
+
+
+@admin.register(PlayerGalleryPhoto)
+class PlayerGalleryPhotoAdmin(admin.ModelAdmin):
+    # Moderation fallback only -- parents manage these from the player page.
+    list_display = ("player", "uploaded_by", "created_at")
+    search_fields = ("player__first_name", "player__last_name")

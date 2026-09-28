@@ -182,6 +182,14 @@ detail page itself when `can_edit_profile` is true) — deliberately not by coac
 roster fields (name/DOB/jersey/position), which stay on the existing `PlayerRosterForm`/coach-roster flow.
 Entry points link in from the public team roster, the coach roster page, and the parent dashboard.
 
+The bottom of that page has a **"More Pictures of <first name>!" gallery** (`accounts.PlayerGalleryPhoto`):
+linked parents add/delete photos inline (`accounts.parent_player_gallery_add`/`_delete`) -- no admin or
+coach editing from the site (Django admin can still remove one); anyone who can view the page sees it.
+Uploads are re-encoded to JPEG, max 1600px, EXIF-rotated (`accounts.forms.downsize_image`), capped at
+`GALLERY_MAX_PHOTOS` per player, to stay inside R2's free tier. Not seeded, so a `flush` wipes them --
+see the seed note below. This is per-player and parent-uploaded, which is why it sidesteps the consent
+question blocking the team-wide gallery idea under Future ideas.
+
 Seed data note: `seed_demo_data` randomly assigns each seeded player a photo from
 `apps/accounts/management/commands/seed_player_photos/` (real photos, consented, downsized to ~20KB each
 specifically to stay well inside Cloudflare R2's free tier even after repeated `--force` reseeds against

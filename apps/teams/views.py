@@ -3,6 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
+from apps.accounts.forms import GALLERY_MAX_PHOTOS, PlayerGalleryPhotoForm
 from apps.accounts.models import ParentPlayerLink, Player, Role, User
 from apps.fees.models import FEE_STATUS_LABELS
 
@@ -127,7 +128,24 @@ def player_detail(request, pk):
     if tier == 0:
         raise Http404
 
-    context = {"player": player, "tier": tier, "can_edit_profile": can_edit_profile}
+    # Gallery editing is linked-parents-only (no admin override, unlike
+    # can_edit_profile) -- see PlayerGalleryPhoto.
+    can_edit_gallery = (
+        request.user.is_authenticated
+        and ParentPlayerLink.objects.filter(
+            parent=request.user, player=player, removed_at__isnull=True
+        ).exists()
+    )
+    context = {
+        "player": player,
+        "tier": tier,
+        "can_edit_profile": can_edit_profile,
+        "can_edit_gallery": can_edit_gallery,
+        "gallery_photos": player.gallery_photos.all(),
+    }
+    if can_edit_gallery:
+        context["gallery_form"] = PlayerGalleryPhotoForm(player=player)
+        context["gallery_max_photos"] = GALLERY_MAX_PHOTOS
     if tier >= 2:
         context["parent_links"] = player.parent_links.filter(
             removed_at__isnull=True

@@ -1,4 +1,9 @@
+from io import BytesIO
+from pathlib import Path
+
 from django import forms
+from django.core.files.base import ContentFile
+from PIL import Image, ImageOps
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
@@ -9,7 +14,7 @@ from apps.tryouts.models import TryoutPoster
 
 from .models import User
 
-from .models import Player
+from .models import Player, PlayerGalleryPhoto
 
 
 class PlayerRosterForm(forms.ModelForm):
@@ -164,6 +169,66 @@ class PlayerProfileForm(forms.ModelForm):
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
         }
+
+
+class _MultipleImageInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class _MultipleImageField(forms.ImageField):
+    """Django's documented pattern for a multi-file upload field -- cleans
+    each selected file as its own image and returns a list."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", _MultipleImageInput(attrs={"accept": "image/*"}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_clean(d, initial) for d in data]
+        return [single_clean(data, initial)]
+
+
+GALLERY_MAX_PHOTOS = 30
+GALLERY_MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+GALLERY_MAX_DIMENSION = 1600
+
+
+def downsize_image(uploaded):
+    """
+    Re-encodes an upload as a JPEG no larger than GALLERY_MAX_DIMENSION on
+    its long side -- phone photos are often several MB, which adds up
+    against R2's free tier. exif_transpose first, so phone photos taken
+    sideways don't end up rotated once the EXIF orientation is dropped.
+    """
+    uploaded.seek(0)
+    image = ImageOps.exif_transpose(Image.open(uploaded)).convert("RGB")
+    image.thumbnail((GALLERY_MAX_DIMENSION, GALLERY_MAX_DIMENSION))
+    buffer = BytesIO()
+    image.save(buffer, "JPEG", quality=82, optimize=True)
+    return ContentFile(buffer.getvalue(), name=f"{Path(uploaded.name).stem}.jpg")
+
+
+class PlayerGalleryPhotoForm(forms.Form):
+    images = _MultipleImageField(label="Add photos")
+
+    def __init__(self, *args, player, **kwargs):
+        self.player = player
+        super().__init__(*args, **kwargs)
+
+    def clean_images(self):
+        images = self.cleaned_data["images"]
+        for image in images:
+            if image.size > GALLERY_MAX_UPLOAD_BYTES:
+                raise forms.ValidationError(f"\"{image.name}\" is too large (20 MB max per photo).")
+        remaining = GALLERY_MAX_PHOTOS - self.player.gallery_photos.count()
+        if len(images) > remaining:
+            raise forms.ValidationError(
+                f"The gallery holds up to {GALLERY_MAX_PHOTOS} photos -- "
+                f"there's room for {max(remaining, 0)} more. Delete some first to add more."
+            )
+        return images
 
 
 class TryoutPosterForm(forms.ModelForm):

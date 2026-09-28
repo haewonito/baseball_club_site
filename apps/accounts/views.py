@@ -36,11 +36,21 @@ from .forms import (
     InviteClaimSignupForm,
     ParentInviteEmailForm,
     PaymentForm,
+    PlayerGalleryPhotoForm,
     PlayerProfileForm,
     PlayerRosterForm,
     TryoutPosterForm,
+    downsize_image,
 )
-from .models import ParentInvite, ParentPlayerLink, Player, Role, User, UserRole
+from .models import (
+    ParentInvite,
+    ParentPlayerLink,
+    Player,
+    PlayerGalleryPhoto,
+    Role,
+    User,
+    UserRole,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -920,6 +930,48 @@ def parent_player_profile_edit(request, player_id):
         "accounts/parent_player_profile_form.html",
         {"form": form, "player": player},
     )
+
+
+def _get_gallery_player_or_403(user, player_id):
+    """Gallery editing is linked-parents-only -- no admin override here,
+    unlike parent_player_profile_edit (see PlayerGalleryPhoto)."""
+    player = get_object_or_404(Player, pk=player_id)
+    if not ParentPlayerLink.objects.filter(
+        parent=user, player=player, removed_at__isnull=True
+    ).exists():
+        raise PermissionDenied
+    return player
+
+
+@login_required
+@require_POST
+def parent_player_gallery_add(request, player_id):
+    player = _get_gallery_player_or_403(request.user, player_id)
+    form = PlayerGalleryPhotoForm(request.POST, request.FILES, player=player)
+    if form.is_valid():
+        for image in form.cleaned_data["images"]:
+            PlayerGalleryPhoto.objects.create(
+                player=player, image=downsize_image(image), uploaded_by=request.user
+            )
+        count = len(form.cleaned_data["images"])
+        messages.success(request, f"Added {count} photo{'s' if count != 1 else ''}.")
+    else:
+        for error in form.errors.get("images", []):
+            messages.error(request, error)
+    return redirect(reverse("teams:player_detail", args=[player.pk]) + "#gallery")
+
+
+@login_required
+@require_POST
+def parent_player_gallery_delete(request, player_id, photo_id):
+    player = _get_gallery_player_or_403(request.user, player_id)
+    photo = get_object_or_404(PlayerGalleryPhoto, pk=photo_id, player=player)
+    # Removes the stored file too (R2 or ./media) -- deleting the row alone
+    # would leave it orphaned in storage.
+    photo.image.delete(save=False)
+    photo.delete()
+    messages.success(request, "Photo deleted.")
+    return redirect(reverse("teams:player_detail", args=[player.pk]) + "#gallery")
 
 
 @login_required

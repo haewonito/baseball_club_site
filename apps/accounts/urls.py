@@ -123,6 +123,16 @@ urlpatterns = [
         name="parent_player_profile_edit",
     ),
     path(
+        "dashboard/parent/players/<int:player_id>/gallery/add/",
+        views.parent_player_gallery_add,
+        name="parent_player_gallery_add",
+    ),
+    path(
+        "dashboard/parent/players/<int:player_id>/gallery/<int:photo_id>/delete/",
+        views.parent_player_gallery_delete,
+        name="parent_player_gallery_delete",
+    ),
+    path(
         "dashboard/parent/players/<int:player_id>/invite/",
         views.parent_invite_player,
         name="parent_invite_player",

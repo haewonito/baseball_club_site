@@ -117,4 +117,51 @@
   {% if can_edit_profile %}
     <p><a class="btn btn--primary" href="{% url 'accounts:parent_player_profile_edit' player.pk %}">Edit Profile</a></p>
   {% endif %}
+
+  {% if gallery_photos or can_edit_gallery %}
+    <section class="team-section player-gallery" id="gallery">
+      <h2>More Pictures of {{ player.first_name }}!</h2>
+
+      {% if gallery_photos %}
+        <ul class="gallery-grid">
+          {% for photo in gallery_photos %}
+            <li class="gallery-grid__item">
+              <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                <img src="{{ photo.image.url }}" alt="Photo of {{ player.first_name }}" loading="lazy">
+              </a>
+              {% if can_edit_gallery %}
+                <form
+                  method="post"
+                  action="{% url 'accounts:parent_player_gallery_delete' player.pk photo.pk %}"
+                  onsubmit="return confirm('Delete this photo? This can&#39;t be undone.');"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="link-button">Delete</button>
+                </form>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No photos yet.</p>
+      {% endif %}
+
+      {% if can_edit_gallery %}
+        <form
+          method="post"
+          enctype="multipart/form-data"
+          action="{% url 'accounts:parent_player_gallery_add' player.pk %}"
+          class="gallery-upload"
+        >
+          {% csrf_token %}
+          {% include "partials/_form_field.html" with field=gallery_form.images %}
+          <p class="form-field__help">
+            You can pick several at once. Up to {{ gallery_max_photos }} photos;
+            {% if player.is_public_profile %}visible to anyone, since {{ player.first_name }}'s profile is public.{% else %}visible only to {{ player.first_name }}'s coaches, parents, and club admins.{% endif %}
+          </p>
+          <button class="btn btn--primary" type="submit">Upload</button>
+        </form>
+      {% endif %}
+    </section>
+  {% endif %}
 {% endblock %}

@@ -387,6 +387,34 @@ legend {
   margin-right: 0.5rem;
 }
 
+/* --- Player detail: "More Pictures" gallery ------------------------------ */
+
+.gallery-grid {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.gallery-grid__item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-gray-line);
+}
+
+.gallery-grid__item form {
+  margin-top: 0.25rem;
+}
+
+.gallery-upload {
+  margin-top: 1rem;
+}
+
 /* --- Copy button (next to the contact email) --------------------------- */
 
 /* Icon-only; color: inherit + stroke currentColor so it reads on both the
