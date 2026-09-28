@@ -114,7 +114,12 @@ class Player(models.Model):
     date_of_birth = models.DateField()
     jersey_number = models.PositiveSmallIntegerField(null=True, blank=True)
     team = models.ForeignKey(
-        "teams.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="players"
+        "teams.Team",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="players",
+        limit_choices_to={"is_deleted_placeholder": False},
     )
     # Profile "flair" -- distinct from the roster fields above (name/DOB/
     # jersey/position), which stay coach/admin-only. These three are the

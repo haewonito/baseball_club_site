@@ -117,7 +117,9 @@ class FeeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["player"].queryset = Player.objects.order_by("last_name", "first_name")
-        self.fields["team"].queryset = Team.objects.order_by("-season_year", "division")
+        self.fields["team"].queryset = Team.objects.filter(is_deleted_placeholder=False).order_by(
+            "-season_year", "division"
+        )
 
     def clean(self):
         cleaned_data = super().clean()

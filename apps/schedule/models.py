@@ -23,7 +23,12 @@ class Event(models.Model):
     individual rows here rather than a recurrence-rule/series concept.
     """
 
-    team = models.ForeignKey("teams.Team", on_delete=models.CASCADE, related_name="events")
+    team = models.ForeignKey(
+        "teams.Team",
+        on_delete=models.CASCADE,
+        related_name="events",
+        limit_choices_to={"is_deleted_placeholder": False},
+    )
     event_type = models.CharField(max_length=20, choices=EventType.choices)
     title = models.CharField(max_length=150, blank=True)
     start_datetime = models.DateTimeField()

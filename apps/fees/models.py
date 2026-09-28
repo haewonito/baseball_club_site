@@ -31,7 +31,12 @@ class Fee(models.Model):
         "accounts.Player", on_delete=models.CASCADE, null=True, blank=True, related_name="fees"
     )
     team = models.ForeignKey(
-        "teams.Team", on_delete=models.CASCADE, null=True, blank=True, related_name="fees"
+        "teams.Team",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="fees",
+        limit_choices_to={"is_deleted_placeholder": False},
     )
     description = models.CharField(max_length=150)  # e.g. "2027 season registration"
     amount_due = models.DecimalField(max_digits=8, decimal_places=2)

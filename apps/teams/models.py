@@ -21,21 +21,60 @@ class Team(models.Model):
         default=False,
         help_text="Whether this team appears as a choice on the public try-out sign-up form.",
     )
+    # Marks the single "Deleted team" placeholder (see get_deleted_team
+    # below) -- not a real team. It's never public or accepting try-outs
+    # (forced in save()), is hidden from TeamAdmin so it can't be edited
+    # or deleted, and is left out of every team picker.
+    is_deleted_placeholder = models.BooleanField(default=False, editable=False)
 
     class Meta:
         ordering = ["-season_year", "division"]
         constraints = [
-            models.UniqueConstraint(fields=["name", "season_year"], name="unique_team_name_per_season")
+            models.UniqueConstraint(fields=["name", "season_year"], name="unique_team_name_per_season"),
+            models.UniqueConstraint(
+                fields=["is_deleted_placeholder"],
+                condition=models.Q(is_deleted_placeholder=True),
+                name="single_deleted_team_placeholder",
+            ),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.is_deleted_placeholder:
+            self.is_public = False
+            self.accepting_tryouts = False
+        super().save(*args, **kwargs)
 
     @property
     def season_label(self):
         """e.g. season_year=2027 -> "2026-2027" -- distinguishes this season
-        from the one before/after it more intuitively than a bare year."""
+        from the one before/after it more intuitively than a bare year.
+        The deleted-team placeholder has no season."""
+        if self.is_deleted_placeholder:
+            return ""
         return f"{self.season_year - 1}-{self.season_year}"
 
     def __str__(self):
+        if self.is_deleted_placeholder:
+            return self.name
         return f"{self.name} ({self.season_label})"
+
+
+DELETED_TEAM_NAME = "Deleted team"
+
+
+def get_deleted_team():
+    """
+    The "Deleted team" placeholder that a TryoutSignup moves to when its
+    team is deleted (TryoutSignup.team's on_delete=SET), so a signup always
+    has a team without a deletion being blocked. Created on first use rather
+    than by a data migration, so it comes back after a `flush` too.
+    Returns the pk, which is what on_delete=SET needs.
+    """
+    team, _ = Team.objects.get_or_create(
+        is_deleted_placeholder=True,
+        defaults={"name": DELETED_TEAM_NAME, "division": "", "season_year": 0},
+    )
+    return team.pk
 
 
 class TeamCoachRole(models.TextChoices):
@@ -51,7 +90,12 @@ class TeamCoach(models.Model):
     the same permission level -- this field is for display only.
     """
 
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="coach_assignments")
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name="coach_assignments",
+        limit_choices_to={"is_deleted_placeholder": False},
+    )
     coach = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="team_assignments"
     )

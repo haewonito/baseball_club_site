@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from apps.teams.models import Position
+from apps.teams.models import Position, get_deleted_team
 
 
 class TryoutYearSettings(models.Model):
@@ -75,11 +75,13 @@ class TryoutSignup(models.Model):
     """Public, no-login submission from a prospective family."""
 
     # Which team's tryout this is for -- the parent picks from whichever
-    # teams currently have Team.accepting_tryouts=True. PROTECT rather than
-    # CASCADE/SET_NULL: a signup is a historical record, and losing which
-    # team it was for isn't something a Team deletion should silently do.
+    # teams currently have Team.accepting_tryouts=True. Deleting a team
+    # doesn't delete its signups (they're historical records) or block the
+    # delete: they move to the "Deleted team" placeholder instead, and
+    # TeamAdmin's delete confirmation warns which ones. A signup on the
+    # placeholder can't be emailed, responded to or promoted to a roster.
     team = models.ForeignKey(
-        "teams.Team", on_delete=models.PROTECT, related_name="tryout_signups"
+        "teams.Team", on_delete=models.SET(get_deleted_team), related_name="tryout_signups"
     )
     player_first_name = models.CharField(max_length=100)
     player_last_name = models.CharField(max_length=100)
@@ -177,6 +179,8 @@ class TryoutSignup(models.Model):
         return self.team.season_label
 
     def __str__(self):
+        if self.team.is_deleted_placeholder:
+            return f"{self.player_full_name} ({self.team.name})"
         return f"{self.player_full_name} ({self.season_label})"
 
 

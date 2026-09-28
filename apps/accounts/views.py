@@ -97,7 +97,8 @@ def admin_tryouts_list(request):
     )
     years = [
         (year, f"{year - 1}-{year}")
-        for year in TryoutSignup.objects.order_by("-team__season_year")
+        for year in TryoutSignup.objects.filter(team__is_deleted_placeholder=False)
+        .order_by("-team__season_year")
         .values_list("team__season_year", flat=True)
         .distinct()
     ]
@@ -197,6 +198,9 @@ def admin_tryout_promote(request, pk):
         return redirect("accounts:admin_tryout_detail", pk=signup.pk)
     if not signup.date_of_birth:
         messages.error(request, "Can't promote -- this sign-up is missing a date of birth.")
+        return redirect("accounts:admin_tryout_detail", pk=signup.pk)
+    if signup.team.is_deleted_placeholder:
+        messages.error(request, "Can't promote -- the team this sign-up was for was deleted.")
         return redirect("accounts:admin_tryout_detail", pk=signup.pk)
 
     player = promote_signup_to_roster(signup, created_by=request.user)
@@ -369,7 +373,7 @@ def admin_schedule(request):
     switcher doesn't reach them. Includes not-yet-public teams."""
     if not request.user.is_admin:
         raise PermissionDenied
-    teams = Team.objects.order_by("-season_year", "name")
+    teams = Team.objects.filter(is_deleted_placeholder=False).order_by("-season_year", "name")
     return render(request, "accounts/admin_schedule.html", {"teams": teams})
 
 
@@ -510,7 +514,7 @@ def coach_roster(request, team_id):
     # Destination options for the bulk "move to team" action below -- every
     # other team, not just public ones, since the age-up case is moving
     # players onto a newly pre-created team that isn't public yet.
-    other_teams = Team.objects.exclude(pk=team.pk).order_by("-season_year", "name")
+    other_teams = Team.objects.exclude(pk=team.pk).filter(is_deleted_placeholder=False).order_by("-season_year", "name")
     return render(
         request,
         "accounts/coach_roster.html",

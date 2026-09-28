@@ -19,7 +19,7 @@ def signup(request):
     """
     accepting_tryouts = (
         TryoutPoster.objects.filter(is_active=True).exists()
-        and Team.objects.filter(accepting_tryouts=True).exists()
+        and Team.objects.filter(accepting_tryouts=True, is_deleted_placeholder=False).exists()
     )
     form = None
     if accepting_tryouts:
@@ -56,7 +56,8 @@ def respond(request, token):
         TryoutResponseInvite.objects.select_related("signup", "signup__team"), token=token
     )
 
-    if not invite.is_valid:
+    # A signup whose team was deleted has no spot left to accept.
+    if not invite.is_valid or invite.signup.team.is_deleted_placeholder:
         return render(request, "tryouts/respond_invalid.html", {"invite": invite})
 
     signup = invite.signup

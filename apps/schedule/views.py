@@ -26,7 +26,7 @@ def schedule_list(request):
         "schedule/list.html",
         {
             "events": events,
-            "teams": Team.objects.filter(is_public=True).order_by("-season_year", "division"),
+            "teams": Team.objects.filter(is_public=True, is_deleted_placeholder=False).order_by("-season_year", "division"),
             "selected_team_id": team_id,
         },
     )

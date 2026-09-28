@@ -21,7 +21,7 @@ _HEAD_FIRST = Case(
 
 def team_index(request):
     """Public teams index. No login required."""
-    teams = Team.objects.filter(is_public=True).order_by("-season_year", "division")
+    teams = Team.objects.filter(is_public=True, is_deleted_placeholder=False).order_by("-season_year", "division")
     return render(request, "teams/index.html", {"teams": teams})
 
 

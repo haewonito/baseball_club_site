@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
+from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
@@ -48,6 +49,52 @@ class TeamAdmin(admin.ModelAdmin):
         else:
             messages.success(request, f'"{team}" reverted to draft -- no longer public.')
         return redirect("admin:teams_team_change", object_id)
+
+    # The "Deleted team" placeholder (Team.is_deleted_placeholder) isn't a
+    # real team: hidden here so it can't be edited, published or deleted.
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_deleted_placeholder=False)
+
+    # Deleting a team keeps its try-out signups (moved to the "Deleted team"
+    # placeholder) and players (left team-less), which Django's own delete
+    # confirmation doesn't mention -- it only lists what gets deleted. Both
+    # delete paths (the per-team Delete button and the bulk "Delete
+    # selected" action) get a warning listing them; the templates are
+    # apps/teams/templates/admin/teams/team/delete_*confirmation.html.
+    def delete_view(self, request, object_id, extra_context=None):
+        response = super().delete_view(request, object_id, extra_context)
+        return self._add_delete_warning(response, Team.objects.filter(pk=object_id))
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if "delete_selected" in actions:
+            delete_selected, name, description = actions["delete_selected"]
+
+            def delete_selected_with_warning(modeladmin, request, queryset):
+                response = delete_selected(modeladmin, request, queryset)
+                return modeladmin._add_delete_warning(response, queryset)
+
+            actions["delete_selected"] = (delete_selected_with_warning, name, description)
+        return actions
+
+    def _add_delete_warning(self, response, teams):
+        # Only the confirmation page is a TemplateResponse; the confirmed
+        # POST redirects, and by then the rows have already moved.
+        if isinstance(response, TemplateResponse) and response.context_data is not None:
+            from apps.accounts.models import Player
+            from apps.tryouts.models import TryoutSignup
+
+            response.context_data["signups_to_move"] = list(
+                TryoutSignup.objects.filter(team__in=teams)
+                .select_related("team")
+                .order_by("team__name", "player_last_name", "player_first_name")
+            )
+            response.context_data["players_to_detach"] = list(
+                Player.objects.filter(team__in=teams)
+                .select_related("team")
+                .order_by("team__name", "last_name", "first_name")
+            )
+        return response
 
     def get_fieldsets(self, request, obj=None):
         if obj is None:

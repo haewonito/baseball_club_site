@@ -1,0 +1,25 @@
+{# Shown above Django's own delete confirmation (see TeamAdmin._add_delete_warning): these rows are kept, not deleted, so Django's "will be deleted" list doesn't mention them. #}
+{% if signups_to_move or players_to_detach %}
+  <div style="border: 1px solid #a50d26; background: #fdf1f2; padding: 0.75rem 1rem; margin-bottom: 1.5rem;">
+    <p style="color: #a50d26; margin-top: 0;"><strong>Warning:</strong> these will be kept but disconnected from the team.</p>
+    {% if signups_to_move %}
+      <p>{{ signups_to_move|length }} try-out sign-up{{ signups_to_move|length|pluralize }}
+        will be moved to &ldquo;Deleted team&rdquo;. They can no longer be emailed, accepted or
+        promoted to a roster.</p>
+      <ul>
+        {% for signup in signups_to_move %}
+          <li>{{ signup.player_full_name }} ({{ signup.team.name }})</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if players_to_detach %}
+      <p>{{ players_to_detach|length }} player{{ players_to_detach|length|pluralize }}
+        will be taken off the roster and left without a team:</p>
+      <ul>
+        {% for player in players_to_detach %}
+          <li>{{ player.first_name }} {{ player.last_name }} ({{ player.team.name }})</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endif %}

@@ -17,10 +17,11 @@ def promote_signup_to_roster(signup, created_by):
 
     Runs automatically when a family accepts (apps.tryouts.views.respond),
     with the admin's "Promote to Roster" button as the fallback. Returns
-    the Player, or None if it can't promote: already promoted, or no date
-    of birth (optional on the sign-up form but required on Player).
+    the Player, or None if it can't promote: already promoted, no date of
+    birth (optional on the sign-up form but required on Player), or its
+    team was deleted (the signup is on the "Deleted team" placeholder).
     """
-    if signup.promoted_player_id or not signup.date_of_birth:
+    if signup.promoted_player_id or not signup.date_of_birth or signup.team.is_deleted_placeholder:
         return None
 
     player = Player.objects.create(

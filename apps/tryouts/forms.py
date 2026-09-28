@@ -18,7 +18,7 @@ class TryoutSignupForm(forms.ModelForm):
     """
 
     team = forms.ModelChoiceField(
-        queryset=Team.objects.filter(accepting_tryouts=True).order_by("-season_year", "division"),
+        queryset=Team.objects.filter(accepting_tryouts=True, is_deleted_placeholder=False).order_by("-season_year", "division"),
         label="Which team are you trying out for?",
         empty_label="Select a team",
     )
