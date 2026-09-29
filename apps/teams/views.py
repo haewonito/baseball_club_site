@@ -1,4 +1,4 @@
-from django.db.models import Case, IntegerField, Prefetch, Value, When
+from django.db.models import Case, F, IntegerField, Prefetch, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -70,7 +70,9 @@ def coach_index(request):
         .distinct()
         .select_related("coach_profile")
         .prefetch_related(Prefetch("team_assignments", queryset=public_assignments))
-        .order_by("last_name", "first_name")
+        # Pinned coaches (CoachProfile.list_first -- the club owner) first,
+        # then by last name. A coach with no profile yet sorts as unpinned.
+        .order_by(F("coach_profile__list_first").desc(nulls_last=True), "last_name", "first_name")
     )
     return render(request, "teams/coaches.html", {"coaches": coaches})
 

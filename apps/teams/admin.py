@@ -153,4 +153,5 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(CoachProfile)
 class CoachProfileAdmin(admin.ModelAdmin):
-    list_display = ("coach",)
+    list_display = ("coach", "list_first")
+    list_editable = ("list_first",)

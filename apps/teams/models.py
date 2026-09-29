@@ -120,6 +120,12 @@ class CoachProfile(models.Model):
     bio_text = models.TextField(blank=True)
     photo = models.ImageField(upload_to="coach_photos/", blank=True, null=True)
     contact_email = models.EmailField(blank=True)  # optional; may route through admins instead
+    # Pins this coach above the alphabetical list on the public Coaches
+    # page (the club owner). Admin-set only, via Django admin.
+    list_first = models.BooleanField(
+        default=False,
+        help_text="Show this coach at the top of the public Coaches page.",
+    )
 
     class Meta:
         ordering = ["coach__last_name", "coach__first_name"]
