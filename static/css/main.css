@@ -149,14 +149,20 @@ a:hover {
 }
 
 /* Who's logged in, at the far right of the nav. */
-.site-nav__welcome {
-  color: var(--color-gray-line);
-  font-size: 0.9rem;
-}
-
 .site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 2.5rem;
   font-size: 0.85rem;
   color: #cccccc;
+}
+
+.site-footer__inner p {
+  margin: 0;
+}
+
+.site-footer__welcome {
+  color: var(--color-white);
 }
 
 /* --- Main content (white surface) ------------------------------------ */

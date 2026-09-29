@@ -43,7 +43,6 @@
             {% csrf_token %}
             <button type="submit">Log Out</button>
           </form>
-          <span class="site-nav__welcome">Welcome, {{ user.first_name|default:user.email }}</span>
         {% else %}
           <a href="{% url 'accounts:login' %}">Log In</a>
         {% endif %}
@@ -67,6 +66,9 @@
       <p>&copy; {% now "Y" %} Choice Select</p>
       <p>{% include "partials/_contact_email.html" %}</p>
       <p><a href="https://www.facebook.com/ChoiceSelectBaseball/" target="_blank" rel="noopener noreferrer">Facebook</a></p>
+      {% if user.is_authenticated %}
+        <p class="site-footer__welcome">Welcome, {{ user.first_name|default:user.email }}</p>
+      {% endif %}
     </div>
   </footer>
 
