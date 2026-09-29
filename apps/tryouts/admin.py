@@ -9,7 +9,6 @@ from .models import (
     TryoutResponseInvite,
     TryoutSignup,
     TryoutSignupPosition,
-    TryoutStatusChange,
     TryoutYearSettings,
 )
 
@@ -28,11 +27,10 @@ class TryoutSignupAdmin(admin.ModelAdmin):
         "parent_phone",
         "submitted_at",
         "team",
-        "status",
         "coach_decision",
         "family_response",
     )
-    list_filter = ("team", "status", "coach_decision", "family_response")
+    list_filter = ("team", "coach_decision", "family_response")
     search_fields = (
         "player_first_name",
         "player_last_name",
@@ -52,31 +50,6 @@ class TryoutYearSettingsAdmin(admin.ModelAdmin):
     list_display = ("next_tryout_date",)
 
 
-@admin.register(TryoutStatusChange)
-class TryoutStatusChangeAdmin(admin.ModelAdmin):
-    """
-    Read-only -- this is an append-only audit trail (see CLAUDE.md), so
-    editing rows here would let an admin falsify history that's meant to be
-    immutable. Rows are written by the status-change flow on the custom
-    admin dashboard, not created here.
-
-    Superusers may delete, though: deleting a TryoutSignup cascades to its
-    audit rows, and Django admin refuses the whole signup deletion unless
-    it may delete those rows too.
-    """
-
-    list_display = ("signup", "old_status", "new_status", "changed_by", "changed_at")
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-
 @admin.register(TryoutResponseInvite)
 class TryoutResponseInviteAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
     set_on_create = ("created_by",)
@@ -85,7 +58,7 @@ class TryoutResponseInviteAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
 
 @admin.register(TryoutDecisionChange)
 class TryoutDecisionChangeAdmin(admin.ModelAdmin):
-    """Read-only except superuser deletes, same reasoning as TryoutStatusChangeAdmin above."""
+    """Read-only except superuser deletes, same reasoning as the decision-change audit admin."""
 
     list_display = ("signup", "old_decision", "new_decision", "changed_by", "changed_at")
 

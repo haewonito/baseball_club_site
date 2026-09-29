@@ -3,7 +3,7 @@
   {% if send_failed %}
     <span class="email-action__error">Couldn't send -- try again.</span>
   {% endif %}
-  {% if signup.coach_decision == "undecided" %}
+  {% if signup.coach_decision == "undecided" or signup.coach_decision == "unattended" %}
     <span class="email-action__hint">Set a decision first</span>
   {% elif signup.decision_emailed_at %}
     <button class="btn" type="button" disabled>

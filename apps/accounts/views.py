@@ -30,8 +30,6 @@ from apps.tryouts.models import (
     TryoutPoster,
     TryoutResponseInvite,
     TryoutSignup,
-    TryoutStatus,
-    TryoutStatusChange,
 )
 
 from .emails import send_parent_invite_email
@@ -129,7 +127,6 @@ def admin_tryouts_list(request):
             "signups": signups,
             "years": years,
             "selected_year": selected_year,
-            "status_choices": TryoutStatus.choices,
             "decision_choices": TryoutDecision.choices,
         },
     )
@@ -146,7 +143,6 @@ def admin_tryout_detail(request, pk):
         ),
         pk=pk,
     )
-    status_changes = signup.status_changes.select_related("changed_by").order_by("-changed_at")
     decision_changes = signup.decision_changes.select_related("changed_by").order_by("-changed_at")
     existing_player = None
     if not signup.promoted_player_id:
@@ -158,42 +154,8 @@ def admin_tryout_detail(request, pk):
         {
             "signup": signup,
             "existing_player": existing_player,
-            "status_choices": TryoutStatus.choices,
             "decision_choices": TryoutDecision.choices,
-            "status_changes": status_changes,
             "decision_changes": decision_changes,
-        },
-    )
-
-
-@login_required
-@require_POST
-def admin_tryout_status_change(request, pk):
-    signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
-    if not _can_manage_tryout_signup(request.user, signup.team):
-        raise PermissionDenied
-
-    new_status = request.POST.get("status", "")
-    if new_status not in dict(TryoutStatus.choices):
-        return HttpResponseBadRequest("Invalid status")
-
-    if new_status != signup.status:
-        TryoutStatusChange.objects.create(
-            signup=signup,
-            old_status=signup.status,
-            new_status=new_status,
-            changed_by=request.user,
-        )
-        signup.status = new_status
-        signup.save(update_fields=["status"])
-
-    return render(
-        request,
-        "partials/_tryout_status_select.html",
-        {
-            "signup": signup,
-            "status_choices": TryoutStatus.choices,
-            "confirm": request.POST.get("confirm") == "1",
         },
     )
 
@@ -538,10 +500,9 @@ def _get_roster_team_or_404(user, team_id):
 
 
 def _can_manage_tryout_signup(user, team):
-    # Both Status and Decision are now editable from either dashboard
-    # (admin_tryout_status_change, coach_tryout_decision_change) -- an
-    # admin can act on any signup, a coach only on their own team's, same
-    # scoping as roster/practice editing.
+    # The decision is editable from either dashboard
+    # (coach_tryout_decision_change) -- an admin can act on any signup, a
+    # coach only on their own team's, same scoping as roster/practice editing.
     return user.is_admin or TeamCoach.objects.filter(coach=user, team=team).exists()
 
 
@@ -796,11 +757,11 @@ def coach_tryouts(request):
     if selected_team_id:
         signups = signups.filter(team_id=selected_team_id)
 
-    # Editing (status, decision, sending its email) is scoped to the
-    # coach's own team(s) -- viewing every signup stays "all teams, all
-    # years" per the coach dashboard's design, but the status/decision
-    # dropdowns and send button only render as editable for the rows this
-    # coach is actually allowed to act on.
+    # Editing (decision, sending its email) is scoped to the coach's own
+    # team(s) -- viewing every signup stays "all teams, all years" per the
+    # coach dashboard's design, but the decision dropdown and send button
+    # only render as editable for the rows this coach is actually allowed
+    # to act on.
     my_team_ids = set(
         TeamCoach.objects.filter(coach=request.user).values_list("team_id", flat=True)
     )
@@ -810,7 +771,6 @@ def coach_tryouts(request):
         {
             "signups": signups,
             "decision_choices": TryoutDecision.choices,
-            "status_choices": TryoutStatus.choices,
             "my_team_ids": my_team_ids,
             "teams": teams,
             "selected_team_id": selected_team_id,

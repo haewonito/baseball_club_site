@@ -6,7 +6,7 @@
   <section class="page-hero">
     <h1>Try-Out Sign-Ups</h1>
     <p>
-      All teams, all years. You can set the Status and Decision, and send the decision
+      All teams, all years. You can set the Decision, and send the decision
       email, for your own team's sign-ups; everything else here is view-only.
     </p>
     <p>
@@ -45,7 +45,6 @@
           <th>Phone</th>
           <th>Submitted</th>
           <th>Season</th>
-          <th>Status</th>
           <th>Decision</th>
           <th>Email</th>
         </tr>
@@ -60,13 +59,6 @@
             <td>{{ signup.parent_phone }}</td>
             <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
             <td>{{ signup.season_label }}</td>
-            <td>
-              {% if signup.team_id in my_team_ids %}
-                {% include "partials/_tryout_status_select.html" with signup=signup status_choices=status_choices %}
-              {% else %}
-                {{ signup.get_status_display }}
-              {% endif %}
-            </td>
             <td>
               {% if signup.team_id in my_team_ids %}
                 {% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}

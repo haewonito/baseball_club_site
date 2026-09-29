@@ -13,11 +13,6 @@ urlpatterns = [
     path("dashboard/admin/tryouts/", views.admin_tryouts_list, name="admin_tryouts_list"),
     path("dashboard/admin/tryouts/<int:pk>/", views.admin_tryout_detail, name="admin_tryout_detail"),
     path(
-        "dashboard/admin/tryouts/<int:pk>/status/",
-        views.admin_tryout_status_change,
-        name="admin_tryout_status_change",
-    ),
-    path(
         "dashboard/admin/tryouts/<int:pk>/promote/",
         views.admin_tryout_promote,
         name="admin_tryout_promote",

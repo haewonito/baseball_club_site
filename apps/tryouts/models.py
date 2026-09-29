@@ -37,25 +37,19 @@ class TryoutYearSettings(models.Model):
         return row.next_tryout_date if row else None
 
 
-class TryoutStatus(models.TextChoices):
-    NEW = "new", "New"
-    CONTACTED = "contacted", "Contacted"
-    ATTENDED = "attended", "Attended"
-
-
 class TryoutDecision(models.TextChoices):
     """
-    Separate axis from TryoutStatus above -- status tracks contact/
-    attendance logistics, this tracks the actual roster call. Never shown
-    to the family until a signup resolves to INVITE/NOT_SELECTED -- a coach
-    can send that signup's decision email as soon as it's set, independent
-    of every other signup on the team (see
-    apps.accounts.views.coach_tryout_send_email).
+    The coach's roster call. UNATTENDED means the kid didn't show up to the
+    try-out; like UNDECIDED it has no email. Never shown to the family until
+    a signup resolves to INVITE/NOT_SELECTED -- a coach can send that
+    signup's decision email as soon as it's set, independent of every other
+    signup on the team (see apps.accounts.views.coach_tryout_send_email).
     """
 
     UNDECIDED = "undecided", "Undecided"
     INVITE = "invite", "Invite"
     NOT_SELECTED = "not_selected", "Not Selected"
+    UNATTENDED = "unattended", "Unattended"
 
 
 class TryoutFamilyResponse(models.TextChoices):
@@ -101,9 +95,6 @@ class TryoutSignup(models.Model):
 
     submitted_at = models.DateTimeField(auto_now_add=True)
 
-    status = models.CharField(
-        max_length=20, choices=TryoutStatus.choices, default=TryoutStatus.NEW
-    )
     admin_notes = models.TextField(blank=True)
 
     # Set by whichever coach is assigned to `team` -- see
@@ -209,30 +200,9 @@ class TryoutSignupPosition(models.Model):
         return f"{self.signup} - {self.get_position_display()}"
 
 
-class TryoutStatusChange(models.Model):
-    """
-    Audit trail for status changes -- pairs with the confirmation-dialog
-    UX so an admin's status edit is deliberate and traceable.
-    """
-
-    signup = models.ForeignKey(
-        TryoutSignup, on_delete=models.CASCADE, related_name="status_changes"
-    )
-    old_status = models.CharField(max_length=20, choices=TryoutStatus.choices)
-    new_status = models.CharField(max_length=20, choices=TryoutStatus.choices)
-    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    changed_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "Try-Out Status Change"
-        verbose_name_plural = "Try-Out Status Changes"
-
-
 class TryoutDecisionChange(models.Model):
     """
-    Audit trail for coach_decision changes -- same append-only pattern as
-    TryoutStatusChange above, just on the coach-driven axis instead of the
-    admin-driven one.
+    Audit trail for coach_decision changes -- append-only, so a decision edit is traceable.
     """
 
     signup = models.ForeignKey(
