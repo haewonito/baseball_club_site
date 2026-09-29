@@ -744,36 +744,32 @@ def coach_event_delete(request, team_id, kind, event_id):
 def coach_tryouts(request):
     if not request.user.is_coach:
         raise PermissionDenied
-    signups = TryoutSignup.objects.select_related("team").prefetch_related("positions").order_by(
-        "player_last_name", "player_first_name"
+    # A coach only ever sees sign-ups for the teams they coach, one team at
+    # a time (the newest season first). An unknown or not-theirs ?team= just
+    # falls back to the first team rather than erroring.
+    teams = list(
+        Team.objects.filter(is_deleted_placeholder=False, coach_assignments__coach=request.user)
+        .distinct()
+        .order_by("-season_year", "name")
     )
-    # "All teams, all years" stays the coach dashboard's baseline view --
-    # the team filter below narrows what's *shown*, it's not a permission
-    # boundary (that's still my_team_ids, for the decision/email actions).
-    teams = Team.objects.filter(
-        pk__in=signups.values_list("team_id", flat=True)
-    ).distinct().order_by("-season_year", "name")
-    selected_team_id = request.GET.get("team")
-    if selected_team_id:
-        signups = signups.filter(team_id=selected_team_id)
-
-    # Editing (decision, sending its email) is scoped to the coach's own
-    # team(s) -- viewing every signup stays "all teams, all years" per the
-    # coach dashboard's design, but the decision dropdown and send button
-    # only render as editable for the rows this coach is actually allowed
-    # to act on.
-    my_team_ids = set(
-        TeamCoach.objects.filter(coach=request.user).values_list("team_id", flat=True)
-    )
+    selected_team = next((t for t in teams if str(t.pk) == request.GET.get("team")), None)
+    if selected_team is None and teams:
+        selected_team = teams[0]
+    signups = TryoutSignup.objects.none()
+    if selected_team:
+        signups = (
+            TryoutSignup.objects.filter(team=selected_team)
+            .prefetch_related("positions")
+            .order_by("player_last_name", "player_first_name")
+        )
     return render(
         request,
         "accounts/coach_tryouts.html",
         {
             "signups": signups,
             "decision_choices": TryoutDecision.choices,
-            "my_team_ids": my_team_ids,
             "teams": teams,
-            "selected_team_id": selected_team_id,
+            "selected_team": selected_team,
         },
     )
 
@@ -926,7 +922,17 @@ def tryout_mass_email(request):
     )
     if decision:
         signups = signups.filter(coach_decision=decision)
-    recipients = _mass_email_recipients(signups)
+    all_recipients = _mass_email_recipients(signups)
+    recipients = all_recipients
+    for family in all_recipients:
+        family["checked"] = True
+    if request.method == "POST":
+        # The coach may untick families. Only ever narrows the list computed
+        # above from the filter, so a forged address can't be added.
+        chosen = {e.strip().lower() for e in request.POST.getlist("recipient")}
+        for family in all_recipients:
+            family["checked"] = family["email"].lower() in chosen
+        recipients = [r for r in all_recipients if r["checked"]]
 
     reply_to = user.email
     profile = getattr(user, "coach_profile", None)
@@ -937,7 +943,7 @@ def tryout_mass_email(request):
     if request.method == "POST":
         form = TryoutMassEmailForm(request.POST)
         if not recipients:
-            form.add_error(None, "No families match this filter, so there's no one to email.")
+            form.add_error(None, "No families are selected, so there's no one to email.")
         if form.is_valid():
             body = (
                 f"{form.cleaned_data['body'].rstrip()}\n\n"
@@ -988,6 +994,7 @@ def tryout_mass_email(request):
         {
             "form": form,
             "recipients": recipients,
+            "all_recipients": all_recipients,
             "filter_teams": filter_teams,
             "selected_team": selected_team,
             "selected_decision": decision,

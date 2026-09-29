@@ -4,8 +4,10 @@
 
 {% block content %}
   <section class="page-hero">
-    <h1>Coach Dashboard <span class="page-hero__subname">{{ user }}</span></h1>
-    <p><a href="{% url 'accounts:coach_profile_edit' %}">Edit my coach profile &rarr;</a></p>
+    <div class="page-hero__row">
+      <h1>Coach Dashboard <span class="page-hero__subname">{{ user }}</span></h1>
+      <a class="btn btn--small" href="{% url 'accounts:coach_profile_edit' %}">Edit my profile</a>
+    </div>
   </section>
 
   {% if not assignments %}
@@ -36,8 +38,11 @@
   {% endif %}
 
   <section class="team-section">
-    <a href="{% url 'accounts:coach_tryouts' %}">View all try-out sign-ups &rarr;</a>
-    &middot;
-    <a href="{% url 'accounts:tryout_mass_email' %}">Email try-out families &rarr;</a>
+    <h2>Try-Outs</h2>
+    <p>Review sign-ups and set decisions across all teams.</p>
+    <div class="dashboard-links">
+      <a class="btn" href="{% url 'accounts:coach_tryouts' %}">Sign-Ups</a>
+      <a class="btn" href="{% url 'accounts:tryout_mass_email' %}">Email Families</a>
+    </div>
   </section>
 {% endblock %}

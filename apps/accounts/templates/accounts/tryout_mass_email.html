@@ -11,7 +11,7 @@
     </p>
   </section>
 
-  <form class="filter-form" method="get">
+  <form class="filter-form filter-form--wide" method="get">
     <div class="form-row">
       <div class="form-field">
         <label for="id_team">Team</label>
@@ -34,14 +34,22 @@
     </div>
   </form>
 
-  <section class="team-section">
-    <h2>Recipients ({{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }})</h2>
-    {% if recipients %}
-      <details>
-        <summary>Show who will get this email</summary>
+  <form
+    method="post"
+    id="mass-email-form"
+    data-count-label="famil"
+  >
+    {% csrf_token %}
+    <input type="hidden" name="team" value="{{ selected_team.pk|default:'' }}">
+    <input type="hidden" name="decision" value="{{ selected_decision }}">
+
+    <section class="team-section">
+      <h2>Recipients (<span id="recipient-count">{{ recipients|length }}</span> of {{ all_recipients|length }} selected)</h2>
+      {% if all_recipients %}
         <table class="roster-table">
           <thead>
             <tr>
+              <th><input type="checkbox" id="recipient-all" aria-label="Select all families" {% if recipients|length == all_recipients|length %}checked{% endif %}></th>
               <th>Parent</th>
               <th>Email</th>
               <th>Player</th>
@@ -50,9 +58,14 @@
             </tr>
           </thead>
           <tbody>
-            {% for family in recipients %}
+            {% for family in all_recipients %}
               {% for signup in family.signups %}
                 <tr>
+                  <td>
+                    {% if forloop.first %}
+                      <input type="checkbox" class="recipient-box" name="recipient" value="{{ family.email }}" aria-label="Email {{ family.parent }}" {% if family.checked %}checked{% endif %}>
+                    {% endif %}
+                  </td>
                   <td>{% if forloop.first %}{{ family.parent }}{% endif %}</td>
                   <td>{% if forloop.first %}{{ family.email }}{% endif %}</td>
                   <td>{{ signup.player_full_name }}</td>
@@ -63,26 +76,18 @@
             {% endfor %}
           </tbody>
         </table>
-      </details>
-    {% else %}
-      <p>No families match this filter.</p>
-    {% endif %}
-  </section>
+      {% else %}
+        <p>No families match this filter.</p>
+      {% endif %}
+    </section>
 
-  <section class="team-section">
-    <h2>Message</h2>
-    {% if form.non_field_errors %}
-      <div class="form-errors">
-        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-      </div>
-    {% endif %}
-    <form
-      method="post"
-      onsubmit="return confirm('Send this email to {{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }}?');"
-    >
-      {% csrf_token %}
-      <input type="hidden" name="team" value="{{ selected_team.pk|default:'' }}">
-      <input type="hidden" name="decision" value="{{ selected_decision }}">
+    <section class="team-section">
+      <h2>Message</h2>
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
       {% include "partials/_form_field.html" with field=form.subject %}
       {% include "partials/_form_field.html" with field=form.body %}
       <p class="form-field__help">
@@ -90,11 +95,38 @@
         Emails from the site often land in spam, so for anything important consider also
         mentioning it in person or by text.
       </p>
-      <button class="btn btn--primary" type="submit" {% if not recipients %}disabled{% endif %}>
+      <button class="btn btn--primary" id="send-button" type="submit" {% if not recipients %}disabled{% endif %}>
         Send to {{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }}
       </button>
-    </form>
-  </section>
+    </section>
+  </form>
+
+  <script>
+    (function () {
+      var form = document.getElementById("mass-email-form");
+      var boxes = form.querySelectorAll(".recipient-box");
+      var all = document.getElementById("recipient-all");
+      var button = document.getElementById("send-button");
+      var count = document.getElementById("recipient-count");
+      function label(n) { return n + " " + (n === 1 ? "family" : "families"); }
+      function refresh() {
+        var n = form.querySelectorAll(".recipient-box:checked").length;
+        count.textContent = n;
+        button.textContent = "Send to " + label(n);
+        button.disabled = n === 0;
+        if (all) all.checked = n === boxes.length;
+      }
+      if (all) all.addEventListener("change", function () {
+        boxes.forEach(function (b) { b.checked = all.checked; });
+        refresh();
+      });
+      boxes.forEach(function (b) { b.addEventListener("change", refresh); });
+      form.addEventListener("submit", function (e) {
+        var n = form.querySelectorAll(".recipient-box:checked").length;
+        if (!confirm("Send this email to " + label(n) + "?")) e.preventDefault();
+      });
+    })();
+  </script>
 
   <section class="team-section">
     <h2>Sent Emails</h2>
