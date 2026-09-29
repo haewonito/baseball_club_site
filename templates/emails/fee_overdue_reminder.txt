@@ -1,6 +1,6 @@
 {% autoescape off %}Hi {{ parent.first_name|default:"there" }},
 
-This is {{ assistant_name }}, Lindsay's automated assistant at Choice Select. I keep an eye on our payment records so Lindsay doesn't have to chase down every balance by hand.
+This is {{ assistant_name }}, Lindsay's automated assistant at Choice Select.
 
 Our records show a balance on {{ player.first_name }}'s account that was due on {{ fee.due_date|date:"F j" }}:
 
@@ -9,10 +9,8 @@ Our records show a balance on {{ player.first_name }}'s account that was due on 
   Paid so far:  ${{ amount_paid }}
   Balance:      ${{ balance }}
 
-When you get a chance, please take care of the remaining balance.
 
-Already paid? Thank you, and sorry for the nudge! Payments are entered by hand, so yours may not be recorded yet. You can see {{ player.first_name }}'s full payment history anytime on your Parent Dashboard:
-{{ payments_url }}
+Already paid? Apologies and disregard this email.  Sometimes the system lags.
 
 Questions or concerns? Contact us at {{ contact_email }}.
 
@@ -20,5 +18,6 @@ Thanks,
 {{ assistant_name }}
 Choice Select's automated assistant
 
-You're getting this because you're {{ player.first_name }}'s primary parent on the Choice Select site. If this email landed in your spam folder, please mark it "Not spam" or add {{ contact_email }} to your contacts, so future updates reach your inbox.
+p.s.
+This email goes out only to the player's primary parent.
 {% endautoescape %}
