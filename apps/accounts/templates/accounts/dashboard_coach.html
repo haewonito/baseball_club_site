@@ -5,6 +5,7 @@
 {% block content %}
   <section class="page-hero">
     <h1>Coach Dashboard <span class="page-hero__subname">{{ user }}</span></h1>
+    <p><a href="{% url 'accounts:coach_profile_edit' %}">Edit my coach profile &rarr;</a></p>
   </section>
 
   {% if not assignments %}

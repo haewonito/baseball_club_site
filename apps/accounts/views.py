@@ -403,6 +403,36 @@ def admin_coach_bio_edit(request, user_id):
     )
 
 
+
+@login_required
+def coach_profile_edit(request):
+    """A coach edits their own public coach page (bio, photo, contact
+    email) -- same form admins use in admin_coach_bio_edit. Name and team
+    assignments stay admin-managed."""
+    if not request.user.is_coach:
+        raise PermissionDenied
+
+    profile, _ = CoachProfile.objects.get_or_create(coach=request.user)
+    if request.method == "POST":
+        form = CoachProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your coach profile has been updated.")
+            return redirect("teams:coach_detail", pk=request.user.pk)
+    else:
+        form = CoachProfileForm(instance=profile)
+    return render(
+        request,
+        "accounts/admin_coach_bio_form.html",
+        {
+            "form": form,
+            "coach": request.user,
+            "is_own_profile": True,
+            "back_url": reverse("accounts:dashboard_coach"),
+            "back_label": "Back to dashboard",
+        },
+    )
+
 @login_required
 def admin_tryout_posters_list(request):
     if not request.user.is_admin:

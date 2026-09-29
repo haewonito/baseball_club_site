@@ -59,6 +59,7 @@ urlpatterns = [
         name="admin_tryout_poster_delete",
     ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
+    path("dashboard/coach/profile/", views.coach_profile_edit, name="coach_profile_edit"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
     path("dashboard/tryouts/email/", views.tryout_mass_email, name="tryout_mass_email"),
     path(

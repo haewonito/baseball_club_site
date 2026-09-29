@@ -35,5 +35,9 @@
     </section>
   {% endif %}
 
+  {% if user.is_authenticated and user.pk == coach.pk %}
+    <p><a class="btn" href="{% url 'accounts:coach_profile_edit' %}">Edit my profile</a></p>
+  {% endif %}
+
   <p class="back-link"><a href="{% url 'teams:coaches' %}">&larr; Back to coaches</a></p>
 {% endblock %}

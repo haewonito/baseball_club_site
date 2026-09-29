@@ -49,7 +49,7 @@ unpaid.
 - [ ] **Teams index** lists only public teams, with seasons shown as "2026-2027"
 - [ ] **Team detail** shows the roster with positions, coaches with Head/Assistant labels, and that team's schedule
 - [ ] **Coaches index/detail**: bios and photos show, and each coach links to their teams
-- [ ] Player detail for a player with a public profile shows name, photo, jersey number, position, team and description, and **no** date of birth, parent info or fees
+- [ ] Player detail for a player with a public profile (seeded players all start private, so turn one on first as its parent; see section 4) shows name, photo, jersey number, position, team and description, and **no** date of birth, parent info or fees
 - [ ] Player detail for a player **without** a public profile doesn't reveal their details to a logged-out visitor
 - [ ] **Location** page shows the address and directions
 - [ ] The site looks right at phone width, with no sideways scrolling and a usable nav
@@ -107,6 +107,7 @@ unpaid.
 - [ ] Changing Status shows a confirm dialog and then saves; changing Decision saves right away with no dialog
 - [ ] **No fees** appear anywhere for Tom (and `/accounts/dashboard/admin/fees/` is forbidden)
 - [ ] Travis Roth (an assistant) can do everything Shawn (head coach) can on 11U
+- [ ] **Edit my coach profile** (link on the dashboard, and an "Edit my profile" button on your own public coach page): change the bio, photo and contact email; saving goes to your public coach page showing the changes. The button doesn't appear on other coaches' pages
 - [ ] **Email Families** (button on Try-Out Sign-Ups, link on the dashboard): the Team dropdown lists only Tom's teams, and the recipient count and list change with the Team and Decision filters
 - [ ] A family with two kids trying out appears once, with both kids listed
 - [ ] Sending asks for confirmation, then shows "Email sent to N families", and the email appears under **Sent Emails** with its recipients
@@ -156,6 +157,7 @@ Paste these URLs while logged in as the wrong user. Each should show forbidden o
 - [ ] Coach (Tom) → the 11U practices/roster URLs (a team he doesn't coach)
 - [ ] Coach (Tom) → `/accounts/dashboard/tryouts/email/?team=<11U id>`
 - [ ] Parent (Katie) → `/accounts/dashboard/tryouts/email/`
+- [ ] Parent (Katie) → `/accounts/dashboard/coach/profile/`
 
 ## 10. Django admin (`/admin/`, needs a superuser)
 

@@ -1,10 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Bio: {{ coach }} · {{ block.super }}{% endblock %}
+{# Shared by admin_coach_bio_edit (admin editing any coach) and coach_profile_edit (a coach editing their own, is_own_profile). #}
+{% block title %}{% if is_own_profile %}Edit My Coach Profile{% else %}Edit Bio: {{ coach }}{% endif %} · {{ block.super }}{% endblock %}
 
 {% block content %}
   <section class="page-hero">
-    <h1>Edit Bio: {{ coach }}</h1>
+    {% if is_own_profile %}
+      <h1>Edit My Coach Profile</h1>
+      <p>
+        This is what families see on your <a href="{% url 'teams:coach_detail' coach.pk %}">public coach page</a>.
+        To change your name or team assignments, contact a club admin.
+      </p>
+    {% else %}
+      <h1>Edit Bio: {{ coach }}</h1>
+    {% endif %}
   </section>
 
   {% if form.non_field_errors %}
@@ -25,5 +34,9 @@
     <button class="btn btn--primary" type="submit">Save</button>
   </form>
 
-  <p class="back-link"><a href="{% url 'accounts:admin_coaches_list' %}">&larr; Back to coach bios</a></p>
+  {% if is_own_profile %}
+    <p class="back-link"><a href="{{ back_url }}">&larr; {{ back_label }}</a></p>
+  {% else %}
+    <p class="back-link"><a href="{% url 'accounts:admin_coaches_list' %}">&larr; Back to coach bios</a></p>
+  {% endif %}
 {% endblock %}

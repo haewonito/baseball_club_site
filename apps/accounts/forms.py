@@ -148,14 +148,31 @@ class PaymentForm(forms.ModelForm):
 
 class CoachProfileForm(forms.ModelForm):
     """`coach` isn't a form field -- the profile is looked up/created from
-    the URL's user id, the same pattern used throughout this file."""
+    the URL's user id (admin_coach_bio_edit) or is the logged-in coach's
+    own (coach_profile_edit)."""
 
     class Meta:
         model = CoachProfile
         fields = ["bio_text", "photo", "contact_email"]
+        labels = {
+            "bio_text": "Bio",
+            "contact_email": "Contact email",
+        }
+        help_texts = {
+            "contact_email": "Shown on your public coach page. Leave blank to use your login email.",
+        }
         widgets = {
             "bio_text": forms.Textarea(attrs={"rows": 6}),
         }
+
+    def clean_photo(self):
+        # A new upload is shrunk like gallery photos (phone photos are
+        # several MB, against R2's free tier); an unchanged or cleared
+        # photo passes through as-is.
+        photo = self.cleaned_data.get("photo")
+        if photo and "photo" in self.changed_data:
+            return downsize_image(photo)
+        return photo
 
 
 class PlayerProfileForm(forms.ModelForm):
