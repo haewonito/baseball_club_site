@@ -45,6 +45,23 @@
            business-Admin-role user may not have Django-admin access. {% endcomment %}
         <p>Promoted to roster: {{ signup.promoted_player }}</p>
       {% else %}
+        {% if existing_player %}
+          {# Returning player: same name (and DOB) as a kid already linked to the accepting parent. #}
+          <p>
+            <strong>Possible returning player:</strong> {{ existing_player }}
+            {% if existing_player.team %}(currently on {{ existing_player.team.name }}){% endif %}
+            is already linked to the parent who accepted.
+          </p>
+          <form
+            method="post"
+            action="{% url 'accounts:admin_tryout_promote' signup.pk %}"
+            onsubmit="return confirm('Move the existing {{ existing_player|escapejs }} to {{ signup.team.name|escapejs }}? Their photos, fees and parent links stay with them.');"
+          >
+            {% csrf_token %}
+            <input type="hidden" name="returning" value="yes">
+            <button class="btn btn--primary" type="submit">Move Existing Player to Roster</button>
+          </form>
+        {% endif %}
         {% if not signup.date_of_birth %}
           <p>
             Not added to the roster automatically because the sign-up has no date of birth.
@@ -57,7 +74,7 @@
           onsubmit="return confirm('Add {{ signup.player_full_name }} to {{ signup.team.name }}&#39;s roster?');"
         >
           {% csrf_token %}
-          <button class="btn btn--primary" type="submit">Promote to Roster</button>
+          <button class="btn{% if not existing_player %} btn--primary{% endif %}" type="submit">{% if existing_player %}Add as a New Player Instead{% else %}Promote to Roster{% endif %}</button>
         </form>
       {% endif %}
     {% endif %}

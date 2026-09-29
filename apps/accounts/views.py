@@ -21,7 +21,7 @@ from apps.tryouts.emails import (
     send_response_invite_email,
     send_tryout_mass_email,
 )
-from apps.tryouts.roster import promote_signup_to_roster
+from apps.tryouts.roster import find_existing_player, promote_signup_to_roster
 from apps.tryouts.models import (
     TryoutDecision,
     TryoutDecisionChange,
@@ -65,6 +65,14 @@ logger = logging.getLogger(__name__)
 
 class LoginView(BaseLoginView):
     template_name = "accounts/login.html"
+
+    def get_initial(self):
+        # ?email= prefills the email box (the try-out sign-up form's
+        # "log in first" prompt sends it).
+        initial = super().get_initial()
+        if self.request.method == "GET" and self.request.GET.get("email"):
+            initial["username"] = self.request.GET["email"]
+        return initial
 
 
 @login_required
@@ -140,12 +148,16 @@ def admin_tryout_detail(request, pk):
     )
     status_changes = signup.status_changes.select_related("changed_by").order_by("-changed_at")
     decision_changes = signup.decision_changes.select_related("changed_by").order_by("-changed_at")
+    existing_player = None
+    if not signup.promoted_player_id:
+        existing_player = find_existing_player(signup, signup.responded_by)
 
     return render(
         request,
         "accounts/admin_tryout_detail.html",
         {
             "signup": signup,
+            "existing_player": existing_player,
             "status_choices": TryoutStatus.choices,
             "decision_choices": TryoutDecision.choices,
             "status_changes": status_changes,
@@ -198,20 +210,29 @@ def admin_tryout_promote(request, pk):
         raise PermissionDenied
 
     signup = get_object_or_404(
-        TryoutSignup.objects.select_related("team").prefetch_related("positions"), pk=pk
+        TryoutSignup.objects.select_related("team", "responded_by").prefetch_related("positions"),
+        pk=pk,
     )
     if signup.family_response != TryoutFamilyResponse.ACCEPTED:
         raise PermissionDenied
     if signup.promoted_player_id:
         return redirect("accounts:admin_tryout_detail", pk=signup.pk)
-    if not signup.date_of_birth:
-        messages.error(request, "Can't promote -- this sign-up is missing a date of birth.")
-        return redirect("accounts:admin_tryout_detail", pk=signup.pk)
     if signup.team.is_deleted_placeholder:
         messages.error(request, "Can't promote -- the team this sign-up was for was deleted.")
         return redirect("accounts:admin_tryout_detail", pk=signup.pk)
 
-    player = promote_signup_to_roster(signup, created_by=request.user)
+    # "yes" = the admin confirmed this is the returning player the
+    # detail page flagged; move that Player instead of creating another.
+    existing_player = None
+    if request.POST.get("returning") == "yes":
+        existing_player = find_existing_player(signup, signup.responded_by)
+    if existing_player is None and not signup.date_of_birth:
+        messages.error(request, "Can't promote -- this sign-up is missing a date of birth.")
+        return redirect("accounts:admin_tryout_detail", pk=signup.pk)
+
+    player = promote_signup_to_roster(
+        signup, created_by=request.user, existing_player=existing_player
+    )
     if not signup.responded_by_id:
         messages.warning(
             request,
@@ -219,7 +240,10 @@ def admin_tryout_promote(request, pk):
             "link one manually via the Django admin's Parent Player Links.",
         )
 
-    messages.success(request, f'{player} added to {signup.team.name}\'s roster.')
+    if existing_player is not None:
+        messages.success(request, f"{player} (returning player) moved to {signup.team.name}'s roster.")
+    else:
+        messages.success(request, f'{player} added to {signup.team.name}\'s roster.')
     return redirect("accounts:admin_tryout_detail", pk=signup.pk)
 
 

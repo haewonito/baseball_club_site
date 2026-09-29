@@ -29,6 +29,12 @@
     {% if not accepting_tryouts %}
       <p>There are no try-outs currently open. Check back soon, or see the Home page for upcoming dates.</p>
     {% else %}
+      {% if restored_draft %}
+        <p class="form-restored">
+          Welcome back! We kept your answers &mdash; please review them and submit the sign-up.
+        </p>
+      {% endif %}
+
       <form method="post" class="signup-form" novalidate>
         {% csrf_token %}
 
@@ -66,6 +72,26 @@
         </fieldset>
 
         <button type="submit" class="btn btn--primary">Submit sign-up</button>
+
+        {% if existing_account_email %}
+          {# Not saved yet: the view found an account for this email. See tryouts.views.signup. #}
+          <dialog id="existing-account-dialog" class="confirm-dialog">
+            <h2>You already have an account</h2>
+            <p>
+              <strong>{{ existing_account_email }}</strong> is already registered with Choice Select.
+              Can you log in before submitting? Your answers will be kept.
+            </p>
+            <p class="form-field__help">
+              Forgot your password or can't log in right now? You can still submit without logging in.
+            </p>
+            <div class="confirm-dialog__actions">
+              <button class="btn btn--primary" type="submit" name="account_check" value="login">Log in first</button>
+              <button class="btn" type="submit" name="account_check" value="skip">Submit without logging in</button>
+              <button class="btn" type="button" onclick="this.closest('dialog').close(); document.getElementById('{{ form.parent_email.id_for_label }}').focus();">Change email</button>
+            </div>
+          </dialog>
+          <script>document.getElementById("existing-account-dialog").showModal();</script>
+        {% endif %}
       </form>
     {% endif %}
   </section>

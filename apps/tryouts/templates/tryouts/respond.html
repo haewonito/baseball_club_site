@@ -24,7 +24,30 @@
         <form method="post">
           {% csrf_token %}
           <input type="hidden" name="action" value="accept">
-          <button class="btn btn--primary" type="submit">Accept</button>
+          {% if existing_player %}
+            <button class="btn btn--primary" type="button" onclick="document.getElementById('returning-dialog').showModal()">Accept</button>
+
+            {# Returning-player check: "yes" moves the existing Player to this team (apps.tryouts.roster). #}
+            <dialog id="returning-dialog" class="confirm-dialog" {% if confirm_returning %}open{% endif %}>
+              <h2>Has {{ signup.player_first_name }} played with us before?</h2>
+              <p>
+                {{ existing_player }} already seems to be in our system{% if existing_player.team %}
+                (currently on {{ existing_player.team.name }}){% endif %}. Can you confirm that
+                {{ signup.player_first_name }} has registered with a Choice Select team before?
+              </p>
+              <p class="form-field__help">
+                If yes, we'll move {{ signup.player_first_name }}'s existing profile to
+                {{ signup.team.name }}, keeping photos and payment history.
+              </p>
+              <div class="confirm-dialog__actions">
+                <button class="btn btn--primary" type="submit" name="returning" value="yes">Yes, same player</button>
+                <button class="btn" type="submit" name="returning" value="no">No, a different child</button>
+                <button class="btn" type="button" onclick="this.closest('dialog').close()">Cancel</button>
+              </div>
+            </dialog>
+          {% else %}
+            <button class="btn btn--primary" type="submit">Accept</button>
+          {% endif %}
         </form>
       {% else %}
         <p>
