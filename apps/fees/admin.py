@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.accounts.admin_mixins import AutoUserFieldsAdminMixin
 
-from .models import Fee, Payment
+from .models import Fee, FeeReminder, Payment
 
 
 @admin.register(Fee)
@@ -25,3 +25,18 @@ class FeeAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
 class PaymentAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
     set_on_create = ("recorded_by",)
     list_display = ("fee", "amount", "method", "paid_at", "recorded_by")
+
+
+@admin.register(FeeReminder)
+class FeeReminderAdmin(admin.ModelAdmin):
+    """History of Gus's automated overdue reminders (apps.fees.reminders). Read-only."""
+
+    list_display = ("fee", "sent_to_email", "balance_at_send", "sent_at")
+    list_filter = ("sent_at",)
+    search_fields = ("fee__player__first_name", "fee__player__last_name", "sent_to_email")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

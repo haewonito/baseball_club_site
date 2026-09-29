@@ -27,6 +27,7 @@
           <th>Amount Due</th>
           <th>Balance</th>
           <th>Status</th>
+          <th>Reminder</th>
           <th></th>
         </tr>
       </thead>
@@ -39,6 +40,11 @@
             <td>${{ row.fee.amount_due }}</td>
             <td>${{ row.balance }}</td>
             <td>{{ row.status_label }}</td>
+            <td>
+              {% if row.fee.reminder %}
+                <span class="status-badge" title="Sent to {{ row.fee.reminder.sent_to_email }}">Sent {{ row.fee.reminder.sent_at|date:"M j" }}</span>
+              {% else %}&mdash;{% endif %}
+            </td>
             <td><a href="{% url 'accounts:admin_fee_edit' row.fee.pk %}">Edit</a></td>
           </tr>
         {% endfor %}

@@ -253,7 +253,11 @@ def admin_fees_list(request):
         raise PermissionDenied
 
     only_outstanding = request.GET.get("outstanding") == "1"
-    fees = Fee.objects.select_related("player", "team").prefetch_related("payments").order_by("-created_at")
+    fees = (
+        Fee.objects.select_related("player", "team", "reminder")
+        .prefetch_related("payments")
+        .order_by("-created_at")
+    )
 
     rows = []
     total_outstanding = 0
@@ -347,7 +351,7 @@ def admin_fee_detail(request, pk):
         raise PermissionDenied
 
     fee = get_object_or_404(
-        Fee.objects.select_related("player", "team").prefetch_related("payments"), pk=pk
+        Fee.objects.select_related("player", "team", "reminder").prefetch_related("payments"), pk=pk
     )
     return render(
         request,

@@ -180,6 +180,11 @@ EMAIL_BACKEND = config(
 # (choiceselectleague.org is); an unverified address is rejected by their API.
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectleague.org")
 
+# Base URL for links in emails sent outside a request (e.g. the daily
+# overdue-fee reminder command), where build_absolute_uri isn't available.
+# Moves to the club domain along with DEFAULT_FROM_EMAIL (see CLAUDE.md).
+SITE_URL = config("SITE_URL", default="https://choiceselectleague.org").rstrip("/")
+
 ANYMAIL = {
     "RESEND_API_KEY": config("RESEND_API_KEY", default=""),
 }

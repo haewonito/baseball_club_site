@@ -94,3 +94,31 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.amount} on {self.paid_at} for {self.fee}"
+
+
+class FeeReminder(models.Model):
+    """
+    One automated overdue-payment reminder ("Gus", apps.fees.reminders),
+    sent to the player's primary parent. At most one per fee, ever (the
+    one-to-one): the club doesn't want repeat reminders. Also what the
+    admin fees pages show as "Reminder sent". Written only after the email
+    actually went out, so a failed send is retried on the next daily run.
+    """
+
+    fee = models.OneToOneField(Fee, on_delete=models.CASCADE, related_name="reminder")
+    sent_at = models.DateTimeField(auto_now_add=True)
+    sent_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    # Snapshots, so the record still reads right after the user's email
+    # changes or more payments come in.
+    sent_to_email = models.EmailField()
+    balance_at_send = models.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        ordering = ["-sent_at"]
+        verbose_name = "Overdue Fee Reminder"
+        verbose_name_plural = "Overdue Fee Reminders"
+
+    def __str__(self):
+        return f"Reminder for {self.fee} sent {self.sent_at:%Y-%m-%d}"
