@@ -395,8 +395,11 @@ legend {
   color: var(--color-gray-text);
 }
 
-.email-action__sent {
-  margin-right: 0.5rem;
+.email-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
 }
 
 .email-action__error {
@@ -547,6 +550,11 @@ legend {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.status-badge.status-badge--small {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
 }
 
 .status-badge {

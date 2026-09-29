@@ -1,15 +1,15 @@
 {# Usage: {% include "partials/_tryout_email_action.html" with signup=signup %} -- also the htmx swap target/response fragment for the send-email POST (coach_tryout_send_email), and rendered out-of-band (pass oob=True) alongside the decision-select fragment whenever the decision changes, since this cell's content depends on coach_decision. #}
-<span class="status-cell" id="email-cell-{{ signup.pk }}"{% if oob %} hx-swap-oob="true"{% endif %}>
+<span class="status-cell email-cell" id="email-cell-{{ signup.pk }}"{% if oob %} hx-swap-oob="true"{% endif %}>
   {% if send_failed %}
     <span class="email-action__error">Couldn't send -- try again.</span>
   {% endif %}
   {% if signup.coach_decision == "undecided" or signup.coach_decision == "unattended" %}
     <span class="email-action__hint">Set a decision first</span>
   {% elif signup.decision_emailed_at %}
-    <button class="btn btn--small email-action__sent" type="button" disabled>
+    <button class="btn btn--small" type="button" disabled>
       {% if signup.coach_decision == "invite" %}Acceptance Email Sent{% else %}Rejection Email Sent{% endif %}
     </button>
-    <span class="status-badge">&#10003; Sent</span>
+    <span class="status-badge status-badge--small">&#10003; Sent</span>
   {% else %}
     <button
       class="btn btn--small{% if signup.coach_decision == 'invite' %} btn--primary{% endif %}"
