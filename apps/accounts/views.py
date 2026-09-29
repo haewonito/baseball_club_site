@@ -50,6 +50,7 @@ from .forms import (
     downsize_image,
 )
 from .models import (
+    MAX_LINKED_ADULTS_PER_PLAYER,
     ParentInvite,
     ParentPlayerLink,
     Player,
@@ -1159,16 +1160,17 @@ def parent_invite_player(request, player_id):
     )
     player = link.player
 
-    invite = (
-        ParentInvite.objects.filter(player=player, created_by=request.user, claimed_at__isnull=True)
-        .order_by("-created_at")
-        .first()
-    )
-    if invite and not invite.is_valid:
-        invite = None
-
+    invite = _open_invite_for(player, request.user)
     if request.method == "POST" and not invite:
-        invite = ParentInvite.objects.create(player=player, created_by=request.user)
+        # At most MAX_LINKED_ADULTS_PER_PLAYER adults per kid, counting
+        # open invites, so the page offers "Generate" only while a slot is left.
+        if ParentInvite.slots_left(player) > 0:
+            invite = ParentInvite.objects.create(player=player, created_by=request.user)
+        else:
+            messages.error(
+                request,
+                f"{player.first_name} already has the most adults allowed. Contact the club to add someone else.",
+            )
 
     invite_url = None
     email_form = None
@@ -1179,11 +1181,55 @@ def parent_invite_player(request, player_id):
         # last sent to, so a resend doesn't need retyping the address.
         email_form = ParentInviteEmailForm(initial={"email": invite.invitee_email})
 
+    linked_count = player.parent_links.filter(removed_at__isnull=True).count()
     return render(
         request,
         "accounts/parent_invite.html",
-        {"player": player, "invite": invite, "invite_url": invite_url, "email_form": email_form},
+        {
+            "player": player,
+            "invite": invite,
+            "invite_url": invite_url,
+            "email_form": email_form,
+            "linked_count": linked_count,
+            "max_adults": MAX_LINKED_ADULTS_PER_PLAYER,
+            "can_invite": ParentInvite.slots_left(player) > 0,
+        },
     )
+
+
+def _open_invite_for(player, user):
+    """`user`'s current usable invite for `player`, if any -- a parent has
+    at most one open invite per kid at a time."""
+    return (
+        ParentInvite.open_invites()
+        .filter(player=player, created_by=user)
+        .order_by("-created_at")
+        .first()
+    )
+
+
+@login_required
+@require_POST
+def parent_invite_cancel(request, player_id):
+    """Cancels the logged-in parent's open invite link for this kid. Only
+    possible before anyone has used it -- a used link is already a
+    parent-player link, which only an admin can remove."""
+    if not request.user.is_parent:
+        raise PermissionDenied
+    link = get_object_or_404(
+        ParentPlayerLink.objects.select_related("player"),
+        parent=request.user,
+        player_id=player_id,
+        removed_at__isnull=True,
+    )
+    invite = _open_invite_for(link.player, request.user)
+    if invite:
+        invite.cancelled_at = timezone.now()
+        invite.save(update_fields=["cancelled_at"])
+        messages.success(request, "Invite link cancelled. It can no longer be used.")
+    else:
+        messages.error(request, "There's no unused invite link to cancel.")
+    return redirect("accounts:parent_invite_player", player_id=link.player_id)
 
 
 @login_required
@@ -1201,12 +1247,8 @@ def parent_invite_send_email(request, player_id):
     )
     player = link.player
 
-    invite = (
-        ParentInvite.objects.filter(player=player, created_by=request.user, claimed_at__isnull=True)
-        .order_by("-created_at")
-        .first()
-    )
-    if not invite or not invite.is_valid:
+    invite = _open_invite_for(player, request.user)
+    if not invite:
         raise PermissionDenied
 
     email_form = ParentInviteEmailForm(request.POST)
@@ -1253,6 +1295,19 @@ def invite_claim(request, token):
     if not invite.is_valid:
         return render(request, "accounts/invite_invalid.html", {"invite": invite})
 
+    # Re-checked here, not just when the link was made: another adult may
+    # have been linked since. Someone already linked to the kid isn't
+    # adding anyone, so they're never blocked.
+    already_linked = request.user.is_authenticated and invite.player.parent_links.filter(
+        parent=request.user, removed_at__isnull=True
+    ).exists()
+    at_cap = (
+        invite.player.parent_links.filter(removed_at__isnull=True).count()
+        >= MAX_LINKED_ADULTS_PER_PLAYER
+    )
+    if at_cap and not already_linked:
+        return render(request, "accounts/invite_invalid.html", {"invite": invite, "full": True})
+
     if request.user.is_authenticated:
         if request.method == "POST":
             _complete_invite_claim(invite, request.user)
@@ -1272,8 +1327,13 @@ def invite_claim(request, token):
 
 
 def _complete_invite_claim(invite, user):
+    # Only an *active* link counts: an adult whose earlier link was removed
+    # gets a new one (removed links stay as history).
     ParentPlayerLink.objects.get_or_create(
-        parent=user, player=invite.player, defaults={"created_by": invite.created_by}
+        parent=user,
+        player=invite.player,
+        removed_at__isnull=True,
+        defaults={"created_by": invite.created_by},
     )
     invite.claimed_at = timezone.now()
     invite.claimed_by = user

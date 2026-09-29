@@ -6,12 +6,19 @@
   <section class="page-hero">
     <h1>This invite link is no longer valid</h1>
     <p>
-      {% if invite.claimed_at %}
-        It's already been used.
+      {% if full %}
+        {{ invite.player.first_name }} already has the most adults linked. Contact the club at
+        {% include "partials/_contact_email.html" %} if you still need access.
       {% else %}
-        It has expired.
+        {% if invite.claimed_at %}
+          It's already been used.
+        {% elif invite.cancelled_at %}
+          The person who sent it cancelled it.
+        {% else %}
+          It has expired.
+        {% endif %}
+        Ask the person who sent it for a new one.
       {% endif %}
-      Ask the person who sent it for a new one.
     </p>
   </section>
 {% endblock %}

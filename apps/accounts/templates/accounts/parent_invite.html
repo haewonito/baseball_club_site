@@ -36,12 +36,33 @@
         {% if invite.emailed_at %}Resend Email{% else %}Send Email{% endif %}
       </button>
     </form>
-  {% else %}
+
+    {# Only an unused link gets here (parent_invite_player shows only open invites). #}
+    <form
+      method="post"
+      action="{% url 'accounts:parent_invite_cancel' player.pk %}"
+      onsubmit="return confirm('Cancel this invite link? Nobody will be able to use it.');"
+    >
+      {% csrf_token %}
+      <button class="btn" type="submit">Cancel Invite Link</button>
+    </form>
+    <p class="form-field__help">You can cancel the link as long as nobody has used it yet.</p>
+  {% elif can_invite %}
     <form method="post">
       {% csrf_token %}
       <button class="btn btn--primary" type="submit">Generate Invite Link</button>
     </form>
+  {% else %}
+    <p>
+      {{ player.first_name }} already has the most adults allowed ({{ max_adults }}), counting any
+      invite links that haven't been used yet. To add someone else, contact the club at
+      {% include "partials/_contact_email.html" %}.
+    </p>
   {% endif %}
+
+  <p class="form-field__help">
+    {{ linked_count }} of {{ max_adults }} adults linked to {{ player.first_name }}.
+  </p>
 
   <p class="back-link"><a href="{% url 'accounts:dashboard_parent' %}">&larr; Back to dashboard</a></p>
 {% endblock %}

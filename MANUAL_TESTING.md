@@ -93,6 +93,10 @@ unpaid.
 - [ ] After claiming, the new parent sees Ethan on their dashboard
 - [ ] Opening the same link again shows the "invalid/used" page
 - [ ] A made-up token URL shows the "invalid" page
+- [ ] **Cancel Invite Link** (shown under an unused link) asks for confirmation. Afterwards, the old link shows "the person who sent it cancelled it", and a new link can be generated
+- [ ] Once a link has been used, there's no Cancel button for it
+- [ ] The page shows "N of 3 adults linked". With 3 adults linked (or 2 plus an unused link), "Generate" is replaced by a "most adults allowed, contact the club" message
+- [ ] An old unused link opened after the kid reached 3 adults says the kid already has the most adults linked, and doesn't link anyone
 
 ## 6. Coach (Tom Nguyen, then Shawn Lewis)
 

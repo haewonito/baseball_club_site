@@ -144,5 +144,10 @@ urlpatterns = [
         views.parent_invite_send_email,
         name="parent_invite_send_email",
     ),
+    path(
+        "dashboard/parent/players/<int:player_id>/invite/cancel/",
+        views.parent_invite_cancel,
+        name="parent_invite_cancel",
+    ),
     path("invite/<uuid:token>/", views.invite_claim, name="invite_claim"),
 ]

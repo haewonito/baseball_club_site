@@ -97,7 +97,7 @@ class ParentPlayerLinkAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
 
 @admin.register(ParentInvite)
 class ParentInviteAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
-    list_display = ("player", "created_by", "created_at", "expires_at", "claimed_at")
+    list_display = ("player", "created_by", "created_at", "expires_at", "claimed_at", "cancelled_at")
     set_on_create = ("created_by",)
     readonly_fields = ("claimed_by",)  # set by the claim flow
 

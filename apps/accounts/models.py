@@ -216,6 +216,12 @@ def _default_invite_expiry():
     return timezone.now() + timedelta(days=14)
 
 
+# Most adults a parent can link to one kid through self-service invites
+# (each linked adult sees the kid's private info). Counts active links
+# plus still-open invites. Admins can link more in Django admin.
+MAX_LINKED_ADULTS_PER_PLAYER = 3
+
+
 class ParentInvite(models.Model):
     """
     Self-service second-parent linking. The primary parent generates one
@@ -238,11 +244,35 @@ class ParentInvite(models.Model):
     # requires an email address, this is purely for the optional send.
     invitee_email = models.EmailField(blank=True)
     emailed_at = models.DateTimeField(null=True, blank=True)
+    # Set when the parent who created it cancels it before anyone uses it
+    # (accounts.views.parent_invite_cancel). Kept rather than deleted, as a record.
+    cancelled_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Parent Invite"
         verbose_name_plural = "Parent Invites"
 
+    @classmethod
+    def open_invites(cls):
+        """Unused, uncancelled, unexpired invites -- the ones a link can still claim."""
+        return cls.objects.filter(
+            claimed_at__isnull=True, cancelled_at__isnull=True, expires_at__gt=timezone.now()
+        )
+
+    @classmethod
+    def slots_left(cls, player):
+        """How many more adults can be invited for `player` before hitting
+        MAX_LINKED_ADULTS_PER_PLAYER (active links + open invites)."""
+        used = (
+            player.parent_links.filter(removed_at__isnull=True).count()
+            + cls.open_invites().filter(player=player).count()
+        )
+        return max(MAX_LINKED_ADULTS_PER_PLAYER - used, 0)
+
     @property
     def is_valid(self) -> bool:
-        return self.claimed_at is None and timezone.now() < self.expires_at
+        return (
+            self.claimed_at is None
+            and self.cancelled_at is None
+            and timezone.now() < self.expires_at
+        )
