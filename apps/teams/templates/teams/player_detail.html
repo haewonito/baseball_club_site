@@ -41,7 +41,10 @@
       {% if parent_links %}
         <ul class="coach-list">
           {% for link in parent_links %}
-            <li>{{ link.parent }} &mdash; {{ link.parent.email }}</li>
+            <li>
+              {{ link.parent }} &mdash; {{ link.parent.email }}
+              {% if link.is_primary %}<span class="status-badge">Primary</span>{% endif %}
+            </li>
           {% endfor %}
         </ul>
       {% else %}

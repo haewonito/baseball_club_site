@@ -869,3 +869,92 @@ legend {
 .confirm-dialog .btn:not(.btn--primary) {
   background: var(--color-white);
 }
+
+/* --- Info tooltip (partials/_info_tip.html) ------------------------------ */
+
+.info-tip {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+}
+
+.info-tip summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1px solid var(--color-gray-text);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-style: italic;
+  font-family: Georgia, serif;
+  color: var(--color-gray-text);
+  text-transform: none;
+}
+
+.info-tip summary::-webkit-details-marker {
+  display: none;
+}
+
+.info-tip[open] summary {
+  border-color: var(--color-red);
+  color: var(--color-red);
+}
+
+.info-tip__text {
+  position: absolute;
+  z-index: 10;
+  top: 1.6rem;
+  left: -0.5rem;
+  width: min(16rem, 70vw);
+  padding: 0.6rem 0.75rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-line);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(17, 17, 17, 0.12);
+  color: var(--color-black);
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* In a card row, anchor the bubble to the row (full card width) rather
+   than to the icon, which sits near the right edge on a phone. */
+.kid-card__row {
+  position: relative;
+}
+
+.kid-card__row .info-tip {
+  position: static;
+}
+
+.kid-card__row .info-tip__text {
+  left: 0;
+  right: 0;
+  top: 100%;
+  width: auto;
+}
+
+.kid-card__primary-change {
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.kid-card__primary-change summary {
+  cursor: pointer;
+  color: var(--color-red);
+}
+
+.kid-card__primary-change form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}

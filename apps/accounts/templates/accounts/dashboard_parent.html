@@ -31,6 +31,31 @@
               $0.00
             {% endif %}
           </p>
+          <div class="kid-card__row">
+            <span>
+              Primary parent
+              {% include "partials/_info_tip.html" with text="The primary parent gets the club's automated emails about this player, like reminders for overdue payments. That's the only difference: every linked adult can see and do everything else." %}
+            </span>
+            {% if card.is_primary %}You{% else %}{{ card.primary_link.parent|default:"—" }}{% endif %}
+          </div>
+          {% if card.is_primary and card.other_links %}
+            <details class="kid-card__primary-change">
+              <summary>Make someone else primary</summary>
+              <form
+                method="post"
+                action="{% url 'accounts:parent_make_primary' card.player.pk %}"
+                onsubmit="return confirm('Make ' + this.link_id.options[this.link_id.selectedIndex].text + ' {{ card.player.first_name|escapejs }}&#39;s primary parent? You will stop getting the automated emails.');"
+              >
+                {% csrf_token %}
+                <select name="link_id" aria-label="New primary parent">
+                  {% for other in card.other_links %}
+                    <option value="{{ other.pk }}">{{ other.parent }}</option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn--small" type="submit">Make primary</button>
+              </form>
+            </details>
+          {% endif %}
           <a class="btn" href="{% url 'accounts:parent_player_payments' card.player.pk %}">View payment history</a>
           <a class="btn" href="{% url 'accounts:parent_player_profile_edit' card.player.pk %}">Edit Profile</a>
           <a class="btn" href="{% url 'accounts:parent_invite_player' card.player.pk %}">Invite Another Adult</a>

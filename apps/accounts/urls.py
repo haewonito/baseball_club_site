@@ -149,5 +149,10 @@ urlpatterns = [
         views.parent_invite_cancel,
         name="parent_invite_cancel",
     ),
+    path(
+        "dashboard/parent/players/<int:player_id>/primary/",
+        views.parent_make_primary,
+        name="parent_make_primary",
+    ),
     path("invite/<uuid:token>/", views.invite_claim, name="invite_claim"),
 ]

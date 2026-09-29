@@ -5,7 +5,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -1044,7 +1044,16 @@ def dashboard_parent(request):
     links = (
         ParentPlayerLink.objects.filter(parent=request.user, removed_at__isnull=True)
         .select_related("player", "player__team")
-        .prefetch_related("player__fees__payments")
+        .prefetch_related(
+            "player__fees__payments",
+            Prefetch(
+                "player__parent_links",
+                queryset=ParentPlayerLink.objects.filter(removed_at__isnull=True).select_related(
+                    "parent"
+                ),
+                to_attr="active_links",
+            ),
+        )
         .order_by("player__last_name", "player__first_name")
     )
     now = timezone.now()
@@ -1058,7 +1067,18 @@ def dashboard_parent(request):
         # (see admin_fee_add), so a plain player.fees.all() already picks
         # them up -- no separate team-fee handling needed here.
         balance = sum(fee.balance for fee in player.fees.all())
-        cards.append({"player": player, "next_event": next_event, "balance": balance})
+        primary_link = next((l for l in player.active_links if l.is_primary), None)
+        cards.append(
+            {
+                "player": player,
+                "next_event": next_event,
+                "balance": balance,
+                "primary_link": primary_link,
+                "is_primary": link.is_primary,
+                # Adults the current primary could hand "primary" to.
+                "other_links": [l for l in player.active_links if l.pk != link.pk],
+            }
+        )
 
     return render(request, "accounts/dashboard_parent.html", {"cards": cards})
 
@@ -1254,6 +1274,40 @@ def parent_invite_cancel(request, player_id):
     else:
         messages.error(request, "There's no unused invite link to cancel.")
     return redirect("accounts:parent_invite_player", player_id=link.player_id)
+
+
+@login_required
+@require_POST
+def parent_make_primary(request, player_id):
+    """
+    The kid's current primary parent hands "primary" to another adult
+    linked to the same kid (ParentPlayerLink.save un-primaries their own
+    link). Only the current primary can do this; admins use Django admin.
+    """
+    if not request.user.is_parent:
+        raise PermissionDenied
+    own_link = get_object_or_404(
+        ParentPlayerLink.objects.select_related("player"),
+        parent=request.user,
+        player_id=player_id,
+        removed_at__isnull=True,
+    )
+    if not own_link.is_primary:
+        raise PermissionDenied
+    new_link = get_object_or_404(
+        ParentPlayerLink.objects.select_related("parent"),
+        pk=request.POST.get("link_id"),
+        player_id=player_id,
+        removed_at__isnull=True,
+    )
+    if new_link.pk != own_link.pk:
+        new_link.is_primary = True
+        new_link.save(update_fields=["is_primary"])
+        messages.success(
+            request,
+            f"{new_link.parent} is now {own_link.player.first_name}'s primary parent.",
+        )
+    return redirect("accounts:dashboard_parent")
 
 
 @login_required

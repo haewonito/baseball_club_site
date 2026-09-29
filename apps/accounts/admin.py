@@ -81,8 +81,8 @@ class PlayerAdmin(admin.ModelAdmin):
 
 @admin.register(ParentPlayerLink)
 class ParentPlayerLinkAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
-    list_display = ("parent", "player", "created_at", "is_active")
-    list_filter = ("player__team",)
+    list_display = ("parent", "player", "is_primary", "created_at", "is_active")
+    list_filter = ("player__team", "is_primary")
     set_on_create = ("created_by",)
 
     def get_readonly_fields(self, request, obj=None):

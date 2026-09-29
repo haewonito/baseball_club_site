@@ -1,0 +1,11 @@
+{% comment %}
+  Small "i" info tooltip. A <details> rather than a hover tooltip so it
+  opens on tap on phones (there's no hover there). The bubble spans the
+  nearest positioned ancestor when the tip sits in one (e.g. a kid-card
+  row), so it doesn't run off a narrow card. Usage:
+  {% include "partials/_info_tip.html" with text="..." %}
+{% endcomment %}
+<details class="info-tip">
+  <summary aria-label="More info">i</summary>
+  <span class="info-tip__text">{{ text }}</span>
+</details>

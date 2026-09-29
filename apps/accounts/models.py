@@ -3,8 +3,10 @@ from datetime import timedelta
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 from django.db.models.functions import Lower
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 
 
@@ -182,6 +184,13 @@ class ParentPlayerLink(models.Model):
     Links a Parent-role User to a Player. Admin-created by default;
     second-parent self-service linking happens via ParentInvite below.
     Soft-delete keeps history for the admin-visible link log.
+
+    Every kid with any active link has exactly one primary parent, the one
+    who gets automated emails like overdue-fee reminders (apps.fees). It's
+    otherwise identical to any other link. save() keeps that true wherever
+    links are created or removed: the first active link becomes primary,
+    making a link primary un-primaries the old one, and removing the
+    primary hands it to the longest-linked remaining adult.
     """
 
     parent = models.ForeignKey(User, on_delete=models.CASCADE, related_name="player_links")
@@ -194,6 +203,14 @@ class ParentPlayerLink(models.Model):
     removed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    is_primary = models.BooleanField(
+        default=False,
+        help_text=(
+            "The primary parent gets automated emails about this player, like overdue "
+            "payment reminders. Exactly one active link per player is primary; ticking "
+            "this moves it here."
+        ),
+    )
 
     class Meta:
         ordering = ["player__last_name", "player__first_name", "parent__last_name"]
@@ -204,12 +221,56 @@ class ParentPlayerLink(models.Model):
                 fields=["parent", "player"],
                 condition=models.Q(removed_at__isnull=True),
                 name="unique_active_parent_player_link",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["player"],
+                condition=models.Q(is_primary=True, removed_at__isnull=True),
+                name="one_primary_parent_per_player",
+            ),
         ]
 
     @property
     def is_active(self) -> bool:
         return self.removed_at is None
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = {*update_fields, "is_primary"}
+        with transaction.atomic():
+            other_active = ParentPlayerLink.objects.filter(
+                player_id=self.player_id, removed_at__isnull=True
+            ).exclude(pk=self.pk)
+            if self.removed_at is not None:
+                was_primary = self.is_primary
+                self.is_primary = False
+                super().save(*args, **kwargs)
+                if was_primary:
+                    ensure_primary_parent(self.player_id)
+                return
+            if self.is_primary:
+                other_active.filter(is_primary=True).update(is_primary=False)
+            elif not other_active.filter(is_primary=True).exists():
+                self.is_primary = True
+            super().save(*args, **kwargs)
+
+
+def ensure_primary_parent(player_id):
+    """
+    If the player has active links but no primary (the primary was just
+    removed or deleted), make the longest-linked remaining adult primary.
+    """
+    active = ParentPlayerLink.objects.filter(player_id=player_id, removed_at__isnull=True)
+    if active.exists() and not active.filter(is_primary=True).exists():
+        first = active.order_by("created_at", "pk").first()
+        ParentPlayerLink.objects.filter(pk=first.pk).update(is_primary=True)
+
+
+@receiver(post_delete, sender=ParentPlayerLink)
+def _reassign_primary_after_delete(sender, instance, **kwargs):
+    # Hard deletes (Django admin) bypass save(); still hand primary on.
+    if instance.is_primary and instance.removed_at is None:
+        ensure_primary_parent(instance.player_id)
 
 
 def _default_invite_expiry():
