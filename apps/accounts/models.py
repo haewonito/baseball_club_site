@@ -30,6 +30,13 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    def get_by_natural_key(self, email):
+        # What ModelBackend calls at login. Case-insensitive to match the
+        # unique_lower_email constraint (a phone's autocapitalize turns
+        # "james@x.com" into "James@x.com"); the constraint guarantees at
+        # most one match.
+        return self.get(email__iexact=email)
+
     def create_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
