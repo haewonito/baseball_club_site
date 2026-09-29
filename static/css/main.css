@@ -70,10 +70,18 @@ a:hover {
   }
 }
 
+/* No scrolling for visitors who turned on Reduce Motion (iPhone:
+   Settings > Accessibility > Motion) -- wrap instead, so the whole
+   message is readable rather than cut off at the screen edge. */
 @media (prefers-reduced-motion: reduce) {
+  .site-announcement {
+    white-space: normal;
+  }
+
   .site-announcement__track {
+    display: block;
     animation: none;
-    padding-left: 1.5rem;
+    padding-left: 0;
   }
 }
 
