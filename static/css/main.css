@@ -395,6 +395,10 @@ legend {
   color: var(--color-gray-text);
 }
 
+.email-action__sent {
+  margin-right: 0.5rem;
+}
+
 .email-action__error {
   font-size: 0.85rem;
   color: var(--color-red);
