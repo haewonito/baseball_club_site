@@ -130,14 +130,16 @@ class TryoutSignup(models.Model):
         blank=True,
         related_name="+",
     )
-    # Set once by admin_tryout_promote -- guards against promoting the
+    # Set once by promote_signup_to_roster -- guards against promoting the
     # same signup twice and gives the detail page something to link to.
-    promoted_player = models.OneToOneField(
+    # A ForeignKey, not one-to-one: a returning player keeps the same
+    # Player across seasons, so several signups can point at it.
+    promoted_player = models.ForeignKey(
         "accounts.Player",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="tryout_signup",
+        related_name="tryout_signups",
     )
     # Set by apps.accounts.views.coach_tryout_send_email once the
     # acceptance/rejection email for the CURRENT coach_decision has gone

@@ -865,3 +865,7 @@ legend {
   border-radius: var(--radius);
   padding: 0.75rem 1rem;
 }
+
+.confirm-dialog .btn:not(.btn--primary) {
+  background: var(--color-white);
+}

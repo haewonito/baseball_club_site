@@ -104,12 +104,17 @@
       {% endif %}
     </section>
 
-    {% if tryout_signup %}
+    {% if tryout_signups %}
       <section class="team-section">
         <h2>Try-Out Origin</h2>
-        <p>Promoted from a try-out sign-up.
-          <a href="{% url 'accounts:admin_tryout_detail' tryout_signup.pk %}">View original sign-up</a>
-        </p>
+        <p>Added to a roster from {{ tryout_signups|length }} try-out sign-up{{ tryout_signups|length|pluralize }}:</p>
+        <ul>
+          {% for tryout_signup in tryout_signups %}
+            <li>
+              <a href="{% url 'accounts:admin_tryout_detail' tryout_signup.pk %}">{{ tryout_signup.team.name }}{% if tryout_signup.season_label %} ({{ tryout_signup.season_label }}){% endif %}</a>
+            </li>
+          {% endfor %}
+        </ul>
       </section>
     {% endif %}
   {% endif %}

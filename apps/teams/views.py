@@ -163,5 +163,8 @@ def player_detail(request, pk):
         context["link_history"] = player.parent_links.select_related(
             "parent", "created_by", "removed_by"
         ).order_by("-created_at")
-        context["tryout_signup"] = getattr(player, "tryout_signup", None)
+        # One per season for a returning player (see TryoutSignup.promoted_player).
+        context["tryout_signups"] = player.tryout_signups.select_related("team").order_by(
+            "submitted_at"
+        )
     return render(request, "teams/player_detail.html", context)
