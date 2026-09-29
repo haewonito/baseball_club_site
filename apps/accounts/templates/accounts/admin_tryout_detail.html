@@ -31,7 +31,8 @@
     {% comment %} Sending happens from the coach's own Try-Out Sign-Ups page now, not
        from here -- this is read-only status for admin visibility. {% endcomment %}
     {% if signup.decision_emailed_at %}
-      <p>Decision email sent {{ signup.decision_emailed_at|date:"M j, Y g:i A" }}.</p>
+      <p>Decision email sent {{ signup.decision_emailed_at|date:"M j, Y g:i A" }}.
+        If the family says they didn't get it, ask them to check their spam folder.</p>
     {% elif signup.coach_decision == "undecided" %}
       <p>Available once the assigned coach sets a decision.</p>
     {% else %}

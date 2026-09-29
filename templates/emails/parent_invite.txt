@@ -11,5 +11,7 @@ Use this link to accept the invite and set up your login:
 
 This link expires {{ invite.expires_at|date:"M j, Y" }}.
 
+If this email landed in your spam folder, please mark it "Not spam" so future emails from us reach your inbox.
+
 Thanks,
 Choice Select

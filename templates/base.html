@@ -34,13 +34,16 @@
           {% if user.is_parent %}
             <a href="{% url 'accounts:dashboard_parent' %}">Parent Dashboard</a>
           {% endif %}
-          {% if not user.is_admin and not user.is_coach and not user.is_parent %}
+          {% if user.is_superuser %}
+            <a href="{% url 'admin:index' %}">Super User Dashboard</a>
+          {% elif not user.is_admin and not user.is_coach and not user.is_parent %}
             <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
           {% endif %}
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
             <button type="submit">Log Out</button>
           </form>
+          <span class="site-nav__welcome">Welcome, {{ user.first_name|default:user.email }}</span>
         {% else %}
           <a href="{% url 'accounts:login' %}">Log In</a>
         {% endif %}

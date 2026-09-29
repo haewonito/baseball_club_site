@@ -148,7 +148,7 @@ class TryoutSignup(models.Model):
     decision_emailed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ["-submitted_at"]
+        ordering = ["player_last_name", "player_first_name"]
         verbose_name = "Try-Out Sign-Up"
         verbose_name_plural = "Try-Out Sign-Ups"
 

@@ -55,6 +55,12 @@ class TryoutSignupForm(forms.ModelForm):
             "parent_phone": "Phone number",
             "parent_email": "Email address",
         }
+        help_texts = {
+            "parent_email": (
+                "We'll email a confirmation here. Our emails sometimes land in spam, "
+                "so please check there if you don't see it."
+            ),
+        }
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "previous_team": forms.TextInput(attrs={"placeholder": "e.g. Rockies 12U"}),

@@ -13,5 +13,7 @@ selected for this season's team.
 You can view the try-out outcome here:
 {{ invite_url }}
 {% endif %}
+If this email landed in your spam folder, please mark it "Not spam" so future emails from us reach your inbox.
+
 Thanks,
 {{ signup.team.name }} Coaching Staff

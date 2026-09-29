@@ -87,6 +87,8 @@
       {% include "partials/_form_field.html" with field=form.body %}
       <p class="form-field__help">
         Replies go to {{ reply_to }}. A line saying who sent it is added at the bottom.
+        Emails from the site often land in spam, so for anything important consider also
+        mentioning it in person or by text.
       </p>
       <button class="btn btn--primary" type="submit" {% if not recipients %}disabled{% endif %}>
         Send to {{ recipients|length }} famil{{ recipients|length|pluralize:"y,ies" }}

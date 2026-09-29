@@ -1,10 +1,13 @@
 from django.contrib import admin
 
+from apps.accounts.admin_mixins import AutoUserFieldsAdminMixin
+
 from .models import Fee, Payment
 
 
 @admin.register(Fee)
-class FeeAdmin(admin.ModelAdmin):
+class FeeAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
+    set_on_create = ("created_by",)
     list_display = ("description", "player", "team", "amount_due", "balance", "status")
     list_filter = ("team",)
     # No PaymentInline here -- Payment is already its own registered
@@ -19,5 +22,6 @@ class FeeAdmin(admin.ModelAdmin):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
+    set_on_create = ("recorded_by",)
     list_display = ("fee", "amount", "method", "paid_at", "recorded_by")

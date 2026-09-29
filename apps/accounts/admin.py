@@ -3,6 +3,8 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from apps.teams.models import PlayerPosition
 
+from .admin_mixins import AutoUserFieldsAdminMixin
+
 from .models import ParentInvite, ParentPlayerLink, Player, PlayerGalleryPhoto, User, UserRole
 
 
@@ -15,8 +17,8 @@ class UserAdmin(DjangoUserAdmin):
     """
 
     filter_horizontal = ("roles", "groups", "user_permissions")
-    ordering = ("email",)
-    list_display = ("email", "first_name", "last_name", "is_staff")
+    ordering = ("last_name", "first_name", "email")
+    list_display = ("first_name", "last_name", "email", "is_staff")
     search_fields = ("email", "first_name", "last_name")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -78,18 +80,31 @@ class PlayerAdmin(admin.ModelAdmin):
 
 
 @admin.register(ParentPlayerLink)
-class ParentPlayerLinkAdmin(admin.ModelAdmin):
+class ParentPlayerLinkAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
     list_display = ("parent", "player", "created_at", "is_active")
     list_filter = ("player__team",)
+    set_on_create = ("created_by",)
+
+    def get_readonly_fields(self, request, obj=None):
+        return (*super().get_readonly_fields(request, obj), "removed_by")
+
+    def save_model(self, request, obj, form, change):
+        # removed_by follows removed_at: whoever sets it is the remover.
+        if "removed_at" in form.changed_data:
+            obj.removed_by = request.user if obj.removed_at else None
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(ParentInvite)
-class ParentInviteAdmin(admin.ModelAdmin):
+class ParentInviteAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
     list_display = ("player", "created_by", "created_at", "expires_at", "claimed_at")
+    set_on_create = ("created_by",)
+    readonly_fields = ("claimed_by",)  # set by the claim flow
 
 
 @admin.register(PlayerGalleryPhoto)
-class PlayerGalleryPhotoAdmin(admin.ModelAdmin):
+class PlayerGalleryPhotoAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
     # Moderation fallback only -- parents manage these from the player page.
     list_display = ("player", "uploaded_by", "created_at")
     search_fields = ("player__first_name", "player__last_name")
+    set_on_create = ("uploaded_by",)

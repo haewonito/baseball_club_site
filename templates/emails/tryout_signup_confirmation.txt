@@ -9,7 +9,7 @@ Team: {{ signup.team.name }} ({{ signup.season_label }})
 {% if next_tryout_date %}
 Try-outs are on {{ next_tryout_date|date:"l, F j, Y" }}.
 {% endif %}
-A coach will follow up by phone or email with next steps. If anything above is wrong, or you have questions, email us at {{ contact_email }}.
+A coach will follow up by phone or email with next steps. If this email landed in your spam folder, please mark it "Not spam" or add {{ contact_email }} to your contacts, so our next emails (including try-out results) reach your inbox. If anything above is wrong, or you have questions, email us at {{ contact_email }}.
 
 Thanks,
 Choice Select

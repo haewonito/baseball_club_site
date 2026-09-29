@@ -28,6 +28,10 @@
     <form method="post" action="{% url 'accounts:parent_invite_send_email' player.pk %}">
       {% csrf_token %}
       {% include "partials/_form_field.html" with field=email_form.email %}
+      <p class="form-field__help">
+        Our emails sometimes land in spam. Ask them to check their spam folder, or send them
+        the link above yourself.
+      </p>
       <button class="btn btn--primary" type="submit">
         {% if invite.emailed_at %}Resend Email{% else %}Send Email{% endif %}
       </button>

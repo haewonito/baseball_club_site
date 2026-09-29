@@ -183,3 +183,12 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectleag
 ANYMAIL = {
     "RESEND_API_KEY": config("RESEND_API_KEY", default=""),
 }
+
+# App warnings/errors (e.g. logger.exception on a failed email send) go to
+# stdout/stderr, which is what Railway's log viewer shows.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}

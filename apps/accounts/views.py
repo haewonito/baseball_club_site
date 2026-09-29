@@ -100,7 +100,7 @@ def admin_tryouts_list(request):
     signups = (
         TryoutSignup.objects.select_related("team", "promoted_player")
         .prefetch_related("positions")
-        .order_by("-submitted_at")
+        .order_by("player_last_name", "player_first_name")
     )
     years = [
         (year, f"{year - 1}-{year}")
@@ -725,7 +725,7 @@ def coach_tryouts(request):
     if not request.user.is_coach:
         raise PermissionDenied
     signups = TryoutSignup.objects.select_related("team").prefetch_related("positions").order_by(
-        "-submitted_at"
+        "player_last_name", "player_first_name"
     )
     # "All teams, all years" stays the coach dashboard's baseline view --
     # the team filter below narrows what's *shown*, it's not a permission
@@ -923,7 +923,8 @@ def tryout_mass_email(request):
             body = (
                 f"{form.cleaned_data['body'].rstrip()}\n\n"
                 f"--\nSent by {user.get_full_name() or user.email} through Choice Select. "
-                "Reply to this email to reach them directly.\n"
+                "Reply to this email to reach them directly. If this landed in spam, please "
+                'mark it "Not spam" so future emails reach your inbox.\n'
             )
             error = None
             try:
@@ -989,6 +990,7 @@ def dashboard_parent(request):
         ParentPlayerLink.objects.filter(parent=request.user, removed_at__isnull=True)
         .select_related("player", "player__team")
         .prefetch_related("player__fees__payments")
+        .order_by("player__last_name", "player__first_name")
     )
     now = timezone.now()
     cards = []
@@ -1188,11 +1190,21 @@ def parent_invite_send_email(request, player_id):
     try:
         send_parent_invite_email(invite, request)
     except Exception:
-        messages.error(request, "Couldn't send the email -- check the email configuration.")
+        logger.exception("Parent invite email failed for invite %s", invite.pk)
+        # Parents see this, so point them at the copy/paste link rather
+        # than at server configuration they can't do anything about.
+        messages.error(
+            request,
+            "Couldn't send the email right now. You can still copy the link above and send it yourself.",
+        )
     else:
         invite.emailed_at = timezone.now()
         invite.save(update_fields=["emailed_at"])
-        messages.success(request, f"Emailed the invite link to {invite.invitee_email}.")
+        messages.success(
+            request,
+            f"Emailed the invite link to {invite.invitee_email}. "
+            "If they don't see it, ask them to check their spam folder.",
+        )
 
     return redirect("accounts:parent_invite_player", player_id=player.pk)
 

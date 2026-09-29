@@ -140,6 +140,12 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Who's logged in, at the far right of the nav. */
+.site-nav__welcome {
+  color: var(--color-gray-line);
+  font-size: 0.9rem;
+}
+
 .site-footer__inner {
   font-size: 0.85rem;
   color: #cccccc;
@@ -814,14 +820,4 @@ legend {
 .tryout-poster-card img {
   width: 100%;
   display: block;
-}
-
-.tryout-poster-card__label {
-  padding: 0.6rem 0.9rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--color-gray-text);
-  border-top: 1px solid var(--color-gray-line);
 }

@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from apps.accounts.admin_mixins import AutoUserFieldsAdminMixin
+
 from .models import (
     TryoutDecisionChange,
     TryoutMassEmail,
@@ -38,7 +40,6 @@ class TryoutSignupAdmin(admin.ModelAdmin):
         "parent_last_name",
         "parent_email",
     )
-    ordering = ["-submitted_at"]
     readonly_fields = ("submitted_at",)
     inlines = [TryoutSignupPositionInline]
     # Coaches get view-only access to this same list via a custom
@@ -77,7 +78,8 @@ class TryoutStatusChangeAdmin(admin.ModelAdmin):
 
 
 @admin.register(TryoutResponseInvite)
-class TryoutResponseInviteAdmin(admin.ModelAdmin):
+class TryoutResponseInviteAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
+    set_on_create = ("created_by",)
     list_display = ("signup", "created_by", "created_at", "expires_at", "responded_at")
 
 
@@ -116,7 +118,8 @@ class TryoutMassEmailAdmin(admin.ModelAdmin):
 
 
 @admin.register(TryoutPoster)
-class TryoutPosterAdmin(admin.ModelAdmin):
+class TryoutPosterAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
+    set_on_create = ("uploaded_by",)
     # Secondary access point for Django-admin superusers -- the primary
     # upload/edit flow is the custom accounts dashboard page
     # (admin_tryout_posters_list etc.), since a business-Admin-role user

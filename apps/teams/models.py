@@ -102,6 +102,7 @@ class TeamCoach(models.Model):
     role = models.CharField(max_length=20, choices=TeamCoachRole.choices)
 
     class Meta:
+        ordering = ["coach__last_name", "coach__first_name"]
         constraints = [
             models.UniqueConstraint(fields=["team", "coach"], name="unique_team_coach"),
         ]
@@ -121,6 +122,7 @@ class CoachProfile(models.Model):
     contact_email = models.EmailField(blank=True)  # optional; may route through admins instead
 
     class Meta:
+        ordering = ["coach__last_name", "coach__first_name"]
         verbose_name = "Coach Profile"
         verbose_name_plural = "Coach Profiles"
 

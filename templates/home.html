@@ -30,7 +30,6 @@
         {% for poster in tryout_posters %}
           <a class="tryout-poster-card" href="{% url 'tryouts:signup' %}">
             <img src="{{ poster.image.url }}" alt="{{ poster.title }}">
-            <div class="tryout-poster-card__label">{{ poster.get_poster_type_display }}</div>
           </a>
         {% endfor %}
       </div>

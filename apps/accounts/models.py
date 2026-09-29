@@ -73,6 +73,9 @@ class User(AbstractUser):
         constraints = [
             models.UniqueConstraint(Lower("email"), name="unique_lower_email"),
         ]
+        # Lists of people sort by last name everywhere (Django admin lists
+        # and dropdowns included), per the user.
+        ordering = ["last_name", "first_name", "email"]
 
     def __str__(self):
         return self.get_full_name() or self.email
@@ -138,6 +141,9 @@ class Player(models.Model):
         ),
     )
 
+    class Meta:
+        ordering = ["last_name", "first_name"]
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -190,6 +196,7 @@ class ParentPlayerLink(models.Model):
     )
 
     class Meta:
+        ordering = ["player__last_name", "player__first_name", "parent__last_name"]
         verbose_name = "Parent-Player Link"
         verbose_name_plural = "Parent-Player Links"
         constraints = [
