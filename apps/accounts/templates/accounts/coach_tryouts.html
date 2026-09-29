@@ -29,7 +29,6 @@
         <tr>
           <th>Player</th>
           <th>Positions</th>
-          <th>Parent</th>
           <th>Phone</th>
           <th>Decision</th>
           <th>Email</th>
@@ -40,7 +39,6 @@
           <tr>
             <td>{{ signup.player_full_name }}</td>
             <td>{{ signup.positions_display }}</td>
-            <td>{{ signup.parent_full_name }}</td>
             <td>{{ signup.parent_phone }}</td>
             <td>{% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}</td>
             <td>{% include "partials/_tryout_email_action.html" with signup=signup %}</td>
