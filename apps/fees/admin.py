@@ -31,8 +31,8 @@ class PaymentAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
 class FeeReminderAdmin(admin.ModelAdmin):
     """History of Gus's automated overdue reminders (apps.fees.reminders). Read-only."""
 
-    list_display = ("fee", "sent_to_email", "balance_at_send", "sent_at")
-    list_filter = ("sent_at",)
+    list_display = ("fee", "was_sent", "sent_to_email", "balance_at_send", "sent_at")
+    list_filter = ("was_sent", "sent_at")
     search_fields = ("fee__player__first_name", "fee__player__last_name", "sent_to_email")
 
     def has_add_permission(self, request):

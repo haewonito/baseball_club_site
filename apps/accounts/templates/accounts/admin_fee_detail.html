@@ -9,12 +9,17 @@
     <a href="{% url 'accounts:admin_fee_edit' fee.pk %}">Edit fee</a>
   </section>
 
-  {% if fee.reminder %}
+  {% if fee.reminder.was_sent %}
     {# apps.fees.reminders -- one automated reminder per fee, never repeated. #}
     <p class="form-restored">
       <strong>Overdue reminder sent</strong> {{ fee.reminder.sent_at|date:"M j, Y" }} to
       {{ fee.reminder.sent_to_email }} (primary parent), for a ${{ fee.reminder.balance_at_send }} balance.
       Gus won't send another for this fee.
+    </p>
+  {% elif fee.reminder %}
+    <p class="form-restored">
+      <strong>No automated reminder:</strong> this fee was already overdue when Gus's reminders
+      started, so he'll never email about it.
     </p>
   {% endif %}
 

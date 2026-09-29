@@ -112,8 +112,12 @@ class FeeReminder(models.Model):
     )
     # Snapshots, so the record still reads right after the user's email
     # changes or more payments come in.
-    sent_to_email = models.EmailField()
+    sent_to_email = models.EmailField(blank=True)
     balance_at_send = models.DecimalField(max_digits=8, decimal_places=2)
+    # False = no email went out: the fee was already overdue when Gus
+    # started (fees migration 0004, the user's choice), so it's marked as
+    # reminded to keep him from emailing old balances.
+    was_sent = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["-sent_at"]

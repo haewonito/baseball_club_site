@@ -41,8 +41,10 @@
             <td>${{ row.balance }}</td>
             <td>{{ row.status_label }}</td>
             <td>
-              {% if row.fee.reminder %}
+              {% if row.fee.reminder.was_sent %}
                 <span class="status-badge" title="Sent to {{ row.fee.reminder.sent_to_email }}">Sent {{ row.fee.reminder.sent_at|date:"M j" }}</span>
+              {% elif row.fee.reminder %}
+                <span title="Already overdue when automatic reminders started, so no email was sent">Skipped</span>
               {% else %}&mdash;{% endif %}
             </td>
             <td><a href="{% url 'accounts:admin_fee_edit' row.fee.pk %}">Edit</a></td>
