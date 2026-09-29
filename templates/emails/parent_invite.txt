@@ -1,4 +1,4 @@
-Hi,
+{% autoescape off %}Hi,
 
 {{ invite.created_by.first_name }} {{ invite.created_by.last_name }} has invited you to connect
 with {{ invite.player }}'s account on the Choice Select site.
@@ -15,3 +15,4 @@ If this email landed in your spam folder, please mark it "Not spam" so future em
 
 Thanks,
 Choice Select
+{% endautoescape %}

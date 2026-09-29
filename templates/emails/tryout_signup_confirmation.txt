@@ -1,4 +1,4 @@
-Hi {{ signup.parent_first_name }},
+{% autoescape off %}Hi {{ signup.parent_first_name }},
 
 Thanks for signing up {{ signup.player_full_name }} for Choice Select try-outs. We've received the sign-up:
 
@@ -13,3 +13,4 @@ A coach will follow up by phone or email with next steps. If this email landed i
 
 Thanks,
 Choice Select
+{% endautoescape %}
