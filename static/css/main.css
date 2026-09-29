@@ -552,11 +552,6 @@ legend {
   flex-wrap: wrap;
 }
 
-.status-badge.status-badge--small {
-  padding: 0.1rem 0.4rem;
-  font-size: 0.7rem;
-}
-
 .status-badge {
   display: inline-block;
   background: var(--color-red-pale);

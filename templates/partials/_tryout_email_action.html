@@ -6,10 +6,7 @@
   {% if signup.coach_decision == "undecided" or signup.coach_decision == "unattended" %}
     <span class="email-action__hint">Set a decision first</span>
   {% elif signup.decision_emailed_at %}
-    <button class="btn btn--small" type="button" disabled>
-      {% if signup.coach_decision == "invite" %}Acceptance Email Sent{% else %}Rejection Email Sent{% endif %}
-    </button>
-    <span class="status-badge status-badge--small">&#10003; Sent</span>
+    <span class="status-badge">&#10003; {% if signup.coach_decision == "invite" %}Acceptance{% else %}Rejection{% endif %} email sent</span>
   {% else %}
     <button
       class="btn btn--small{% if signup.coach_decision == 'invite' %} btn--primary{% endif %}"
