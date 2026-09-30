@@ -49,7 +49,7 @@
       <p>Last emailed to {{ invite.invitee_email }} on {{ invite.emailed_at|date:"M j, Y g:i A" }}.</p>
     {% endif %}
 
-    <p>Expires {{ invite.expires_at|date:"M j, Y" }}.</p>
+    <p>*Link expires {{ invite.expires_at|date:"M j, Y" }}.</p>
 
     {# Only an unused link gets here (parent_invite_player shows only open invites). #}
     <form
