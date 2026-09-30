@@ -1163,7 +1163,27 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
   margin: 0;
   padding: 0;
   max-height: 20rem;
-  overflow-y: auto;
+  overflow-y: scroll;
+  /* Firefox */
+  scrollbar-width: auto;
+  scrollbar-color: #9a9a9a var(--color-gray-bg);
+}
+
+/* Styling the scrollbar (Chrome/Safari) stops macOS from auto-hiding it, so
+   people can see there are more players below. */
+.player-picker__list::-webkit-scrollbar {
+  width: 12px;
+}
+
+.player-picker__list::-webkit-scrollbar-track {
+  background: var(--color-gray-bg);
+  border-left: 1px solid var(--color-gray-line);
+}
+
+.player-picker__list::-webkit-scrollbar-thumb {
+  background: #9a9a9a;
+  border-radius: 6px;
+  border: 2px solid var(--color-gray-bg);
 }
 
 .player-picker__list li {
