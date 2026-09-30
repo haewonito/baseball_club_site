@@ -61,7 +61,6 @@
           <th tabindex="0">Description</th>
           <th tabindex="0">Player / Team</th>
           <th tabindex="0">Due</th>
-          <th tabindex="0">Amount Due</th>
           <th tabindex="0">Balance</th>
           <th tabindex="0">Status</th>
           <th tabindex="0">Reminder</th>
@@ -72,8 +71,7 @@
           <tr>
             <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">{{ row.fee.description }}</a></td>
             <td>{{ row.fee.player|default:row.fee.team }}</td>
-            <td data-sort="{{ row.fee.due_date|date:'Y-m-d' }}">{{ row.fee.due_date|default:"—" }}</td>
-            <td data-sort="{{ row.fee.amount_due }}">${{ row.fee.amount_due }}</td>
+            <td data-sort="{{ row.fee.due_date|date:'Y-m-d' }}">{{ row.fee.due_date|date:"M j"|default:"—" }}</td>
             <td data-sort="{{ row.balance }}">${{ row.balance }}</td>
             <td>{{ row.status_label }}</td>
             <td>

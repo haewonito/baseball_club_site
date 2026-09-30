@@ -16,11 +16,6 @@
       {{ fee.reminder.sent_to_email }} (primary parent), for a ${{ fee.reminder.balance_at_send }} balance.
       Gus won't send another for this fee.
     </p>
-  {% elif fee.reminder %}
-    <p class="form-restored">
-      <strong>No automated reminder:</strong> this fee was already overdue when Gus's reminders
-      started, so he'll never email about it.
-    </p>
   {% endif %}
 
   {% include "partials/_fee_ledger.html" with fee=fee payment_form=payment_form %}
