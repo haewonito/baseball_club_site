@@ -256,7 +256,6 @@ legend {
   background: var(--color-white);
 }
 
-.form-field input:focus,
 /* Every single-choice dropdown gets its own chevron, set in from the right
    edge -- the browser's built-in arrow sits flush against the border. Only
    the image/padding are set here, so each select keeps its own colours and
@@ -271,6 +270,7 @@ select:not([multiple]):not([size]) {
   background-size: 1rem;
 }
 
+.form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
   outline: none;
