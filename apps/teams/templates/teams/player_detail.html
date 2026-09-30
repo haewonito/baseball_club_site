@@ -21,6 +21,41 @@
     </section>
   {% endif %}
 
+  {% if profile_form %}
+    <details class="profile-edit" id="profile"{% if profile_form.errors %} open{% endif %}>
+      <summary class="btn btn--small">Edit Profile</summary>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if profile_form.non_field_errors %}
+          <div class="form-errors">
+            {% for error in profile_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+          </div>
+        {% endif %}
+        {% include "partials/_form_field.html" with field=profile_form.photo %}
+        {% if player.photo %}
+          <div class="form-field form-field--checkbox">
+            <label for="{{ profile_form.remove_photo.id_for_label }}">
+              {{ profile_form.remove_photo }}
+              {{ profile_form.remove_photo.label }}
+            </label>
+          </div>
+        {% endif %}
+        {% include "partials/_form_field.html" with field=profile_form.description %}
+        {# Checkbox to the left of its label, unlike the stacked label-over-input of _form_field.html. #}
+        <div class="form-field form-field--checkbox">
+          <label for="{{ profile_form.is_public_profile.id_for_label }}">
+            {{ profile_form.is_public_profile }}
+            {{ profile_form.is_public_profile.label }}
+          </label>
+          {% if profile_form.is_public_profile.help_text %}
+            <p class="form-field__help">{{ profile_form.is_public_profile.help_text }}</p>
+          {% endif %}
+        </div>
+        <button class="btn btn--primary" type="submit">Save</button>
+      </form>
+    </details>
+  {% endif %}
+
   <section class="team-section">
     <h2>Positions</h2>
     {% if player.positions.all %}
@@ -120,10 +155,6 @@
         </ul>
       </section>
     {% endif %}
-  {% endif %}
-
-  {% if can_edit_profile %}
-    <p><a class="btn btn--primary" href="{% url 'accounts:parent_player_profile_edit' player.pk %}">Edit Profile</a></p>
   {% endif %}
 
   {% if gallery_photos or can_edit_gallery %}

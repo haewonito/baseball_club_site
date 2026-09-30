@@ -291,6 +291,26 @@ legend {
   flex-shrink: 0;
 }
 
+/* Collapsed "Edit Profile" section on the player page. */
+.profile-edit {
+  margin: 0 0 1.5rem;
+}
+
+.profile-edit summary {
+  display: inline-block;
+  cursor: pointer;
+  list-style: none;
+}
+
+.profile-edit summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile-edit form {
+  margin-top: 1rem;
+  max-width: 480px;
+}
+
 /* A single checkbox with its label beside it (e.g. "Make profile public"). */
 .form-field--checkbox label {
   display: flex;

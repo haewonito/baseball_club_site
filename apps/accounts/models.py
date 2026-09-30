@@ -140,7 +140,7 @@ class Player(models.Model):
     # Profile "flair" -- distinct from the roster fields above (name/DOB/
     # jersey/position), which stay coach/admin-only. These three are the
     # parent's own domain: editable by the player's linked parent (or
-    # admin) via apps.accounts.views.parent_player_profile_edit, never by
+    # admin) via the inline form on teams.views.player_detail, never by
     # a coach. See apps.teams.views.player_detail for the tiered
     # public/coach-parent/admin page these feed.
     photo = models.ImageField(upload_to="player_photos/", null=True, blank=True)

@@ -200,8 +200,26 @@ class PlayerProfileForm(forms.ModelForm):
     """
     The parent's own editable subset of Player -- name/DOB/jersey/position
     stay coach-or-admin-only via PlayerRosterForm; this is only ever used
-    from parent_player_profile_edit (parent, or admin as an override).
+    from teams.views.player_detail (the linked parent, or admin as an
+    override -- see teams.views._player_viewer_info).
     """
+
+    # A plain file box, not Django's "Currently: ... / Clear / Change:" widget
+    # -- the page already shows the current photo -- so removal is its own
+    # checkbox.
+    photo = forms.ImageField(
+        required=False, widget=forms.FileInput(attrs={"accept": "image/*"})
+    )
+    remove_photo = forms.BooleanField(required=False, label="Remove current photo")
+
+    def save(self, commit=True):
+        player = super().save(commit=False)
+        if self.cleaned_data.get("remove_photo") and not self.files.get("photo"):
+            player.photo.delete(save=False)
+            player.photo = None
+        if commit:
+            player.save()
+        return player
 
     class Meta:
         model = Player

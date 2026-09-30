@@ -1,9 +1,10 @@
 from django.db.models import Case, F, IntegerField, Prefetch, Value, When
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from apps.accounts.forms import GALLERY_MAX_PHOTOS, PlayerGalleryPhotoForm
+from apps.accounts.forms import GALLERY_MAX_PHOTOS, PlayerGalleryPhotoForm, PlayerProfileForm
 from apps.accounts.models import ParentPlayerLink, Player, Role, User
 from apps.fees.models import FEE_STATUS_LABELS
 
@@ -98,7 +99,7 @@ def _player_viewer_info(request, player):
     parent linked to the player), 3 = tier 2 + fees/links/everything
     (admin). can_edit_profile is separate from tier: only admin or the
     specific linked parent may edit photo/description/is_public_profile
-    (apps.accounts.views.parent_player_profile_edit) -- a coach can be
+    (the inline form on player_detail itself) -- a coach can be
     tier 2 without ever getting edit rights.
     """
     user = request.user
@@ -130,6 +131,23 @@ def player_detail(request, pk):
     if tier == 0:
         raise Http404
 
+    # The inline "Edit profile" form (photo, description, public toggle)
+    # posts back to this page. Same rule as the button that shows it: only
+    # the linked parent or an admin, so anyone else's POST is refused.
+    profile_form = None
+    if request.method == "POST":
+        if not can_edit_profile:
+            raise PermissionDenied
+        profile_form = PlayerProfileForm(request.POST, request.FILES, instance=player)
+        if profile_form.is_valid():
+            profile_form.save()
+            return redirect("teams:player_detail", pk=player.pk)
+        # Validation assigns the rejected values onto `player`; show the
+        # saved ones in the page and keep the rejected ones in the form.
+        player = Player.objects.select_related("team").prefetch_related("positions").get(pk=pk)
+    elif can_edit_profile:
+        profile_form = PlayerProfileForm(instance=player)
+
     # Gallery editing is linked-parents-only (no admin override, unlike
     # can_edit_profile) -- see PlayerGalleryPhoto.
     can_edit_gallery = (
@@ -142,6 +160,7 @@ def player_detail(request, pk):
         "player": player,
         "tier": tier,
         "can_edit_profile": can_edit_profile,
+        "profile_form": profile_form,
         "can_edit_gallery": can_edit_gallery,
         "gallery_photos": player.gallery_photos.all(),
     }

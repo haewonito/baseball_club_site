@@ -61,7 +61,7 @@
             </details>
           {% endif %}
           <a class="btn" href="{% url 'accounts:parent_player_payments' card.player.pk %}">View payment history</a>
-          <a class="btn" href="{% url 'accounts:parent_player_profile_edit' card.player.pk %}">Edit Profile</a>
+          <a class="btn" href="{% url 'teams:player_detail' card.player.pk %}">Profile &amp; Photos</a>
           <a class="btn" href="{% url 'accounts:parent_invite_player' card.player.pk %}">Invite Another Adult</a>
         </div>
       {% endfor %}

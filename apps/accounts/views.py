@@ -1107,38 +1107,15 @@ def parent_player_payments(request, player_id):
 
 @login_required
 def parent_player_profile_edit(request, player_id):
-    """
-    Edits exactly the three "profile flair" fields (photo, description,
-    is_public_profile) -- never name/DOB/jersey/position, which stay
-    coach/admin-only via PlayerRosterForm. Open to the specific linked
-    parent, or admin as an override (same pattern as every other
-    admin-can-do-anything check in this file) -- deliberately not open to
-    coaches, unlike roster editing.
-    """
-    player = get_object_or_404(Player, pk=player_id)
-    is_linked_parent = ParentPlayerLink.objects.filter(
-        parent=request.user, player=player, removed_at__isnull=True
-    ).exists()
-    if not (request.user.is_admin or is_linked_parent):
-        raise PermissionDenied
-
-    if request.method == "POST":
-        form = PlayerProfileForm(request.POST, request.FILES, instance=player)
-        if form.is_valid():
-            form.save()
-            return redirect("teams:player_detail", pk=player.pk)
-    else:
-        form = PlayerProfileForm(instance=player)
-    return render(
-        request,
-        "accounts/parent_player_profile_form.html",
-        {"form": form, "player": player},
-    )
+    """Profile editing now happens inline on the player page (teams.views.
+    player_detail, which does the permission check); this URL only keeps old
+    links and bookmarks working."""
+    return redirect(reverse("teams:player_detail", args=[player_id]) + "#profile")
 
 
 def _get_gallery_player_or_403(user, player_id):
     """Gallery editing is linked-parents-only -- no admin override here,
-    unlike parent_player_profile_edit (see PlayerGalleryPhoto)."""
+    unlike the profile form on player_detail (see PlayerGalleryPhoto)."""
     player = get_object_or_404(Player, pk=player_id)
     if not ParentPlayerLink.objects.filter(
         parent=user, player=player, removed_at__isnull=True
