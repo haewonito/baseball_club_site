@@ -34,7 +34,7 @@
           <div class="kid-card__row">
             <span>
               Primary parent
-              {% include "partials/_info_tip.html" with text="The primary parent gets the club's automated emails about this player, like reminders for overdue payments. That's the only difference: every linked adult can see and do everything else." %}
+              {% include "partials/_info_tip.html" with text="Only the primary parent gets the club's automated reminders for overdue payments. That's the only difference: every linked adult can see and do everything else." %}
             </span>
             {% if card.is_primary %}You{% else %}{{ card.primary_link.parent|default:"—" }}{% endif %}
           </div>
