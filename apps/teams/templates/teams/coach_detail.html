@@ -35,8 +35,26 @@
     </section>
   {% endif %}
 
-  {% if user.is_authenticated and user.pk == coach.pk %}
-    <p><a class="btn" href="{% url 'accounts:coach_profile_edit' %}">Edit my profile</a></p>
+  {% if form %}
+    <details class="profile-edit private-only" id="edit-profile"{% if form.errors %} open{% endif %}>
+      <summary class="btn btn--small">Edit Profile</summary>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="form-errors">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+          </div>
+        {% endif %}
+        {% include "partials/_form_field.html" with field=form.bio_text %}
+        {% include "partials/_form_field.html" with field=form.photo %}
+        {% include "partials/_form_field.html" with field=form.contact_email %}
+        <button class="btn btn--primary" type="submit">Save</button>
+      </form>
+    </details>
+    <script>
+      // Dashboard/admin links land here as #edit-profile: open that section.
+      if (location.hash === "#edit-profile") document.getElementById("edit-profile").open = true;
+    </script>
   {% endif %}
 
   <p class="back-link"><a href="{% url 'teams:coaches' %}">&larr; Back to coaches</a></p>

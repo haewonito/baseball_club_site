@@ -1,14 +1,21 @@
 from django.db.models import Case, F, IntegerField, Prefetch, Value, When
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from apps.accounts.forms import GALLERY_MAX_PHOTOS, PlayerGalleryPhotoForm, PlayerProfileForm
+from apps.accounts.forms import (
+    CoachProfileForm,
+    GALLERY_MAX_PHOTOS,
+    PlayerGalleryPhotoForm,
+    PlayerProfileForm,
+    PlayerRosterForm,
+)
 from apps.accounts.models import ParentPlayerLink, Player, Role, User
 from apps.fees.models import FEE_STATUS_LABELS
 
-from .models import Team, TeamCoach, TeamCoachRole
+from .models import CoachProfile, Team, TeamCoach, TeamCoachRole
 
 # Head coach listed before assistants -- explicit Case/When rather than
 # relying on "head" sorting before "assistant" alphabetically, which would
@@ -79,7 +86,12 @@ def coach_index(request):
 
 
 def coach_detail(request, pk):
-    """Public coach bio detail. No login required. Same visibility rule as coach_index."""
+    """
+    Public coach bio detail. No login required. Same visibility rule as
+    coach_index. The coach themself, or an admin, also gets an inline
+    "Edit Profile" form (bio, photo, contact email) that posts back here;
+    name and team assignments stay admin-managed in Django admin.
+    """
     public_assignments = TeamCoach.objects.filter(team__is_public=True).select_related("team")
     coach = get_object_or_404(
         User.objects.filter(roles__role=Role.COACH)
@@ -88,7 +100,23 @@ def coach_detail(request, pk):
         .prefetch_related(Prefetch("team_assignments", queryset=public_assignments)),
         pk=pk,
     )
-    return render(request, "teams/coach_detail.html", {"coach": coach})
+    can_edit = request.user.is_authenticated and (
+        request.user.pk == coach.pk or request.user.is_admin
+    )
+    form = None
+    if request.method == "POST":
+        if not can_edit:
+            raise PermissionDenied
+        profile, _ = CoachProfile.objects.get_or_create(coach=coach)
+        form = CoachProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Coach profile updated.")
+            return redirect("teams:coach_detail", pk=coach.pk)
+    elif can_edit:
+        profile, _ = CoachProfile.objects.get_or_create(coach=coach)
+        form = CoachProfileForm(instance=profile)
+    return render(request, "teams/coach_detail.html", {"coach": coach, "form": form})
 
 
 def _player_viewer_info(request, player):
@@ -131,22 +159,40 @@ def player_detail(request, pk):
     if tier == 0:
         raise Http404
 
-    # The inline "Edit profile" form (photo, description, public toggle)
-    # posts back to this page. Same rule as the button that shows it: only
-    # the linked parent or an admin, so anyone else's POST is refused.
+    # Two inline forms post back to this page: "Edit Profile" (photo,
+    # description, public toggle; linked parent or admin) and "Edit Roster
+    # Info" (name, DOB, jersey, positions; that team's coach or an admin).
+    # A hidden form_kind field says which one was submitted, and each is
+    # refused unless the viewer could see its button.
+    can_edit_roster = tier >= 3 or (
+        tier == 2
+        and player.team_id is not None
+        and TeamCoach.objects.filter(coach=request.user, team=player.team).exists()
+    )
     profile_form = None
+    roster_form = None
     if request.method == "POST":
-        if not can_edit_profile:
-            raise PermissionDenied
-        profile_form = PlayerProfileForm(request.POST, request.FILES, instance=player)
-        if profile_form.is_valid():
-            profile_form.save()
-            return redirect("teams:player_detail", pk=player.pk)
+        if request.POST.get("form_kind") == "roster":
+            if not can_edit_roster:
+                raise PermissionDenied
+            roster_form = PlayerRosterForm(request.POST, instance=player, prefix="roster")
+            if roster_form.is_valid():
+                roster_form.save()
+                return redirect("teams:player_detail", pk=player.pk)
+        else:
+            if not can_edit_profile:
+                raise PermissionDenied
+            profile_form = PlayerProfileForm(request.POST, request.FILES, instance=player)
+            if profile_form.is_valid():
+                profile_form.save()
+                return redirect("teams:player_detail", pk=player.pk)
         # Validation assigns the rejected values onto `player`; show the
         # saved ones in the page and keep the rejected ones in the form.
         player = Player.objects.select_related("team").prefetch_related("positions").get(pk=pk)
-    elif can_edit_profile:
+    if can_edit_profile and profile_form is None:
         profile_form = PlayerProfileForm(instance=player)
+    if can_edit_roster and roster_form is None:
+        roster_form = PlayerRosterForm(instance=player, prefix="roster")
 
     # Gallery editing is linked-parents-only (no admin override, unlike
     # can_edit_profile) -- see PlayerGalleryPhoto.
@@ -161,6 +207,7 @@ def player_detail(request, pk):
         "tier": tier,
         "can_edit_profile": can_edit_profile,
         "profile_form": profile_form,
+        "roster_form": roster_form,
         "can_edit_gallery": can_edit_gallery,
         "gallery_photos": player.gallery_photos.all(),
     }

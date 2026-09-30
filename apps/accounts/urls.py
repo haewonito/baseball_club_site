@@ -78,11 +78,6 @@ urlpatterns = [
     path("dashboard/admin/coaches/", views.admin_coaches_list, name="admin_coaches_list"),
     path("dashboard/admin/schedule/", views.admin_schedule, name="admin_schedule"),
     path(
-        "dashboard/admin/coaches/<int:user_id>/bio/",
-        views.admin_coach_bio_edit,
-        name="admin_coach_bio_edit",
-    ),
-    path(
         "dashboard/admin/tryout-posters/",
         views.admin_tryout_posters_list,
         name="admin_tryout_posters_list",
@@ -103,7 +98,6 @@ urlpatterns = [
         name="admin_tryout_poster_delete",
     ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
-    path("dashboard/coach/profile/", views.coach_profile_edit, name="coach_profile_edit"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
     path("dashboard/tryouts/email/", views.tryout_mass_email, name="tryout_mass_email"),
     path(
@@ -121,11 +115,6 @@ urlpatterns = [
         "dashboard/coach/teams/<int:team_id>/roster/add/",
         views.coach_roster_add,
         name="coach_roster_add",
-    ),
-    path(
-        "dashboard/coach/teams/<int:team_id>/roster/players/<int:player_id>/edit/",
-        views.coach_roster_edit_player,
-        name="coach_roster_edit_player",
     ),
     path(
         "dashboard/coach/teams/<int:team_id>/roster/players/<int:player_id>/remove/",

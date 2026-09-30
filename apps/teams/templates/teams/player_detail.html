@@ -36,6 +36,7 @@
       <summary class="btn btn--small">Edit Profile</summary>
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        <input type="hidden" name="form_kind" value="profile">
         {% if profile_form.non_field_errors %}
           <div class="form-errors">
             {% for error in profile_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
@@ -61,6 +62,29 @@
             <p class="form-field__help">{{ profile_form.is_public_profile.help_text }}</p>
           {% endif %}
         </div>
+        <button class="btn btn--primary" type="submit">Save</button>
+      </form>
+    </details>
+  {% endif %}
+
+  {% if roster_form %}
+    <details class="profile-edit private-only" id="roster"{% if roster_form.errors %} open{% endif %}>
+      <summary class="btn btn--small">Edit Roster Info</summary>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form_kind" value="roster">
+        {% if roster_form.non_field_errors %}
+          <div class="form-errors">
+            {% for error in roster_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+          </div>
+        {% endif %}
+        <div class="form-row">
+          {% include "partials/_form_field.html" with field=roster_form.first_name %}
+          {% include "partials/_form_field.html" with field=roster_form.last_name %}
+        </div>
+        {% include "partials/_form_field.html" with field=roster_form.date_of_birth %}
+        {% include "partials/_form_field.html" with field=roster_form.jersey_number %}
+        {% include "partials/_form_field.html" with field=roster_form.positions %}
         <button class="btn btn--primary" type="submit">Save</button>
       </form>
     </details>
@@ -220,6 +244,12 @@
         </form>
       {% endif %}
     </section>
+  {% endif %}
+  {% if roster_form %}
+    <script>
+      // The roster list's "Edit" link lands here as #roster: open that section.
+      if (location.hash === "#roster") document.getElementById("roster").open = true;
+    </script>
   {% endif %}
   {% if can_edit_gallery or profile_form %}
     <script>

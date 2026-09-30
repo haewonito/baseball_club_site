@@ -97,6 +97,6 @@ class TryoutPosterAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):
     # upload/edit flow is the custom accounts dashboard page
     # (admin_tryout_posters_list etc.), since a business-Admin-role user
     # may not have Django-admin access at all (same reasoning as
-    # CoachProfile's admin_coach_bio_edit).
+    # CoachProfile's coach_detail).
     list_display = ("title", "poster_type", "is_active", "display_order", "created_at")
     list_filter = ("poster_type", "is_active")

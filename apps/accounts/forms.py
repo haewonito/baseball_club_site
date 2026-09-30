@@ -169,8 +169,7 @@ class PaymentForm(forms.ModelForm):
 
 class CoachProfileForm(forms.ModelForm):
     """`coach` isn't a form field -- the profile is looked up/created from
-    the URL's user id (admin_coach_bio_edit) or is the logged-in coach's
-    own (coach_profile_edit)."""
+    the coach page being edited (teams.views.coach_detail)."""
 
     class Meta:
         model = CoachProfile

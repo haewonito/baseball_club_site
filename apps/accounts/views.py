@@ -377,55 +377,6 @@ def admin_schedule(request):
 
 
 @login_required
-def admin_coach_bio_edit(request, user_id):
-    if not request.user.is_admin:
-        raise PermissionDenied
-
-    coach = get_object_or_404(User, pk=user_id, roles__role=Role.COACH)
-    profile, _ = CoachProfile.objects.get_or_create(coach=coach)
-    if request.method == "POST":
-        form = CoachProfileForm(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            form.save()
-            return redirect("accounts:admin_coaches_list")
-    else:
-        form = CoachProfileForm(instance=profile)
-    return render(
-        request, "accounts/admin_coach_bio_form.html", {"form": form, "coach": coach}
-    )
-
-
-
-@login_required
-def coach_profile_edit(request):
-    """A coach edits their own public coach page (bio, photo, contact
-    email) -- same form admins use in admin_coach_bio_edit. Name and team
-    assignments stay admin-managed."""
-    if not request.user.is_coach:
-        raise PermissionDenied
-
-    profile, _ = CoachProfile.objects.get_or_create(coach=request.user)
-    if request.method == "POST":
-        form = CoachProfileForm(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Your coach profile has been updated.")
-            return redirect("teams:coach_detail", pk=request.user.pk)
-    else:
-        form = CoachProfileForm(instance=profile)
-    return render(
-        request,
-        "accounts/admin_coach_bio_form.html",
-        {
-            "form": form,
-            "coach": request.user,
-            "is_own_profile": True,
-            "back_url": reverse("accounts:dashboard_coach"),
-            "back_label": "Back to dashboard",
-        },
-    )
-
-@login_required
 def admin_tryout_posters_list(request):
     if not request.user.is_admin:
         raise PermissionDenied
@@ -566,26 +517,6 @@ def coach_roster_add(request, team_id):
         request,
         "accounts/coach_roster_form.html",
         {"team": team, "form": form, "heading": "Add Player"},
-    )
-
-
-@login_required
-def coach_roster_edit_player(request, team_id, player_id):
-    if not (request.user.is_coach or request.user.is_admin):
-        raise PermissionDenied
-    team = _get_roster_team_or_404(request.user, team_id)
-    player = get_object_or_404(Player, pk=player_id, team=team)
-    if request.method == "POST":
-        form = PlayerRosterForm(request.POST, instance=player)
-        if form.is_valid():
-            form.save()
-            return redirect("accounts:coach_roster", team_id=team.pk)
-    else:
-        form = PlayerRosterForm(instance=player)
-    return render(
-        request,
-        "accounts/coach_roster_form.html",
-        {"team": team, "form": form, "heading": f"Edit {player}"},
     )
 
 
