@@ -1164,26 +1164,6 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
   padding: 0;
   max-height: 20rem;
   overflow-y: scroll;
-  /* Firefox */
-  scrollbar-width: auto;
-  scrollbar-color: #9a9a9a var(--color-gray-bg);
-}
-
-/* Styling the scrollbar (Chrome/Safari) stops macOS from auto-hiding it, so
-   people can see there are more players below. */
-.player-picker__list::-webkit-scrollbar {
-  width: 12px;
-}
-
-.player-picker__list::-webkit-scrollbar-track {
-  background: var(--color-gray-bg);
-  border-left: 1px solid var(--color-gray-line);
-}
-
-.player-picker__list::-webkit-scrollbar-thumb {
-  background: #9a9a9a;
-  border-radius: 6px;
-  border: 2px solid var(--color-gray-bg);
 }
 
 .player-picker__list li {
@@ -1230,4 +1210,34 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
   margin-left: auto;
   color: var(--color-gray-text);
   font-size: 0.85rem;
+}
+
+/* Site-wide visible scrollbars. Styling the scrollbar (Chrome/Safari) stops
+   macOS from auto-hiding it, so people can see when there is more to scroll
+   to. Firefox has no ::-webkit-scrollbar, so it gets scrollbar-color; it is
+   kept out of Chrome/Safari because newer Chrome ignores the webkit styling
+   whenever scrollbar-color is set. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: #9a9a9a var(--color-gray-bg);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9a9a9a;
+  border-radius: 6px;
+  border: 2px solid var(--color-gray-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-text);
 }
