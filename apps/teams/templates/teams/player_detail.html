@@ -88,7 +88,6 @@
           {% for link in parent_links %}
             <li>
               {{ link.parent }} &mdash; {{ link.parent.email }}
-              {% if link.is_primary %}<span class="status-badge">Primary</span>{% endif %}
             </li>
           {% endfor %}
         </ul>
