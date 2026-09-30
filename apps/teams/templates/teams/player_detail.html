@@ -1,40 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ player }} · {{ block.super }}  {% if can_edit_gallery or profile_form %}
-    <script>
-      // The browser's "No file chosen" text can't be removed, only recoloured:
-      // make it invisible while a file box is empty, normal once files are picked.
-      (function () {
-        document
-          .querySelectorAll('.gallery-upload input[type="file"], .profile-edit input[type="file"]')
-          .forEach(function (input) {
-            function sync() { input.classList.toggle("file-input--empty", input.files.length === 0); }
-            input.addEventListener("change", sync);
-            window.addEventListener("pageshow", sync);
-            sync();
-          });
-      })();
-    </script>
-  {% endif %}
-
-  {% if tier >= 2 %}
-    <script>
-      (function () {
-        var body = document.body;
-        document.querySelectorAll("[data-preview]").forEach(function (button) {
-          button.addEventListener("click", function () {
-            body.classList.toggle("public-preview", button.dataset.preview === "on");
-            window.scrollTo(0, 0);
-          });
-        });
-        // Coming back via the browser's back button must not restore the preview.
-        window.addEventListener("pageshow", function (event) {
-          if (event.persisted) body.classList.remove("public-preview");
-        });
-      })();
-    </script>
-  {% endif %}
-{% endblock %}
+{% block title %}{{ player }} · {{ block.super }}{% endblock %}
 
 {% block content %}
   <section class="page-hero">
@@ -264,5 +230,39 @@
         </form>
       {% endif %}
     </section>
+  {% endif %}
+  {% if can_edit_gallery or profile_form %}
+    <script>
+      // The browser's "No file chosen" text can't be removed, only recoloured:
+      // make it invisible while a file box is empty, normal once files are picked.
+      (function () {
+        document
+          .querySelectorAll('.gallery-upload input[type="file"], .profile-edit input[type="file"]')
+          .forEach(function (input) {
+            function sync() { input.classList.toggle("file-input--empty", input.files.length === 0); }
+            input.addEventListener("change", sync);
+            window.addEventListener("pageshow", sync);
+            sync();
+          });
+      })();
+    </script>
+  {% endif %}
+
+  {% if tier >= 2 %}
+    <script>
+      (function () {
+        var body = document.body;
+        document.querySelectorAll("[data-preview]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            body.classList.toggle("public-preview", button.dataset.preview === "on");
+            window.scrollTo(0, 0);
+          });
+        });
+        // Coming back via the browser's back button must not restore the preview.
+        window.addEventListener("pageshow", function (event) {
+          if (event.persisted) body.classList.remove("public-preview");
+        });
+      })();
+    </script>
   {% endif %}
 {% endblock %}
