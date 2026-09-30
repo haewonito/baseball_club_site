@@ -1193,6 +1193,19 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
   flex-shrink: 0;
 }
 
+/* Undo the generic ".form-field input:focus" red glow for these checkboxes,
+   so they look the same focused or not (keyboard focus keeps a plain ring). */
+.player-picker__list input[type="checkbox"]:focus {
+  outline: none;
+  border-color: initial;
+  box-shadow: none;
+}
+
+.player-picker__list input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
 .player-picker__team {
   margin-left: auto;
   color: var(--color-gray-text);

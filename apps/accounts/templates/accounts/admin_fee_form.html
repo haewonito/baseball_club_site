@@ -31,8 +31,8 @@
               {% for team in teams %}<option value="{{ team.pk }}">{{ team }}</option>{% endfor %}
               <option value="none">No team</option>
             </select>
-            <button type="button" class="btn btn--small" id="player-select-shown">Select shown</button>
-            <button type="button" class="btn btn--small" id="player-clear-shown">Clear shown</button>
+            <button type="button" class="btn btn--small" id="player-select-shown">Select all</button>
+            <button type="button" class="btn btn--small" id="player-clear-shown">Clear all</button>
             <span class="player-picker__count"><span id="player-count">0</span> selected</span>
           </div>
           <ul class="player-picker__list">
