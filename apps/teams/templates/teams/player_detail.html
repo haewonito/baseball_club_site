@@ -250,7 +250,7 @@
             <div class="label-row">
               <label for="{{ gallery_form.images.id_for_label }}">{{ gallery_form.images.label }}</label>
               <span class="form-field__help">
-                {% if player.is_public_profile %}Visible to anyone, since {{ player.first_name }}'s profile is public.{% else %}Visible only to {{ player.first_name }}'s coaches, parents, and club admins.{% endif %}
+                {% if player.is_public_profile %}- visible to anyone, since {{ player.first_name }}'s profile is public.{% else %}- visible only to {{ player.first_name }}'s coaches, parents, and club admins.{% endif %}
               </span>
             </div>
             {{ gallery_form.images }}
