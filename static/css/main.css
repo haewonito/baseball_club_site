@@ -1323,3 +1323,9 @@ table[data-sortable] th[aria-sort="descending"]::after {
   outline: 2px solid var(--color-red);
   outline-offset: 2px;
 }
+
+/* Due-date column on Fees & Payments: wide enough that "Sep 30" stays on one line. */
+.col-due {
+  white-space: nowrap;
+  min-width: 6rem;
+}
