@@ -25,13 +25,15 @@ class Command(BaseCommand):
         failures = 0
         for t in teams:
             try:
-                counts = sync_team(t, dry_run=dry_run)
+                counts, skipped_titles = sync_team(t, dry_run=dry_run)
             except SyncError as exc:
                 failures += 1
                 self.stderr.write(f"{t}: FAILED - {exc}")
                 continue
             summary = ", ".join(f"{n} {label.replace('_', ' ')}" for label, n in counts.items())
             self.stdout.write(f"{t}{' (dry run)' if dry_run else ''}: {summary}")
+            for title in skipped_titles:
+                self.stdout.write(f"  skipped (not a practice or game): {title}")
         if not teams:
             self.stdout.write("No teams have a GameChanger calendar link.")
         if failures:

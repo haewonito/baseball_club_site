@@ -154,6 +154,9 @@ def apply_feed(team, feed_events, now=None):
         "unchanged": 0,
         "skipped": 0,
     }
+    # Titles of feed events that aren't practices or games, so the sync
+    # output (Railway's cron log) leaves a trail of what isn't being imported.
+    skipped_titles = []
     existing = {e.external_id: e for e in team.events.filter(source=EventSource.GAMECHANGER)}
     seen = set()
 
@@ -161,6 +164,7 @@ def apply_feed(team, feed_events, now=None):
         seen.add(item["uid"])
         if item["event_type"] is None:
             counts["skipped"] += 1
+            skipped_titles.append(f'{item["start"]:%Y-%m-%d} {item["title"]}')
             continue
         event = existing.get(item["uid"])
         if event is None:
@@ -211,11 +215,12 @@ def apply_feed(team, feed_events, now=None):
         event.status = EventStatus.CANCELLED
         event.save(update_fields=["feed_status", "status", "updated_at"])
         counts["cancelled_removed"] += 1
-    return counts
+    return counts, skipped_titles
 
 
 def sync_team(team, dry_run=False, now=None):
-    """Fetch and apply one team's feed. Raises SyncError, leaving data alone."""
+    """Fetch and apply one team's feed. Returns (counts, skipped_titles); raises
+    SyncError, leaving data alone."""
     if not team.gamechanger_feed_url.strip():
         raise SyncError("This team has no GameChanger calendar link.")
     url = normalize_feed_url(team.gamechanger_feed_url)
@@ -228,10 +233,10 @@ def sync_team(team, dry_run=False, now=None):
         raise SyncError("The feed has no events but the team has upcoming synced ones; not touching them.")
 
     with transaction.atomic():
-        counts = apply_feed(team, feed_events, now=now)
+        counts, skipped_titles = apply_feed(team, feed_events, now=now)
         if dry_run:
             transaction.set_rollback(True)
         else:
             team.gamechanger_last_synced_at = now
             team.save(update_fields=["gamechanger_last_synced_at"])
-    return counts
+    return counts, skipped_titles
