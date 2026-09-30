@@ -7,7 +7,7 @@ from PIL import Image, ImageOps
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-from apps.fees.models import Fee, Payment
+from apps.fees.models import Fee, Payment, PaymentMethod
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Position, Team
 from apps.tryouts.models import TryoutPoster
@@ -171,6 +171,10 @@ class PaymentForm(forms.ModelForm):
         widgets = {
             "paid_at": forms.DateInput(attrs={"type": "date"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["method"].initial = PaymentMethod.CASH
 
 
 class CoachProfileForm(forms.ModelForm):

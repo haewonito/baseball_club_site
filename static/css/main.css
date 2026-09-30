@@ -1241,3 +1241,25 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-gray-text);
 }
+
+/* Click-to-sort tables (static/js/sortable-table.js). */
+table[data-sortable] th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+table[data-sortable] th::after {
+  content: " \2195";
+  color: var(--color-gray-line);
+}
+
+table[data-sortable] th[aria-sort="ascending"]::after {
+  content: " \25B2";
+  color: var(--color-red);
+}
+
+table[data-sortable] th[aria-sort="descending"]::after {
+  content: " \25BC";
+  color: var(--color-red);
+}

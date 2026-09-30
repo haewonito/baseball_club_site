@@ -18,16 +18,22 @@
   </p>
 
   {% if rows %}
-    <table class="roster-table">
+    <div class="form-field">
+      <label for="fee-search">Search by player</label>
+      <input type="search" id="fee-search" placeholder="Type a player's name" autocomplete="off">
+    </div>
+
+    {# Click a column heading to sort (static/js/sortable-table.js); data-sort holds the raw value where the shown text doesn't sort right. #}
+    <table class="roster-table" data-sortable id="fees-table">
       <thead>
         <tr>
-          <th>Description</th>
-          <th>Player / Team</th>
-          <th>Due</th>
-          <th>Amount Due</th>
-          <th>Balance</th>
-          <th>Status</th>
-          <th>Reminder</th>
+          <th tabindex="0">Description</th>
+          <th tabindex="0">Player / Team</th>
+          <th tabindex="0">Due</th>
+          <th tabindex="0">Amount Due</th>
+          <th tabindex="0">Balance</th>
+          <th tabindex="0">Status</th>
+          <th tabindex="0">Reminder</th>
         </tr>
       </thead>
       <tbody>
@@ -35,9 +41,9 @@
           <tr>
             <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">{{ row.fee.description }}</a></td>
             <td>{{ row.fee.player|default:row.fee.team }}</td>
-            <td>{{ row.fee.due_date|default:"—" }}</td>
-            <td>${{ row.fee.amount_due }}</td>
-            <td>${{ row.balance }}</td>
+            <td data-sort="{{ row.fee.due_date|date:'Y-m-d' }}">{{ row.fee.due_date|default:"—" }}</td>
+            <td data-sort="{{ row.fee.amount_due }}">${{ row.fee.amount_due }}</td>
+            <td data-sort="{{ row.balance }}">${{ row.balance }}</td>
             <td>{{ row.status_label }}</td>
             <td>
               {% if row.fee.reminder.was_sent %}
@@ -50,6 +56,27 @@
         {% endfor %}
       </tbody>
     </table>
+    <p id="fee-search-empty" hidden>No fees match that name.</p>
+    <script>
+      // Filters the rows as you type, on the Description and Player / Team cells.
+      (function () {
+        var input = document.getElementById("fee-search");
+        var rows = document.querySelectorAll("#fees-table tbody tr");
+        var empty = document.getElementById("fee-search-empty");
+        function apply() {
+          var query = input.value.trim().toLowerCase();
+          var shown = 0;
+          rows.forEach(function (row) {
+            var text = (row.cells[0].textContent + " " + row.cells[1].textContent).toLowerCase();
+            row.hidden = query !== "" && text.indexOf(query) === -1;
+            if (!row.hidden) shown += 1;
+          });
+          empty.hidden = shown > 0;
+        }
+        input.addEventListener("input", apply);
+        window.addEventListener("pageshow", apply);
+      })();
+    </script>
   {% else %}
     <p>No fees{% if only_outstanding %} outstanding{% endif %}.</p>
   {% endif %}
