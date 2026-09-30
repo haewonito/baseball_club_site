@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}{{ player }} · {{ block.super }}{% endblock %}
+{% block title %}{{ player }} · {{ block.super }}  {% if tier >= 2 %}
+    <script>
+      (function () {
+        var body = document.body;
+        document.querySelectorAll("[data-preview]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            body.classList.toggle("public-preview", button.dataset.preview === "on");
+            window.scrollTo(0, 0);
+          });
+        });
+        // Coming back via the browser's back button must not restore the preview.
+        window.addEventListener("pageshow", function (event) {
+          if (event.persisted) body.classList.remove("public-preview");
+        });
+      })();
+    </script>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
   <section class="page-hero">
@@ -10,6 +27,25 @@
       {% if player.jersey_number %} &middot; #{{ player.jersey_number }}{% endif %}
     </p>
   </section>
+
+  {% if tier >= 2 %}
+    {# "View as the public" is client-side only: it hides everything marked .private-only, so a refresh always returns to the normal view. #}
+    <p class="preview-toggle">
+      <button type="button" class="btn btn--small" data-preview="on">See what the public sees</button>
+    </p>
+    <div class="preview-banner">
+      <p>
+        <strong>Public view.</strong>
+        {% if player.is_public_profile and player.team.is_public %}
+          This is what anyone visiting the site sees.
+        {% else %}
+          {{ player.first_name }}'s profile is private, so visitors currently get "page not found".
+          This is what they'd see if you turned on "Make profile public".
+        {% endif %}
+      </p>
+      <button type="button" class="btn btn--small" data-preview="off">Back to my view</button>
+    </div>
+  {% endif %}
 
   {% if player.photo %}
     <p><img src="{{ player.photo.url }}" alt="{{ player }}" class="coach-photo-preview"></p>
@@ -22,7 +58,7 @@
   {% endif %}
 
   {% if profile_form %}
-    <details class="profile-edit" id="profile"{% if profile_form.errors %} open{% endif %}>
+    <details class="profile-edit private-only" id="profile"{% if profile_form.errors %} open{% endif %}>
       <summary class="btn btn--small">Edit Profile</summary>
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -66,12 +102,12 @@
   </section>
 
   {% if tier >= 2 %}
-    <section class="team-section">
+    <section class="team-section private-only">
       <h2>Player Info</h2>
       <p>Date of birth: {{ player.date_of_birth }}</p>
     </section>
 
-    <section class="team-section">
+    <section class="team-section private-only">
       <h2>Parent Contact</h2>
       {% if parent_links %}
         <ul class="coach-list">
@@ -89,7 +125,7 @@
   {% endif %}
 
   {% if tier >= 3 %}
-    <section class="team-section">
+    <section class="team-section private-only">
       <h2>Fees &amp; Payments</h2>
       {% if fee_rows %}
         <table class="roster-table">
@@ -121,7 +157,7 @@
       {% endif %}
     </section>
 
-    <section class="team-section">
+    <section class="team-section private-only">
       <h2>Parent-Player Link History</h2>
       {% if link_history %}
         <ul class="coach-list">
@@ -143,7 +179,7 @@
     </section>
 
     {% if tryout_signups %}
-      <section class="team-section">
+      <section class="team-section private-only">
         <h2>Try-Out Origin</h2>
         <p>Added to a roster from {{ tryout_signups|length }} try-out sign-up{{ tryout_signups|length|pluralize }}:</p>
         <ul>
@@ -158,7 +194,7 @@
   {% endif %}
 
   {% if gallery_photos or can_edit_gallery %}
-    <section class="team-section player-gallery" id="gallery">
+    <section class="team-section player-gallery{% if not gallery_photos %} private-only{% endif %}" id="gallery">
       <h2>More Pictures of {{ player.first_name }}!</h2>
 
       {% if gallery_photos %}
@@ -170,6 +206,7 @@
               </a>
               {% if can_edit_gallery %}
                 <form
+                  class="private-only"
                   method="post"
                   action="{% url 'accounts:parent_player_gallery_delete' player.pk photo.pk %}"
                   onsubmit="return confirm('Delete this photo? This can&#39;t be undone.');"
@@ -190,7 +227,7 @@
           method="post"
           enctype="multipart/form-data"
           action="{% url 'accounts:parent_player_gallery_add' player.pk %}"
-          class="gallery-upload"
+          class="gallery-upload private-only"
         >
           {% csrf_token %}
           {# Written out (not _form_field.html) so the visibility note can sit beside the label, above the file box. #}

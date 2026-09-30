@@ -291,6 +291,28 @@ legend {
   flex-shrink: 0;
 }
 
+/* "See what the public sees" on the player page: hides .private-only. */
+.preview-banner {
+  display: none;
+}
+
+.public-preview .preview-banner {
+  display: block;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-red-pale);
+  border-radius: var(--radius);
+}
+
+.public-preview .preview-banner p {
+  margin: 0 0 0.5rem;
+}
+
+.public-preview .preview-toggle,
+.public-preview .private-only {
+  display: none !important;
+}
+
 /* Collapsed "Edit Profile" section on the player page. */
 .profile-edit {
   margin: 0 0 1.5rem;
