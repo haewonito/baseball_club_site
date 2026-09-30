@@ -9,37 +9,6 @@
     <a class="btn btn--primary" href="{% url 'accounts:admin_fee_add' %}">Create a New Fee</a>
   </section>
 
-  <section class="form-restored" id="reminder-note">
-    <p>
-      <strong>Automatic reminders:</strong>
-      {% if reminder_settings.enabled %}<span class="status-badge">On</span>{% else %}<span class="status-badge">Off</span>{% endif %}
-    </p>
-    <p>
-      When a fee is more than {{ reminder_after_days }} days past its due date and still has a balance, Gus, the club's
-      automated assistant, emails the player's primary parent once. The check runs every other day, so the email goes out
-      about {{ reminder_after_days|add:1 }} to {{ reminder_after_days|add:2 }} days after the due date. Each fee gets at most
-      one reminder, and fees with no due date never get one.
-    </p>
-    {% if reminder_settings.enabled %}
-      <p>Turning reminders off stops every automatic reminder, for all fees, until you turn them back on.</p>
-    {% else %}
-      <p>
-        Reminders are paused for all fees. Turning them back on will also email families whose fees went overdue
-        while they were off.
-      </p>
-    {% endif %}
-    <form
-      method="post"
-      action="{% url 'accounts:admin_fee_reminders_toggle' %}"
-      {% if reminder_settings.enabled %}onsubmit="return confirm('Turn off automatic reminders for all fees?');"{% else %}onsubmit="return confirm('Turn automatic reminders back on? Families with fees that went overdue while they were off will be emailed.');"{% endif %}
-    >
-      {% csrf_token %}
-      <button class="btn btn--small" type="submit">
-        {% if reminder_settings.enabled %}Turn off automatic reminders{% else %}Turn on automatic reminders{% endif %}
-      </button>
-    </form>
-  </section>
-
   <p>
     {% if only_outstanding %}
       <a href="{% url 'accounts:admin_fees_list' %}">Show all fees</a>
@@ -109,6 +78,37 @@
   {% else %}
     <p>No fees{% if only_outstanding %} outstanding{% endif %}.</p>
   {% endif %}
+
+  <section class="form-restored" id="reminder-note">
+    <p>
+      <strong>Automatic reminders:</strong>
+      {% if reminder_settings.enabled %}<span class="status-badge">On</span>{% else %}<span class="status-badge">Off</span>{% endif %}
+    </p>
+    <p>
+      When a fee is more than {{ reminder_after_days }} days past its due date and still has a balance, Gus, the club's
+      automated assistant, emails the player's primary parent once. The check runs every other day, so the email goes out
+      about {{ reminder_after_days|add:1 }} to {{ reminder_after_days|add:2 }} days after the due date. Each fee gets at most
+      one reminder, and fees with no due date never get one.
+    </p>
+    {% if reminder_settings.enabled %}
+      <p>Turning reminders off stops every automatic reminder, for all fees, until you turn them back on.</p>
+    {% else %}
+      <p>
+        Reminders are paused for all fees. Turning them back on will also email families whose fees went overdue
+        while they were off.
+      </p>
+    {% endif %}
+    <form
+      method="post"
+      action="{% url 'accounts:admin_fee_reminders_toggle' %}"
+      {% if reminder_settings.enabled %}onsubmit="return confirm('Turn off automatic reminders for all fees?');"{% else %}onsubmit="return confirm('Turn automatic reminders back on? Families with fees that went overdue while they were off will be emailed.');"{% endif %}
+    >
+      {% csrf_token %}
+      <button class="btn btn--small" type="submit">
+        {% if reminder_settings.enabled %}Turn off automatic reminders{% else %}Turn on automatic reminders{% endif %}
+      </button>
+    </form>
+  </section>
 
   <p class="back-link"><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
 {% endblock %}

@@ -1263,3 +1263,8 @@ table[data-sortable] th[aria-sort="descending"]::after {
   content: " \25BC";
   color: var(--color-red);
 }
+
+/* Automatic-reminders card at the bottom of Fees & Payments. */
+#reminder-note {
+  margin-top: 2rem;
+}
