@@ -90,6 +90,10 @@ class User(AbstractUser):
         return self.get_full_name() or self.email
 
     def has_role(self, role: str) -> bool:
+        # A superuser can already do everything through Django admin, so
+        # every role check passes for them, whatever UserRole rows they hold.
+        if self.is_superuser and self.is_active:
+            return True
         return self.roles.filter(role=role).exists()
 
     @property

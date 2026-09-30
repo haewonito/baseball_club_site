@@ -11,7 +11,11 @@
   </section>
 
   {% if not assignments %}
-    <p>You're not assigned to any teams yet. Contact the club to get set up.</p>
+    {% if user.is_superuser %}
+      <p>You don't coach any teams yourself. Manage any team's schedule from the <a href="{% url 'accounts:dashboard_admin' %}">Admin Dashboard</a>, or its roster from the Teams page.</p>
+    {% else %}
+      <p>You're not assigned to any teams yet. Contact the club to get set up.</p>
+    {% endif %}
   {% else %}
     {% if assignments|length > 1 %}
       <div class="team-switcher">

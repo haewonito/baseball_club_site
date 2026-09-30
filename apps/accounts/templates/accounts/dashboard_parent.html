@@ -63,6 +63,10 @@
       {% endfor %}
     </div>
   {% else %}
-    <p>No players linked to your account yet. Contact the club to get set up.</p>
+    {% if user.is_superuser %}
+      <p>No players are linked to your own account. Every player's fees and profile are under the Admin Dashboard.</p>
+    {% else %}
+      <p>No players linked to your account yet. Contact the club to get set up.</p>
+    {% endif %}
   {% endif %}
 {% endblock %}
