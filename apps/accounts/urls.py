@@ -89,22 +89,22 @@ urlpatterns = [
         name="coach_roster_bulk_move",
     ),
     re_path(
-        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/$",
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments|events)/$",
         views.coach_events,
         name="coach_events",
     ),
     re_path(
-        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/add/$",
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments|events)/add/$",
         views.coach_event_add,
         name="coach_event_add",
     ),
     re_path(
-        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/(?P<event_id>\d+)/edit/$",
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments|events)/(?P<event_id>\d+)/edit/$",
         views.coach_event_edit,
         name="coach_event_edit",
     ),
     re_path(
-        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments)/(?P<event_id>\d+)/delete/$",
+        r"^dashboard/coach/teams/(?P<team_id>\d+)/(?P<kind>practices|tournaments|events)/(?P<event_id>\d+)/delete/$",
         views.coach_event_delete,
         name="coach_event_delete",
     ),

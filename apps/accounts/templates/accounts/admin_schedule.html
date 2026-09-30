@@ -23,7 +23,8 @@
             <td>{{ team.season_label }}</td>
             <td>
               <a href="{% url 'accounts:coach_events' team.pk 'practices' %}">Manage Practices</a><br>
-              <a href="{% url 'accounts:coach_events' team.pk 'tournaments' %}">Manage Tournaments</a>
+              <a href="{% url 'accounts:coach_events' team.pk 'tournaments' %}">Manage Tournaments</a><br>
+              <a href="{% url 'accounts:coach_events' team.pk 'events' %}">Manage Other Events</a>
             </td>
           </tr>
         {% endfor %}

@@ -628,9 +628,13 @@ def coach_roster_bulk_move(request, team_id):
     return redirect("accounts:coach_roster", team_id=team.pk)
 
 
-# URL `kind` segment -> Event.event_type. Coaches manage both kinds for
+# URL `kind` segment -> Event.event_type. Coaches manage all kinds for
 # their own team(s); admins for any team (same scoping as the roster).
-EVENT_KINDS = {"practices": EventType.PRACTICE, "tournaments": EventType.TOURNAMENT}
+EVENT_KINDS = {
+    "practices": EventType.PRACTICE,
+    "tournaments": EventType.TOURNAMENT,
+    "events": EventType.EVENT,
+}
 
 
 def _get_event_team_or_404(request, team_id):
@@ -689,7 +693,7 @@ def coach_event_add(request, team_id, kind):
                 _event_next_url(request) or reverse("accounts:coach_events", args=[team.pk, kind])
             )
     else:
-        form = EventForm()
+        form = EventForm(instance=Event(team=team, event_type=event_type))
     return render(
         request,
         "accounts/coach_event_form.html",

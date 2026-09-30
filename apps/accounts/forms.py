@@ -8,7 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from apps.fees.models import Fee, Payment
-from apps.schedule.models import Event
+from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Position, Team
 from apps.tryouts.models import TryoutPoster
 
@@ -79,6 +79,15 @@ class EventForm(forms.ModelForm):
         widget=forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
         required=False,
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A custom event has no built-in name to fall back on, so the
+        # description is what people see.
+        if self.instance.event_type == EventType.EVENT:
+            self.fields["title"].required = True
+            self.fields["title"].label = "Description"
+            self.fields["title"].help_text = "What's happening, e.g. \"Team picnic\"."
 
     class Meta:
         model = Event

@@ -5,6 +5,9 @@ from django.db import models
 class EventType(models.TextChoices):
     PRACTICE = "practice", "Practice"
     TOURNAMENT = "tournament", "Tournament"
+    # Anything else with a custom name -- a team party, a meeting, a photo
+    # day. The value + "s" is the URL segment ("events"), see EVENT_KINDS.
+    EVENT = "event", "Event"
 
 
 class EventStatus(models.TextChoices):
@@ -20,7 +23,7 @@ class EventSource(models.TextChoices):
 
 class Event(models.Model):
     """
-    One model for both practices and tournaments -- distinguished by
+    One model for practices, tournaments and custom events -- distinguished by
     `event_type`. Public, no login required to view. `status` drives
     the cancellation/postponement banner on the public schedule.
 

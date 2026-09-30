@@ -33,6 +33,7 @@
         <a class="btn" href="{% url 'accounts:coach_roster' current_team.pk %}">Roster</a>
         <a class="btn" href="{% url 'accounts:coach_events' current_team.pk 'practices' %}">Practice Schedule</a>
         <a class="btn" href="{% url 'accounts:coach_events' current_team.pk 'tournaments' %}">Tournament Schedule</a>
+        <a class="btn" href="{% url 'accounts:coach_events' current_team.pk 'events' %}">Other Events</a>
       </div>
     </section>
   {% endif %}

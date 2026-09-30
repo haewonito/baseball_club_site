@@ -64,6 +64,7 @@
       <div class="dashboard-links team-section__actions">
         <a class="btn" href="{% url 'accounts:coach_event_add' team.pk 'practices' %}?next={{ request.path|urlencode }}">Add Practice</a>
         <a class="btn" href="{% url 'accounts:coach_event_add' team.pk 'tournaments' %}?next={{ request.path|urlencode }}">Add Tournament</a>
+        <a class="btn" href="{% url 'accounts:coach_event_add' team.pk 'events' %}?next={{ request.path|urlencode }}">Add Other Event</a>
       </div>
     {% endif %}
     {% if upcoming_events %}
