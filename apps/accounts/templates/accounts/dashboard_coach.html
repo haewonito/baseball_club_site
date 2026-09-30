@@ -6,7 +6,10 @@
   <section class="page-hero">
     <div class="page-hero__row">
       <h1>Coach Dashboard <span class="page-hero__subname">{{ user }}</span></h1>
-      <a class="btn btn--small" href="{% url 'teams:coach_detail' user.pk %}#edit-profile">Edit my profile</a>
+      <div class="page-hero__actions">
+        <a class="btn btn--small" href="{% url 'teams:coach_detail' user.pk %}#edit-profile">Edit my profile</a>
+        <a class="btn btn--small" href="{% url 'accounts:tryout_mass_email' %}">Email Families</a>
+      </div>
     </div>
   </section>
 
@@ -47,7 +50,7 @@
     <p>Review sign-ups and set decisions across all teams.</p>
     <div class="dashboard-links">
       <a class="btn" href="{% url 'accounts:coach_tryouts' %}">Sign-Ups</a>
-      <a class="btn" href="{% url 'accounts:tryout_mass_email' %}">Email Families</a>
+      <a class="btn" href="{% url 'accounts:tryout_mass_email' %}?audience=tryouts">Email Families</a>
     </div>
   </section>
 {% endblock %}
