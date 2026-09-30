@@ -310,14 +310,6 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
 
 .public-preview .preview-banner {
   display: block;
-  margin-bottom: 1.5rem;
-  padding: 0.75rem 1rem;
-  background: var(--color-red-pale);
-  border-radius: var(--radius);
-}
-
-.public-preview .preview-banner p {
-  margin: 0 0 0.5rem;
 }
 
 .public-preview .preview-toggle,

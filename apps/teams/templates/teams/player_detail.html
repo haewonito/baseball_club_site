@@ -16,18 +16,9 @@
     <p class="preview-toggle">
       <button type="button" class="btn btn--small" data-preview="on">See what the public sees</button>
     </p>
-    <div class="preview-banner">
-      <p>
-        <strong>Public view.</strong>
-        {% if player.is_public_profile and player.team.is_public %}
-          This is what anyone visiting the site sees.
-        {% else %}
-          {{ player.first_name }}'s profile is private, so visitors currently get "page not found".
-          This is what they'd see if you turned on "Make profile public".
-        {% endif %}
-      </p>
-      <button type="button" class="btn btn--small" data-preview="off">Back to my view</button>
-    </div>
+    <p class="preview-banner">
+      <button type="button" class="btn btn--small" data-preview="off">Back to parent view</button>
+    </p>
   {% endif %}
 
   {% if player.photo %}
