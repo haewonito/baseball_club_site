@@ -37,6 +37,7 @@ from .forms import (
     CoachProfileForm,
     EventForm,
     SyncedEventForm,
+    FeeAddForm,
     FeeForm,
     InviteClaimSignupForm,
     ParentInviteEmailForm,
@@ -252,42 +253,46 @@ def admin_fee_add(request):
         raise PermissionDenied
 
     if request.method == "POST":
-        form = FeeForm(request.POST)
+        form = FeeAddForm(request.POST)
         if form.is_valid():
-            team = form.cleaned_data["team"]
-            if team:
-                # Team-wide is per-player, full amount each -- not a single
-                # shared row and not split. Fans out here, at creation
-                # time, into ordinary per-player Fees indistinguishable
-                # from one added directly for a single kid, so every other
-                # fee/payment view (admin list, parent dashboard, payment
-                # history) needs no team-fee-aware logic of its own.
-                players = list(team.players.all())
-                Fee.objects.bulk_create(
-                    Fee(
-                        player=player,
-                        description=form.cleaned_data["description"],
-                        amount_due=form.cleaned_data["amount_due"],
-                        due_date=form.cleaned_data["due_date"],
-                        created_by=request.user,
-                    )
-                    for player in players
+            # One full-amount Fee per checked player, not a single shared
+            # row and not split -- ordinary per-player Fees, so every other
+            # fee/payment view (admin list, parent dashboard, payment
+            # history) needs no bulk-fee-aware logic of its own.
+            players = list(form.cleaned_data["players"])
+            fees = Fee.objects.bulk_create(
+                Fee(
+                    player=player,
+                    description=form.cleaned_data["description"],
+                    amount_due=form.cleaned_data["amount_due"],
+                    due_date=form.cleaned_data["due_date"],
+                    created_by=request.user,
                 )
-                messages.success(
-                    request,
-                    f"Added a ${form.cleaned_data['amount_due']} "
-                    f"\"{form.cleaned_data['description']}\" fee for "
-                    f"{len(players)} player(s) on {team}.",
-                )
-                return redirect("accounts:admin_fees_list")
-
-            fee = form.save(commit=False)
-            fee.created_by = request.user
-            fee.save()
-            return redirect("accounts:admin_fee_detail", pk=fee.pk)
+                for player in players
+            )
+            if len(players) == 1:
+                return redirect("accounts:admin_fee_detail", pk=fees[0].pk)
+            messages.success(
+                request,
+                f"Added a ${form.cleaned_data['amount_due']} "
+                f"\"{form.cleaned_data['description']}\" fee for {len(players)} players.",
+            )
+            return redirect("accounts:admin_fees_list")
+        selected = set(request.POST.getlist("players"))
     else:
-        form = FeeForm()
-    return render(request, "accounts/admin_fee_form.html", {"form": form, "heading": "Add Fee"})
+        form = FeeAddForm()
+        selected = set()
+
+    players = Player.objects.select_related("team").order_by("last_name", "first_name")
+    player_rows = [{"player": p, "checked": str(p.pk) in selected} for p in players]
+    teams = Team.objects.filter(is_deleted_placeholder=False, players__isnull=False).distinct().order_by(
+        "-season_year", "division"
+    )
+    return render(
+        request,
+        "accounts/admin_fee_form.html",
+        {"form": form, "heading": "Add Fee", "player_rows": player_rows, "teams": teams},
+    )
 
 
 @login_required

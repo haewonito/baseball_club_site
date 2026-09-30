@@ -16,15 +16,41 @@
   <form method="post">
     {% csrf_token %}
     {% include "partials/_form_field.html" with field=form.description %}
-    <div class="form-row">
+    {% if fee %}
       {% include "partials/_form_field.html" with field=form.player %}
-      {% include "partials/_form_field.html" with field=form.team %}
-    </div>
-    {% if not fee %}
-      <p class="form-field__help">
-        Choosing a team charges every current player on that team this full amount,
-        each as their own separate fee -- not one shared team fee.
-      </p>
+    {% else %}
+      <div class="form-field{% if form.players.errors %} form-field--error{% endif %}">
+        <div class="label-row">
+          <label for="player-filter">Players <span class="required" aria-hidden="true">*</span></label>
+          <span class="form-field__help">Each checked player is charged the full amount, as their own separate fee.</span>
+        </div>
+        <div class="player-picker">
+          <div class="player-picker__bar">
+            <select id="player-filter" aria-label="Filter players by team">
+              <option value="">All teams</option>
+              {% for team in teams %}<option value="{{ team.pk }}">{{ team }}</option>{% endfor %}
+              <option value="none">No team</option>
+            </select>
+            <button type="button" class="btn btn--small" id="player-select-shown">Select shown</button>
+            <button type="button" class="btn btn--small" id="player-clear-shown">Clear shown</button>
+            <span class="player-picker__count"><span id="player-count">0</span> selected</span>
+          </div>
+          <ul class="player-picker__list">
+            {% for row in player_rows %}
+              <li data-team="{{ row.player.team_id|default:'none' }}">
+                <label>
+                  <input type="checkbox" name="players" value="{{ row.player.pk }}"{% if row.checked %} checked{% endif %}>
+                  {{ row.player.last_name }}, {{ row.player.first_name }}
+                  <span class="player-picker__team">{{ row.player.team|default:"No team" }}</span>
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% for error in form.players.errors %}
+          <p class="form-field__error" role="alert">{{ error }}</p>
+        {% endfor %}
+      </div>
     {% endif %}
     <div class="form-row">
       {% include "partials/_form_field.html" with field=form.amount_due %}
@@ -32,6 +58,36 @@
     </div>
     <button class="btn btn--primary" type="submit">Save</button>
   </form>
+
+  {% if not fee %}
+    <script>
+      (function () {
+        var filter = document.getElementById("player-filter");
+        var rows = Array.prototype.slice.call(document.querySelectorAll(".player-picker__list li"));
+        var count = document.getElementById("player-count");
+        function shown(row) { return !row.hidden; }
+        function update() {
+          count.textContent = document.querySelectorAll(".player-picker__list input:checked").length;
+        }
+        function apply() {
+          rows.forEach(function (row) {
+            row.hidden = filter.value !== "" && row.dataset.team !== filter.value;
+          });
+        }
+        function setShown(checked) {
+          rows.filter(shown).forEach(function (row) { row.querySelector("input").checked = checked; });
+          update();
+        }
+        filter.addEventListener("change", apply);
+        document.getElementById("player-select-shown").addEventListener("click", function () { setShown(true); });
+        document.getElementById("player-clear-shown").addEventListener("click", function () { setShown(false); });
+        document.querySelector(".player-picker__list").addEventListener("change", update);
+        window.addEventListener("pageshow", function () { apply(); update(); });
+        apply();
+        update();
+      })();
+    </script>
+  {% endif %}
 
   {% if fee %}
     <p class="back-link"><a href="{% url 'accounts:admin_fee_detail' fee.pk %}">&larr; Back to fee</a></p>

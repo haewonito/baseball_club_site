@@ -119,18 +119,13 @@ class SyncedEventForm(forms.ModelForm):
 
 class FeeForm(forms.ModelForm):
     """
-    Exactly one of `player`/`team` must be set -- a Fee is either for one
-    player or team-wide (see the Fee docstring in apps/fees/models.py).
-    The model itself doesn't enforce this with a DB constraint. On
-    admin_fee_add, choosing `team` doesn't save a team-wide row at all --
-    it fans out into one full-amount Fee per current player on that team
-    (see the view); `team` stays a real, saveable field here mainly so
-    admin_fee_edit can keep editing whatever a Fee instance already has.
+    Edits one existing per-player Fee (admin_fee_edit). Adding goes
+    through FeeAddForm instead, which can charge several players at once.
     """
 
     class Meta:
         model = Fee
-        fields = ["player", "team", "description", "amount_due", "due_date"]
+        fields = ["player", "description", "amount_due", "due_date"]
         widgets = {
             "due_date": forms.DateInput(attrs={"type": "date"}),
         }
@@ -138,21 +133,24 @@ class FeeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["player"].queryset = Player.objects.order_by("last_name", "first_name")
-        self.fields["team"].queryset = Team.objects.filter(is_deleted_placeholder=False).order_by(
-            "-season_year", "division"
-        )
+        self.fields["player"].required = True
 
-    def clean(self):
-        cleaned_data = super().clean()
-        player = cleaned_data.get("player")
-        team = cleaned_data.get("team")
-        if bool(player) == bool(team):
-            raise forms.ValidationError(
-                "Choose exactly one of Player or Team -- not both, not neither."
-            )
-        if team and not team.players.exists():
-            raise forms.ValidationError(f'"{team}" has no players -- nothing to charge.')
-        return cleaned_data
+
+class FeeAddForm(forms.Form):
+    """
+    admin_fee_add: one fee charged, at its full amount (not split), to
+    every checked player as their own separate Fee row. `players` is
+    rendered by hand in admin_fee_form.html (filterable list of
+    checkboxes); this field only validates the submitted ids.
+    """
+
+    description = forms.CharField(max_length=150)
+    amount_due = forms.DecimalField(max_digits=8, decimal_places=2, min_value=0)
+    due_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    players = forms.ModelMultipleChoiceField(
+        queryset=Player.objects.all(),
+        error_messages={"required": "Select at least one player."},
+    )
 
 
 class PaymentForm(forms.ModelForm):

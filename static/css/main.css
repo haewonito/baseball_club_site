@@ -1130,3 +1130,71 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
   padding: 0 1rem;
   font-size: 0.85rem;
 }
+
+/* Add-fee page: filterable, multi-select player list. */
+.player-picker {
+  border: 1px solid var(--color-gray-line);
+  border-radius: var(--radius);
+}
+
+.player-picker__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--color-gray-line);
+  background: var(--color-gray-bg);
+}
+
+.player-picker__bar select {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.player-picker__count {
+  margin-left: auto;
+  color: var(--color-gray-text);
+  font-size: 0.9rem;
+}
+
+.player-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.player-picker__list li {
+  border-bottom: 1px solid var(--color-gray-line);
+}
+
+.player-picker__list li:last-child {
+  border-bottom: 0;
+}
+
+.player-picker__list li[hidden] {
+  display: none;
+}
+
+.player-picker__list label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.player-picker__list input[type="checkbox"] {
+  accent-color: var(--color-red);
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.player-picker__team {
+  margin-left: auto;
+  color: var(--color-gray-text);
+  font-size: 0.85rem;
+}
