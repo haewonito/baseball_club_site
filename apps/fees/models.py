@@ -126,3 +126,34 @@ class FeeReminder(models.Model):
 
     def __str__(self):
         return f"Reminder for {self.fee} sent {self.sent_at:%Y-%m-%d}"
+
+
+class FeeReminderSettings(models.Model):
+    """
+    Singleton (one row, made on first use): the club-wide on/off switch for
+    Gus's automated overdue reminders. Off means `send_fee_reminders` sends
+    nothing at all; it is not per fee. Flipped by an admin from the fees
+    page (accounts.admin_fee_reminders_toggle).
+    """
+
+    enabled = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        verbose_name = "Fee Reminder Settings"
+        verbose_name_plural = "Fee Reminder Settings"
+
+    def __str__(self):
+        return f"Automatic fee reminders: {'on' if self.enabled else 'off'}"
+
+    @classmethod
+    def load(cls):
+        return cls.objects.first() or cls.objects.create()
+
+    @classmethod
+    def reminders_enabled(cls):
+        row = cls.objects.first()
+        return row.enabled if row else True

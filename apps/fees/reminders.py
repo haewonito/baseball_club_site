@@ -21,7 +21,7 @@ from django.utils import timezone
 from apps.accounts.models import ParentPlayerLink
 from config.context_processors import GENERAL_CONTACT_EMAIL
 
-from .models import Fee, FeeReminder
+from .models import Fee, FeeReminder, FeeReminderSettings
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +110,10 @@ def send_fee_reminders(limit=DEFAULT_DAILY_LIMIT, dry_run=False, today=None):
     everything, on a dry run). One failed send is logged and doesn't stop
     the rest; it'll be retried tomorrow.
     """
+    if not FeeReminderSettings.reminders_enabled():
+        # The admin's club-wide switch is off: nothing goes out, and nothing
+        # is recorded, so fees stay eligible for when it's turned back on.
+        return [], [], []
     pairs = fees_needing_reminder(today)
     if dry_run:
         return [], [], pairs

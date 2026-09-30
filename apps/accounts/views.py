@@ -13,7 +13,8 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from apps.fees.models import FEE_STATUS_LABELS, Fee, Payment
+from apps.fees.models import FEE_STATUS_LABELS, Fee, FeeReminderSettings, Payment
+from apps.fees.reminders import OVERDUE_REMINDER_AFTER_DAYS
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Team, TeamCoach
 from apps.tryouts.emails import (
@@ -243,8 +244,34 @@ def admin_fees_list(request):
     return render(
         request,
         "accounts/admin_fees_list.html",
-        {"rows": rows, "total_outstanding": total_outstanding, "only_outstanding": only_outstanding},
+        {
+            "rows": rows,
+            "total_outstanding": total_outstanding,
+            "only_outstanding": only_outstanding,
+            "reminder_settings": FeeReminderSettings.load(),
+            "reminder_after_days": OVERDUE_REMINDER_AFTER_DAYS,
+        },
     )
+
+
+@login_required
+@require_POST
+def admin_fee_reminders_toggle(request):
+    """Flips the club-wide switch for Gus's automatic overdue reminders."""
+    if not request.user.is_admin:
+        raise PermissionDenied
+
+    settings_row = FeeReminderSettings.load()
+    settings_row.enabled = not settings_row.enabled
+    settings_row.updated_by = request.user
+    settings_row.save()
+    messages.success(
+        request,
+        "Automatic overdue reminders are back on."
+        if settings_row.enabled
+        else "Automatic overdue reminders are turned off.",
+    )
+    return redirect("accounts:admin_fees_list")
 
 
 @login_required

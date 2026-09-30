@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from apps.fees.models import FeeReminderSettings
 from apps.fees.reminders import DEFAULT_DAILY_LIMIT, send_fee_reminders
 
 
@@ -23,6 +24,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, dry_run, limit, **options):
+        if not FeeReminderSettings.reminders_enabled():
+            self.stdout.write("Automatic fee reminders are turned off (Fees & Payments page); nothing sent.")
+            return
         sent, failed, pending = send_fee_reminders(limit=limit, dry_run=dry_run)
 
         def describe(fee, link):
