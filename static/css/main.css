@@ -293,11 +293,13 @@ legend {
 
 /* File box with its "No file chosen" text hidden until something is picked
    (set by a small script on the player page). The button keeps its own colour. */
-.file-input--empty {
+/* Prefixed with body/.form-field so it outranks the generic
+   ".form-field input:not(...)" rule, which sets the text colour to black. */
+body .form-field input[type="file"].file-input--empty {
   color: transparent;
 }
 
-.file-input--empty::file-selector-button {
+body .form-field input[type="file"].file-input--empty::file-selector-button {
   color: var(--color-black);
 }
 
