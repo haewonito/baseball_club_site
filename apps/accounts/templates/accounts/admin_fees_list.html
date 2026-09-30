@@ -6,16 +6,16 @@
   <section class="page-hero">
     <h1>Fees &amp; Payments</h1>
     <p>Total outstanding: <strong>${{ total_outstanding }}</strong></p>
+    {# Submits on change; an unchecked box sends nothing, which the view reads as "show all fees". #}
+    <form method="get" class="switch-form">
+      <label class="switch">
+        <input type="checkbox" name="outstanding" value="1" role="switch"{% if only_outstanding %} checked{% endif %} onchange="this.form.submit()">
+        <span class="switch__track" aria-hidden="true"></span>
+        Show only outstanding
+      </label>
+    </form>
     <a class="btn btn--primary" href="{% url 'accounts:admin_fee_add' %}">Create a New Fee</a>
   </section>
-
-  <p>
-    {% if only_outstanding %}
-      <a href="{% url 'accounts:admin_fees_list' %}">Show all fees</a>
-    {% else %}
-      <a href="{% url 'accounts:admin_fees_list' %}?outstanding=1">Show only outstanding</a>
-    {% endif %}
-  </p>
 
   {% if rows %}
     <div class="form-field">

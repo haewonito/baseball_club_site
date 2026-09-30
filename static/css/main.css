@@ -1268,3 +1268,58 @@ table[data-sortable] th[aria-sort="descending"]::after {
 #reminder-note {
   margin-top: 2rem;
 }
+
+/* On/off switch: a checkbox with role="switch" (used by "Show only outstanding"). */
+.switch-form {
+  margin: 0.75rem 0 1rem;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.switch__track {
+  position: relative;
+  width: 2.6rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background: #b5b5b5;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.switch__track::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--color-white);
+  transition: transform 0.15s;
+}
+
+.switch input:checked + .switch__track {
+  background: var(--color-red);
+}
+
+.switch input:checked + .switch__track::after {
+  transform: translateX(1.15rem);
+}
+
+.switch input:focus-visible + .switch__track {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
