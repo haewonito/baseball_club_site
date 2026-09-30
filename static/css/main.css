@@ -742,6 +742,14 @@ legend {
   margin-bottom: 0.15rem;
 }
 
+/* The event's street address, on its own line under the time and place. */
+.kid-card__row .kid-card__sub {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--color-gray-text);
+  font-size: 0.8rem;
+}
+
 .kid-card .btn {
   margin-top: 0.75rem;
 }
