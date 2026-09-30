@@ -28,7 +28,6 @@
           <th>Balance</th>
           <th>Status</th>
           <th>Reminder</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -47,7 +46,6 @@
                 <span title="Already overdue when automatic reminders started, so no email was sent">Skipped</span>
               {% else %}&mdash;{% endif %}
             </td>
-            <td><a href="{% url 'accounts:admin_fee_edit' row.fee.pk %}">Edit</a></td>
           </tr>
         {% endfor %}
       </tbody>
