@@ -206,6 +206,7 @@ class PlayerProfileForm(forms.ModelForm):
     class Meta:
         model = Player
         fields = ["photo", "description", "is_public_profile"]
+        labels = {"is_public_profile": "Make profile public"}
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
         }

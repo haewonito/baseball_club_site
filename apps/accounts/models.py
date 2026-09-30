@@ -148,9 +148,8 @@ class Player(models.Model):
     is_public_profile = models.BooleanField(
         default=False,
         help_text=(
-            "Whether this player's public-tier info (name, photo, jersey number, "
-            "position, team) is visible on the public site. Off by default -- the "
-            "parent (or admin) opts in."
+            "Player's public-tier info (name, photo, jersey number, "
+            "position, team) will be visible on the public site. Private by default"
         ),
     )
 

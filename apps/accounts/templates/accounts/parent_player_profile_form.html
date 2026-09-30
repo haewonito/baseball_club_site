@@ -21,7 +21,19 @@
     {% csrf_token %}
     {% include "partials/_form_field.html" with field=form.photo %}
     {% include "partials/_form_field.html" with field=form.description %}
-    {% include "partials/_form_field.html" with field=form.is_public_profile %}
+    {# Checkbox to the left of its label, unlike the stacked label-over-input of _form_field.html. #}
+    <div class="form-field form-field--checkbox">
+      <label for="{{ form.is_public_profile.id_for_label }}">
+        {{ form.is_public_profile }}
+        {{ form.is_public_profile.label }}
+      </label>
+      {% if form.is_public_profile.help_text %}
+        <p class="form-field__help">{{ form.is_public_profile.help_text }}</p>
+      {% endif %}
+      {% for error in form.is_public_profile.errors %}
+        <p class="form-field__error" role="alert">{{ error }}</p>
+      {% endfor %}
+    </div>
     <button class="btn btn--primary" type="submit">Save</button>
   </form>
 
