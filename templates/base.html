@@ -84,6 +84,20 @@
         setTimeout(function () { button.classList.remove("is-copied"); }, 1500);
       });
     });
+
+    // Info tips (see partials/_info_tip.html) are <details>, so they stay open
+    // until toggled. Close any open one on a click outside it, or on Escape.
+    function closeInfoTips(except) {
+      document.querySelectorAll("details.info-tip[open]").forEach(function (tip) {
+        if (tip !== except) tip.removeAttribute("open");
+      });
+    }
+    document.addEventListener("click", function (event) {
+      closeInfoTips(event.target.closest("details.info-tip"));
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeInfoTips(null);
+    });
   </script>
 </body>
 </html>
