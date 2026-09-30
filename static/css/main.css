@@ -291,6 +291,16 @@ legend {
   flex-shrink: 0;
 }
 
+/* File box with its "No file chosen" text hidden until something is picked
+   (set by a small script on the player page). The button keeps its own colour. */
+.file-input--empty {
+  color: transparent;
+}
+
+.file-input--empty::file-selector-button {
+  color: var(--color-black);
+}
+
 /* "See what the public sees" on the player page: hides .private-only. */
 .preview-banner {
   display: none;

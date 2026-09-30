@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}{{ player }} · {{ block.super }}  {% if tier >= 2 %}
+{% block title %}{{ player }} · {{ block.super }}  {% if can_edit_gallery %}
+    <script>
+      // The browser's "No file chosen" text can't be removed, only recoloured:
+      // make it invisible while the box is empty, normal once files are picked.
+      (function () {
+        var input = document.getElementById("{{ gallery_form.images.id_for_label }}");
+        if (!input) return;
+        function sync() { input.classList.toggle("file-input--empty", input.files.length === 0); }
+        input.addEventListener("change", sync);
+        window.addEventListener("pageshow", sync);
+        sync();
+      })();
+    </script>
+  {% endif %}
+
+  {% if tier >= 2 %}
     <script>
       (function () {
         var body = document.body;
