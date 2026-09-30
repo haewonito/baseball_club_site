@@ -39,6 +39,7 @@
 
     {# Only an unused link gets here (parent_invite_player shows only open invites). #}
     <form
+      class="invite-cancel-form"
       method="post"
       action="{% url 'accounts:parent_invite_cancel' player.pk %}"
       onsubmit="return confirm('Cancel this invite link? Nobody will be able to use it.');"

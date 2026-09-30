@@ -297,6 +297,10 @@ legend {
   color: var(--color-gray-text);
 }
 
+.invite-cancel-form {
+  margin-top: 1.5rem;
+}
+
 .form-field--error input,
 .form-field--error select,
 .form-field--error textarea {
