@@ -25,5 +25,5 @@
 
   {% include "partials/_fee_ledger.html" with fee=fee payment_form=payment_form %}
 
-  <p class="back-link"><a href="{% url 'accounts:admin_fees_list' %}">&larr; Back to fees list</a></p>
+  <p class="back-link"><a href="{% url 'accounts:admin_fees_list' %}" data-cancel>&larr; Back to fees list</a></p>
 {% endblock %}

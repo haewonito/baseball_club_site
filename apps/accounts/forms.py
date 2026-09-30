@@ -128,6 +128,8 @@ class FeeForm(forms.ModelForm):
         fields = ["player", "description", "amount_due", "due_date"]
         widgets = {
             "due_date": forms.DateInput(attrs={"type": "date"}),
+            # step="any": arrows move by $1, but cents like 12.50 still validate.
+            "amount_due": forms.NumberInput(attrs={"step": "any"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -145,7 +147,13 @@ class FeeAddForm(forms.Form):
     """
 
     description = forms.CharField(max_length=150)
-    amount_due = forms.DecimalField(max_digits=8, decimal_places=2, min_value=0)
+    amount_due = forms.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        min_value=0,
+        # step="any": arrows move by $1, but cents like 12.50 still validate.
+        widget=forms.NumberInput(attrs={"step": "any"}),
+    )
     due_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     players = forms.ModelMultipleChoiceField(
         queryset=Player.objects.all(),
