@@ -206,7 +206,7 @@
                   class="private-only"
                   method="post"
                   action="{% url 'accounts:parent_player_gallery_delete' player.pk photo.pk %}"
-                  onsubmit="return confirm('Delete this photo? This can&#39;t be undone.');"
+                  onsubmit="return confirm('Delete this photo? This cannot be undone.');"
                 >
                   {% csrf_token %}
                   <button type="submit" class="link-button">Delete</button>

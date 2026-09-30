@@ -81,7 +81,7 @@
       <h2>Decline</h2>
       <form
         method="post"
-        onsubmit="return confirm('Decline this invitation? This can&#39;t be undone from this link.');"
+        onsubmit="return confirm('Decline this invitation? This cannot be undone from this link.');"
       >
         {% csrf_token %}
         <input type="hidden" name="action" value="decline">

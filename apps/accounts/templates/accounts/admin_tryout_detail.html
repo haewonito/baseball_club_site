@@ -66,7 +66,7 @@
         <form
           method="post"
           action="{% url 'accounts:admin_tryout_promote' signup.pk %}"
-          onsubmit="return confirm('Add {{ signup.player_full_name }} to {{ signup.team.name }}&#39;s roster?');"
+          onsubmit="return confirm('Add {{ signup.player_full_name|escapejs }} to {{ signup.team.name|escapejs }}\&#39;s roster?');"
         >
           {% csrf_token %}
           <button class="btn{% if not existing_player %} btn--primary{% endif %}" type="submit">{% if existing_player %}Add as a New Player Instead{% else %}Promote to Roster{% endif %}</button>

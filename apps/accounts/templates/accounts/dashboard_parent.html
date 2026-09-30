@@ -48,7 +48,7 @@
               <form
                 method="post"
                 action="{% url 'accounts:parent_make_primary' card.player.pk %}"
-                onsubmit="return confirm('Make ' + this.link_id.options[this.link_id.selectedIndex].text + ' {{ card.player.first_name|escapejs }}&#39;s primary parent? You will stop getting the automated emails.');"
+                onsubmit="return confirm('Make ' + this.link_id.options[this.link_id.selectedIndex].text + ' {{ card.player.first_name|escapejs }}\&#39;s primary parent? You will stop getting the automated emails.');"
               >
                 {% csrf_token %}
                 <select name="link_id" aria-label="New primary parent">
