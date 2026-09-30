@@ -462,6 +462,23 @@ legend {
   vertical-align: middle;
 }
 
+/* Icon button beside a read-only field (the invite link). */
+.copy-field {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.copy-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.copy-field .copy-btn {
+  margin-left: 0;
+  font-size: 1.25rem;
+}
+
 .copy-btn:hover,
 .copy-btn.is-copied {
   opacity: 1;

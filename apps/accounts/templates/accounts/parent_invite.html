@@ -18,7 +18,14 @@
   {% if invite %}
     <div class="form-field">
       <label for="id_invite_url">Share this link</label>
-      <input type="text" id="id_invite_url" readonly value="{{ invite_url }}" onclick="this.select()">
+      <div class="copy-field">
+        <input type="text" id="id_invite_url" readonly value="{{ invite_url }}" onclick="this.select()">
+        {# Same icon button as the footer email; the data-copy script in base.html handles the click. #}
+        <button type="button" class="copy-btn" data-copy="{{ invite_url }}" aria-label="Copy link" title="Copy link">
+          <svg class="copy-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg class="copy-btn__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        </button>
+      </div>
     </div>
     <p>Expires {{ invite.expires_at|date:"M j, Y" }}.</p>
 
