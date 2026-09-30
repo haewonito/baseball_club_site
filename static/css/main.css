@@ -1251,7 +1251,7 @@ table[data-sortable] th {
 
 table[data-sortable] th::after {
   content: " \2195";
-  color: var(--color-gray-line);
+  color: #777;
 }
 
 table[data-sortable] th[aria-sort="ascending"]::after {

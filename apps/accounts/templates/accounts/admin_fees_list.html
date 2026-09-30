@@ -6,7 +6,7 @@
   <section class="page-hero">
     <h1>Fees &amp; Payments</h1>
     <p>Total outstanding: <strong>${{ total_outstanding }}</strong></p>
-    <a class="btn btn--primary" href="{% url 'accounts:admin_fee_add' %}">Add Fee</a>
+    <a class="btn btn--primary" href="{% url 'accounts:admin_fee_add' %}">Create a New Fee</a>
   </section>
 
   <p>
@@ -19,7 +19,7 @@
 
   {% if rows %}
     <div class="form-field">
-      <label for="fee-search">Search by player</label>
+      <label for="fee-search">Search by player*</label>
       <input type="search" id="fee-search" placeholder="Type a player's name" autocomplete="off">
     </div>
 

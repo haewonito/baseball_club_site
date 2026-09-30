@@ -291,7 +291,7 @@ def admin_fee_add(request):
     return render(
         request,
         "accounts/admin_fee_form.html",
-        {"form": form, "heading": "Add Fee", "player_rows": player_rows, "teams": teams},
+        {"form": form, "heading": "Create a New Fee", "player_rows": player_rows, "teams": teams},
     )
 
 
