@@ -13,6 +13,11 @@ class EventStatus(models.TextChoices):
     POSTPONED = "postponed", "Postponed"
 
 
+class EventSource(models.TextChoices):
+    MANUAL = "manual", "Added on the website"
+    GAMECHANGER = "gamechanger", "Synced from GameChanger"
+
+
 class Event(models.Model):
     """
     One model for both practices and tournaments -- distinguished by
@@ -40,6 +45,20 @@ class Event(models.Model):
         max_length=20, choices=EventStatus.choices, default=EventStatus.SCHEDULED
     )
 
+    # Where the row came from. GameChanger rows are written by
+    # apps.schedule.gamechanger.sync_team and matched on `external_id` (the
+    # feed's UID); coaches and admins can't edit or delete them, only the
+    # local overlay fields (location, notes, status). See that module.
+    source = models.CharField(
+        max_length=20, choices=EventSource.choices, default=EventSource.MANUAL
+    )
+    external_id = models.CharField(max_length=255, blank=True)
+    # The last status the feed reported ("scheduled", "cancelled", or
+    # "removed" when the event vanished from the feed). Kept apart from
+    # `status` so a local override survives a sync; `status` is only
+    # rewritten when this changes.
+    feed_status = models.CharField(max_length=20, blank=True)
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
     )
@@ -51,10 +70,17 @@ class Event(models.Model):
 
     class Meta:
         ordering = ["start_datetime"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "external_id"],
+                condition=~models.Q(external_id=""),
+                name="unique_external_event_per_team",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.get_event_type_display()} - {self.team} - {self.start_datetime:%Y-%m-%d}"
 
-    # NOTE: if the GameChanger ICS feed sync is confirmed available,
-    # this model may gain a `source` field (manual vs. synced) and the
-    # coach/admin edit UI may shrink to an override layer for cancellations.
+    @property
+    def is_synced(self):
+        return self.source == EventSource.GAMECHANGER

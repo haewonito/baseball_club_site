@@ -19,6 +19,7 @@
           <div class="schedule-item__details">
             <div class="schedule-item__title">
               {{ event.title|default:event_type_label }}
+              {% if event.is_synced %}<span class="email-action__hint">&middot; from GameChanger</span>{% endif %}
               {% if event.status != "scheduled" %}
                 <span class="status-badge">{{ event.get_status_display }}</span>
               {% endif %}
@@ -27,10 +28,12 @@
           </div>
           <div class="schedule-item__actions">
             <a href="{% url 'accounts:coach_event_edit' team.pk kind event.pk %}">Edit</a>
-            <form method="post" action="{% url 'accounts:coach_event_delete' team.pk kind event.pk %}" class="inline-form">
-              {% csrf_token %}
-              <button type="submit" class="link-button">Delete</button>
-            </form>
+            {% if not event.is_synced %}
+              <form method="post" action="{% url 'accounts:coach_event_delete' team.pk kind event.pk %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="link-button">Delete</button>
+              </form>
+            {% endif %}
           </div>
         </li>
       {% endfor %}

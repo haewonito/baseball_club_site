@@ -16,11 +16,28 @@
 
   <form method="post">
     {% csrf_token %}
-    {% include "partials/_form_field.html" with field=form.title %}
-    <div class="form-row">
-      {% include "partials/_form_field.html" with field=form.start_datetime %}
-      {% include "partials/_form_field.html" with field=form.end_datetime %}
-    </div>
+    {% if event.is_synced %}
+      <p>
+        <strong>{{ event.title }}</strong><br>
+        {{ event.start_datetime|date:"D, M j, Y g:i A" }}{% if event.end_datetime %} &ndash; {{ event.end_datetime|date:"g:i A" }}{% endif %}
+      </p>
+      <p class="form-field__help">
+        This event is synced from GameChanger, so its name and time are changed there.
+        You can still add a location and notes here, or mark it cancelled or postponed.
+      </p>
+    {% else %}
+      {% if has_feed %}
+        <p class="form-field__help">
+          This team's schedule syncs from GameChanger. Add an event here only if it isn't in
+          GameChanger, or it will show up twice.
+        </p>
+      {% endif %}
+      {% include "partials/_form_field.html" with field=form.title %}
+      <div class="form-row">
+        {% include "partials/_form_field.html" with field=form.start_datetime %}
+        {% include "partials/_form_field.html" with field=form.end_datetime %}
+      </div>
+    {% endif %}
     {% include "partials/_form_field.html" with field=form.location_name %}
     {% include "partials/_form_field.html" with field=form.location_address %}
     {% include "partials/_form_field.html" with field=form.notes %}

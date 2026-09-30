@@ -21,6 +21,19 @@ class Team(models.Model):
         default=False,
         help_text="Whether this team appears as a choice on the public try-out sign-up form.",
     )
+    # Secret: the team's GameChanger calendar link ("Copy calendar link").
+    # Anyone holding it can read that team's schedule, so it is only edited
+    # in Django admin and never rendered on a public page.
+    gamechanger_feed_url = models.CharField(
+        "GameChanger calendar link",
+        max_length=500,
+        blank=True,
+        help_text=(
+            "Paste the team's GameChanger \"Copy calendar link\" here to sync its "
+            "schedule (python manage.py sync_gamechanger). Leave blank to turn syncing off."
+        ),
+    )
+    gamechanger_last_synced_at = models.DateTimeField(null=True, blank=True, editable=False)
     # Marks the single "Deleted team" placeholder (see get_deleted_team
     # below) -- not a real team. It's never public or accepting try-outs
     # (forced in save()), is hidden from TeamAdmin so it can't be edited

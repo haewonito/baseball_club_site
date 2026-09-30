@@ -8,3 +8,4 @@ django-htmx>=1.17
 python-decouple>=3.8
 Pillow>=10.0
 django-anymail>=11.0
+icalendar>=6.0

@@ -118,12 +118,16 @@ class TeamAdmin(admin.ModelAdmin):
         return (
             (None, {"fields": ("name", "division", "season_year", "accepting_tryouts")}),
             ("Publish Status", {"fields": ("publish_status",)}),
+            (
+                "GameChanger schedule sync",
+                {"fields": ("gamechanger_feed_url", "gamechanger_last_synced_at")},
+            ),
         )
 
     def get_readonly_fields(self, request, obj=None):
         if obj is None:
             return ()
-        return ("publish_status",)
+        return ("publish_status", "gamechanger_last_synced_at")
 
     @admin.display(description="")
     def publish_status(self, obj):

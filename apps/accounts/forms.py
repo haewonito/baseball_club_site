@@ -96,6 +96,18 @@ class EventForm(forms.ModelForm):
         }
 
 
+class SyncedEventForm(forms.ModelForm):
+    """The local overlay on a GameChanger-synced event. Title, time and type
+    belong to GameChanger (apps.schedule.gamechanger) and aren't editable."""
+
+    class Meta:
+        model = Event
+        fields = ["location_name", "location_address", "notes", "status"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
 class FeeForm(forms.ModelForm):
     """
     Exactly one of `player`/`team` must be set -- a Fee is either for one

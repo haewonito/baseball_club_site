@@ -36,6 +36,7 @@ from .emails import send_parent_invite_email
 from .forms import (
     CoachProfileForm,
     EventForm,
+    SyncedEventForm,
     FeeForm,
     InviteClaimSignupForm,
     ParentInviteEmailForm,
@@ -696,6 +697,7 @@ def coach_event_add(request, team_id, kind):
             "team": team,
             "form": form,
             "kind": kind,
+            "has_feed": bool(team.gamechanger_feed_url),
             "heading": f"Add {event_type.label}",
             "next_url": _event_next_url(request),
         },
@@ -708,7 +710,7 @@ def coach_event_edit(request, team_id, kind, event_id):
     event_type = EVENT_KINDS[kind]
     event = get_object_or_404(Event, pk=event_id, team=team, event_type=event_type)
     if request.method == "POST":
-        form = EventForm(request.POST, instance=event)
+        form = (SyncedEventForm if event.is_synced else EventForm)(request.POST, instance=event)
         if form.is_valid():
             updated = form.save(commit=False)
             updated.updated_by = request.user
@@ -717,7 +719,7 @@ def coach_event_edit(request, team_id, kind, event_id):
                 _event_next_url(request) or reverse("accounts:coach_events", args=[team.pk, kind])
             )
     else:
-        form = EventForm(instance=event)
+        form = (SyncedEventForm if event.is_synced else EventForm)(instance=event)
     return render(
         request,
         "accounts/coach_event_form.html",
@@ -725,6 +727,7 @@ def coach_event_edit(request, team_id, kind, event_id):
             "team": team,
             "form": form,
             "kind": kind,
+            "event": event,
             "heading": f"Edit {event_type.label}",
             "next_url": _event_next_url(request),
         },
@@ -736,6 +739,15 @@ def coach_event_edit(request, team_id, kind, event_id):
 def coach_event_delete(request, team_id, kind, event_id):
     team = _get_event_team_or_404(request, team_id)
     event = get_object_or_404(Event, pk=event_id, team=team, event_type=EVENT_KINDS[kind])
+    if event.is_synced:
+        # GameChanger owns these; deleting one would just bring it back on
+        # the next sync. Cancel it instead (edit -> status).
+        messages.error(
+            request,
+            "That event comes from GameChanger and can't be deleted here. "
+            "Edit it and set its status to Cancelled instead.",
+        )
+        return redirect("accounts:coach_events", team_id=team.pk, kind=kind)
     event.delete()
     return redirect("accounts:coach_events", team_id=team.pk, kind=kind)
 
