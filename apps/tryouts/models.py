@@ -274,6 +274,13 @@ class TryoutMassEmail(models.Model):
         related_name="+",
     )
     decision = models.CharField(max_length=20, choices=TryoutDecision.choices, blank=True)
+    # Who the filter drew from: try-out sign-ups, or the families of players
+    # currently on a team's roster.
+    audience = models.CharField(
+        max_length=10,
+        choices=[("tryouts", "Try-out families"), ("roster", "Team families")],
+        default="tryouts",
+    )
     subject = models.CharField(max_length=200)
     body = models.TextField()
     # The addresses it actually went to, one copy each.

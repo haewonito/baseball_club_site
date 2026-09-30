@@ -864,17 +864,46 @@ def _mass_email_recipients(signups):
         key = signup.parent_email.strip().lower()
         family = families.setdefault(
             key,
-            {"email": signup.parent_email.strip(), "parent": signup.parent_full_name, "signups": []},
+            {"email": signup.parent_email.strip(), "parent": signup.parent_full_name, "items": []},
         )
-        family["signups"].append(signup)
+        family["items"].append(
+            {
+                "player": signup.player_full_name,
+                "team": signup.team.name,
+                "detail": signup.get_coach_decision_display(),
+            }
+        )
+    return list(families.values())
+
+
+def _mass_email_roster_recipients(teams):
+    """Same shape, for the adults actively linked to players currently on
+    `teams`. One entry per parent email, listing each of their kids."""
+    links = (
+        ParentPlayerLink.objects.filter(removed_at__isnull=True, player__team__in=teams)
+        .select_related("parent", "player", "player__team")
+        .order_by("parent__last_name", "parent__first_name", "player__first_name")
+    )
+    families = {}
+    for link in links:
+        key = link.parent.email.strip().lower()
+        family = families.setdefault(
+            key,
+            {"email": link.parent.email.strip(), "parent": str(link.parent), "items": []},
+        )
+        family["items"].append(
+            {"player": str(link.player), "team": link.player.team.name, "detail": ""}
+        )
     return list(families.values())
 
 
 @login_required
 def tryout_mass_email(request):
     """
-    "Email Families": a coach or admin emails every family that signed up
-    for try-outs, optionally narrowed to one team and/or one decision. The
+    "Email Families": a coach or admin emails either the families that signed
+    up for try-outs (audience=tryouts, optionally narrowed by decision) or the
+    families of players currently on a roster (audience=roster), for one team
+    or all of their teams (an admin's "all teams" is everyone). The
     recipient list is shown before sending and recomputed from the filter
     on POST (never taken from the browser). Each family gets its own copy
     (apps.tryouts.emails.send_tryout_mass_email), replies go to the sender,
@@ -888,20 +917,29 @@ def tryout_mass_email(request):
     params = request.POST if request.method == "POST" else request.GET
     team_id = params.get("team", "")
     decision = params.get("decision", "")
+    audience = params.get("audience", "roster")
+    if audience not in ("roster", "tryouts"):
+        return HttpResponseBadRequest("Invalid audience")
+    if audience == "roster":
+        decision = ""
     selected_team = None
     if team_id:
         selected_team = get_object_or_404(allowed_teams, pk=team_id)
     if decision and decision not in dict(TryoutDecision.choices):
         return HttpResponseBadRequest("Invalid decision")
 
-    signups = (
-        TryoutSignup.objects.filter(team__in=[selected_team] if selected_team else allowed_teams)
-        .select_related("team")
-        .order_by("parent_last_name", "parent_first_name", "player_first_name")
-    )
-    if decision:
-        signups = signups.filter(coach_decision=decision)
-    all_recipients = _mass_email_recipients(signups)
+    scope = [selected_team] if selected_team else allowed_teams
+    if audience == "roster":
+        all_recipients = _mass_email_roster_recipients(scope)
+    else:
+        signups = (
+            TryoutSignup.objects.filter(team__in=scope)
+            .select_related("team")
+            .order_by("parent_last_name", "parent_first_name", "player_first_name")
+        )
+        if decision:
+            signups = signups.filter(coach_decision=decision)
+        all_recipients = _mass_email_recipients(signups)
     recipients = all_recipients
     for family in all_recipients:
         family["checked"] = True
@@ -918,7 +956,7 @@ def tryout_mass_email(request):
     if profile and profile.contact_email:
         reply_to = profile.contact_email
 
-    filter_query = f"?team={team_id}&decision={decision}"
+    filter_query = f"?audience={audience}&team={team_id}&decision={decision}"
     if request.method == "POST":
         form = TryoutMassEmailForm(request.POST)
         if not recipients:
@@ -943,6 +981,7 @@ def tryout_mass_email(request):
                     sent_by=user,
                     team=selected_team,
                     decision=decision,
+                    audience=audience,
                     subject=form.cleaned_data["subject"],
                     body=body,
                     recipients=sent,
@@ -964,9 +1003,11 @@ def tryout_mass_email(request):
     if not user.is_admin:
         history = history.filter(Q(sent_by=user) | Q(team__in=allowed_teams))
 
-    filter_teams = allowed_teams.filter(tryout_signups__isnull=False).distinct().order_by(
-        "-season_year", "name"
-    )
+    if audience == "roster":
+        filter_teams = allowed_teams.filter(players__isnull=False)
+    else:
+        filter_teams = allowed_teams.filter(tryout_signups__isnull=False)
+    filter_teams = filter_teams.distinct().order_by("-season_year", "name")
     return render(
         request,
         "accounts/tryout_mass_email.html",
@@ -977,12 +1018,16 @@ def tryout_mass_email(request):
             "filter_teams": filter_teams,
             "selected_team": selected_team,
             "selected_decision": decision,
+            "audience": audience,
             "decision_choices": TryoutDecision.choices,
             "reply_to": reply_to,
             "history": history[:25],
             "back_url": reverse(
-                "accounts:admin_tryouts_list" if user.is_admin else "accounts:coach_tryouts"
+                ("accounts:dashboard_admin" if user.is_admin else "accounts:dashboard_coach")
+                if audience == "roster"
+                else ("accounts:admin_tryouts_list" if user.is_admin else "accounts:coach_tryouts")
             ),
+            "back_label": "Back to dashboard" if audience == "roster" else "Back to try-out sign-ups",
         },
     )
 

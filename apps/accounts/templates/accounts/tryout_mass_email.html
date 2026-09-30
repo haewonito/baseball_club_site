@@ -1,18 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}Email Try-Out Families · {{ block.super }}{% endblock %}
+{% block title %}Email Families · {{ block.super }}{% endblock %}
 
 {% block content %}
   <section class="page-hero">
-    <h1>Email Try-Out Families</h1>
+    <h1>Email Families</h1>
     <p>
-      Send one email to every family that signed up for try-outs{% if not user.is_admin %} for your teams{% endif %}.
+      {% if audience == "roster" %}
+        Send one email to the families of the players currently on {% if user.is_admin %}a team, or on every team{% else %}your teams{% endif %}.
+      {% else %}
+        Send one email to every family that signed up for try-outs{% if not user.is_admin %} for your teams{% endif %}.
+      {% endif %}
       Each family gets its own copy and can't see anyone else's address.
     </p>
   </section>
 
   <form class="filter-form filter-form--wide" method="get">
     <div class="form-row">
+      <div class="form-field">
+        <label for="id_audience">Who</label>
+        <select id="id_audience" name="audience" onchange="this.form.submit()">
+          <option value="roster" {% if audience == "roster" %}selected{% endif %}>Current team families</option>
+          <option value="tryouts" {% if audience == "tryouts" %}selected{% endif %}>Try-out sign-ups</option>
+        </select>
+      </div>
       <div class="form-field">
         <label for="id_team">Team</label>
         <select id="id_team" name="team" onchange="this.form.submit()">
@@ -22,6 +33,7 @@
           {% endfor %}
         </select>
       </div>
+      {% if audience == "tryouts" %}
       <div class="form-field">
         <label for="id_decision">Decision</label>
         <select id="id_decision" name="decision" onchange="this.form.submit()">
@@ -31,6 +43,7 @@
           {% endfor %}
         </select>
       </div>
+      {% endif %}
     </div>
   </form>
 
@@ -40,6 +53,7 @@
     data-count-label="famil"
   >
     {% csrf_token %}
+    <input type="hidden" name="audience" value="{{ audience }}">
     <input type="hidden" name="team" value="{{ selected_team.pk|default:'' }}">
     <input type="hidden" name="decision" value="{{ selected_decision }}">
 
@@ -54,12 +68,12 @@
               <th>Email</th>
               <th>Player</th>
               <th>Team</th>
-              <th>Decision</th>
+              {% if audience == "tryouts" %}<th>Decision</th>{% endif %}
             </tr>
           </thead>
           <tbody>
             {% for family in all_recipients %}
-              {% for signup in family.signups %}
+              {% for item in family.items %}
                 <tr>
                   <td>
                     {% if forloop.first %}
@@ -68,9 +82,9 @@
                   </td>
                   <td>{% if forloop.first %}{{ family.parent }}{% endif %}</td>
                   <td>{% if forloop.first %}{{ family.email }}{% endif %}</td>
-                  <td>{{ signup.player_full_name }}</td>
-                  <td>{{ signup.team.name }}</td>
-                  <td>{{ signup.get_coach_decision_display }}</td>
+                  <td>{{ item.player }}</td>
+                  <td>{{ item.team }}</td>
+                  {% if audience == "tryouts" %}<td>{{ item.detail }}</td>{% endif %}
                 </tr>
               {% endfor %}
             {% endfor %}
@@ -90,7 +104,7 @@
       {% endif %}
       {% include "partials/_form_field.html" with field=form.subject %}
       {% include "partials/_form_field.html" with field=form.body %}
-      <p class="form-field__help">
+      <p class="form-field__help" style="margin-bottom: 1.25rem;">
         Replies go to {{ reply_to }}. A line saying who sent it is added at the bottom.
         Emails from the site often land in spam, so for anything important consider also
         mentioning it in person or by text.
@@ -146,7 +160,8 @@
               <td>{{ email.sent_at|date:"M j, Y g:i A" }}</td>
               <td>{{ email.sent_by|default:"(deleted user)" }}</td>
               <td>
-                {{ email.team.name|default:"All teams" }}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
+                {% if email.audience == "roster" %}Team families{% else %}Try-out families{% endif %}
+                &middot; {{ email.team.name|default:"All teams" }}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
                 ({{ email.recipients|length }})
               </td>
               <td>
@@ -165,5 +180,5 @@
     {% endif %}
   </section>
 
-  <p class="back-link"><a href="{{ back_url }}">&larr; Back to try-out sign-ups</a></p>
+  <p class="back-link"><a href="{{ back_url }}">&larr; {{ back_label }}</a></p>
 {% endblock %}

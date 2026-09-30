@@ -7,7 +7,7 @@
     <div class="page-hero__row">
       <h1>Try-Out Sign-Ups</h1>
       {% if selected_team %}
-        <a class="btn btn--small" href="{% url 'accounts:tryout_mass_email' %}?team={{ selected_team.pk }}">Email Families</a>
+        <a class="btn btn--small" href="{% url 'accounts:tryout_mass_email' %}?audience=tryouts&team={{ selected_team.pk }}">Email Families</a>
       {% endif %}
     </div>
   </section>
