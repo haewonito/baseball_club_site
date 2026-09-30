@@ -18,7 +18,7 @@
           <p class="kid-card__row">
             <span>Next event</span>
             {% if card.next_event %}
-              {{ card.next_event.start_datetime|date:"D, M j g:i A" }} &mdash;
+              {{ card.next_event.start_datetime|date:"D, M j \a\t g:i A" }} &mdash;
               {{ card.next_event.location_name|default:card.next_event.get_event_type_display }}
               {% if card.next_event.location_address %}
                 <span class="kid-card__sub">{{ card.next_event.location_address }}</span>
