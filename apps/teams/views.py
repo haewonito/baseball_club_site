@@ -168,9 +168,12 @@ def player_detail(request, pk):
         context["gallery_form"] = PlayerGalleryPhotoForm(player=player)
         context["gallery_max_photos"] = GALLERY_MAX_PHOTOS
     if tier >= 2:
-        context["parent_links"] = player.parent_links.filter(
-            removed_at__isnull=True
-        ).select_related("parent")
+        # Primary parent first, then the usual last-name order (Meta.ordering).
+        context["parent_links"] = (
+            player.parent_links.filter(removed_at__isnull=True)
+            .select_related("parent")
+            .order_by("-is_primary", "parent__last_name", "parent__first_name")
+        )
     if tier >= 3:
         context["fee_rows"] = [
             {"fee": fee, "balance": fee.balance, "status_label": FEE_STATUS_LABELS.get(fee.status, fee.status)}
