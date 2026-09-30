@@ -13,7 +13,7 @@
         <div class="kid-card">
           <h2><a href="{% url 'teams:player_detail' card.player.pk %}">{{ card.player }}</a></h2>
           {% if card.player.team %}
-            <p class="kid-card__team">{{ card.player.team.name }}</p>
+            <p class="kid-card__team">{{ card.player.team.display_name }}</p>
           {% endif %}
           <p class="kid-card__row">
             <span>Next event</span>

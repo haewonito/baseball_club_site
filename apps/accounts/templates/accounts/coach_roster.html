@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{ team.name }} Roster · {{ block.super }}{% endblock %}
+{% block title %}{{ team.display_name }} Roster · {{ block.super }}{% endblock %}
 
 {% block content %}
   <section class="page-hero">
-    <h1>{{ team.name }} &mdash; Roster</h1>
+    <h1>{{ team.display_name }} &mdash; Roster</h1>
   </section>
 
   <section class="team-section">
@@ -76,7 +76,7 @@
           <select name="destination_team" class="status-select" required>
             <option value="">Move checked to…</option>
             {% for other_team in other_teams %}
-              <option value="{{ other_team.pk }}">{{ other_team.name }}</option>
+              <option value="{{ other_team.pk }}">{{ other_team.display_name }}</option>
             {% endfor %}
           </select>
           <button type="submit" class="btn">Move Selected</button>

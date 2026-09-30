@@ -28,7 +28,7 @@
           <div class="player-picker__bar">
             <select id="player-filter" aria-label="Filter players by team">
               <option value="">All teams</option>
-              {% for team in teams %}<option value="{{ team.pk }}">{{ team }}</option>{% endfor %}
+              {% for team in teams %}<option value="{{ team.pk }}">{{ team.short_label }}</option>{% endfor %}
               <option value="none">No team</option>
             </select>
             <button type="button" class="btn btn--small" id="player-select-shown">Select all</button>
@@ -41,7 +41,7 @@
                 <label>
                   <input type="checkbox" name="players" value="{{ row.player.pk }}"{% if row.checked %} checked{% endif %}>
                   {{ row.player.last_name }}, {{ row.player.first_name }}
-                  <span class="player-picker__team">{{ row.player.team|default:"No team" }}</span>
+                  <span class="player-picker__team">{% if row.player.team %}{{ row.player.team.short_label }}{% else %}No team{% endif %}</span>
                 </label>
               </li>
             {% endfor %}

@@ -29,7 +29,7 @@
         <select id="id_team" name="team" onchange="this.form.submit()">
           <option value="">{% if user.is_admin %}All teams{% else %}All my teams{% endif %}</option>
           {% for team in filter_teams %}
-            <option value="{{ team.pk }}" {% if selected_team.pk == team.pk %}selected{% endif %}>{{ team }}</option>
+            <option value="{{ team.pk }}" {% if selected_team.pk == team.pk %}selected{% endif %}>{{ team.short_label }}</option>
           {% endfor %}
         </select>
       </div>
@@ -161,7 +161,7 @@
               <td>{{ email.sent_by|default:"(deleted user)" }}</td>
               <td>
                 {% if email.audience == "roster" %}Team families{% else %}Try-out families{% endif %}
-                &middot; {{ email.team.name|default:"All teams" }}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
+                &middot; {{ email.team.display_name|default:"All teams" }}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
                 ({{ email.recipients|length }})
               </td>
               <td>

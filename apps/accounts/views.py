@@ -206,9 +206,12 @@ def admin_tryout_promote(request, pk):
         )
 
     if existing_player is not None:
-        messages.success(request, f"{player} (returning player) moved to {signup.team.name}'s roster.")
+        messages.success(
+            request,
+            f"{player} (returning player) moved to {signup.team.display_name}'s roster.",
+        )
     else:
-        messages.success(request, f'{player} added to {signup.team.name}\'s roster.')
+        messages.success(request, f'{player} added to {signup.team.display_name}\'s roster.')
     return redirect("accounts:admin_tryout_detail", pk=signup.pk)
 
 
@@ -869,7 +872,7 @@ def _mass_email_recipients(signups):
         family["items"].append(
             {
                 "player": signup.player_full_name,
-                "team": signup.team.name,
+                "team": signup.team.display_name,
                 "detail": signup.get_coach_decision_display(),
             }
         )
@@ -892,7 +895,7 @@ def _mass_email_roster_recipients(teams):
             {"email": link.parent.email.strip(), "parent": str(link.parent), "items": []},
         )
         family["items"].append(
-            {"player": str(link.player), "team": link.player.team.name, "detail": ""}
+            {"player": str(link.player), "team": link.player.team.display_name, "detail": ""}
         )
     return list(families.values())
 

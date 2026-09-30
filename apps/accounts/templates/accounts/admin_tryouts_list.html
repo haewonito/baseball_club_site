@@ -44,7 +44,7 @@
         {% for signup in signups %}
           <tr>
             <td><a href="{% url 'accounts:admin_tryout_detail' signup.pk %}">{{ signup.player_full_name }}</a></td>
-            <td>{{ signup.team.name }}</td>
+            <td>{{ signup.team.display_name }}</td>
             <td>{{ signup.positions_display }}</td>
             <td>{{ signup.parent_full_name }}</td>
             <td>{{ signup.parent_phone }}</td>

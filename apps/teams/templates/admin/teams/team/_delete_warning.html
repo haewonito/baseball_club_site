@@ -8,7 +8,7 @@
         promoted to a roster.</p>
       <ul>
         {% for signup in signups_to_move %}
-          <li>{{ signup.player_full_name }} ({{ signup.team.name }})</li>
+          <li>{{ signup.player_full_name }} ({{ signup.team.display_name }})</li>
         {% endfor %}
       </ul>
     {% endif %}
@@ -17,7 +17,7 @@
         will be taken off the roster and left without a team:</p>
       <ul>
         {% for player in players_to_detach %}
-          <li>{{ player.first_name }} {{ player.last_name }} ({{ player.team.name }})</li>
+          <li>{{ player.first_name }} {{ player.last_name }} ({{ player.team.display_name }})</li>
         {% endfor %}
       </ul>
     {% endif %}

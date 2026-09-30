@@ -18,7 +18,7 @@
         <a
           href="?team={{ team.pk }}"
           class="team-filter__pill{% if team.pk == selected_team.pk %} team-filter__pill--active{% endif %}"
-        >{{ team.name }}</a>
+        >{{ team.display_name }}</a>
       {% endfor %}
     </div>
   {% endif %}
@@ -49,7 +49,7 @@
       </tbody>
     </table>
   {% elif selected_team %}
-    <p>No try-out sign-ups for {{ selected_team.name }} yet.</p>
+    <p>No try-out sign-ups for {{ selected_team.display_name }} yet.</p>
   {% else %}
     <p>You're not assigned to any teams yet.</p>
   {% endif %}

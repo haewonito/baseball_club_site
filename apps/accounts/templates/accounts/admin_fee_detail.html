@@ -5,7 +5,7 @@
 {% block content %}
   <section class="page-hero">
     <h1>{{ fee.description }}</h1>
-    <p>{{ fee.player|default:fee.team }}{% if fee.due_date %} &middot; Due {{ fee.due_date }}{% endif %}</p>
+    <p>{% if fee.player %}{{ fee.player }}{% elif fee.team %}{{ fee.team.short_label }}{% endif %}{% if fee.due_date %} &middot; Due {{ fee.due_date }}{% endif %}</p>
     <a href="{% url 'accounts:admin_fee_edit' fee.pk %}">Edit fee</a>
   </section>
 

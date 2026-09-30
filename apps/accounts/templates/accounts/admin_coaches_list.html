@@ -23,7 +23,7 @@
             <td>{{ coach }}</td>
             <td>
               {% for assignment in coach.team_assignments.all %}
-                {{ assignment.team.name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
+                {{ assignment.team.display_name }} ({{ assignment.get_role_display }}){% if not forloop.last %}, {% endif %}
               {% endfor %}
             </td>
             <td>{% if coach.coach_profile.bio_text %}Yes{% else %}No bio yet{% endif %}</td>

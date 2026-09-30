@@ -39,7 +39,7 @@
         {% for row in rows %}
           <tr>
             <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">{{ row.fee.description }}</a></td>
-            <td>{{ row.fee.player|default:row.fee.team }}</td>
+            <td>{% if row.fee.player %}{{ row.fee.player }}{% elif row.fee.team %}{{ row.fee.team.short_label }}{% endif %}</td>
             <td class="col-due" data-sort="{{ row.fee.due_date|date:'Y-m-d' }}">{{ row.fee.due_date|date:"M j"|default:"—" }}</td>
             <td data-sort="{{ row.balance }}">${{ row.balance }}</td>
             <td>{{ row.status_label }}</td>

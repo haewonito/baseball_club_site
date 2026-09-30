@@ -71,6 +71,7 @@ unpaid.
 - [ ] Email is case-insensitive at login (e.g. try `Haewon201+Sandra.Lee@gmail.com`)
 - [ ] After login, the redirect order is Admin → Coach → Parent (Ryan Rickard lands on Admin, Shawn Lewis on Coach, Katie on Parent)
 - [ ] Nav shows **one link per role held** (Ryan: Admin + Coach; Shawn: Coach + Parent)
+- [ ] Team names on logged-in-only pages omit the redundant "Choice Select" prefix; public team pages keep their existing names
 - [ ] Log out works, and dashboard URLs then redirect to the login page
 
 ## 4. Parent (Katie Helstein / James Brooks)

@@ -19,7 +19,7 @@
       <tbody>
         {% for team in teams %}
           <tr>
-            <td>{{ team.name }}{% if not team.is_public %} <span class="status-badge">Not public</span>{% endif %}</td>
+            <td>{{ team.display_name }}{% if not team.is_public %} <span class="status-badge">Not public</span>{% endif %}</td>
             <td>{{ team.season_label }}</td>
             <td>
               <a href="{% url 'accounts:coach_events' team.pk 'practices' %}">Manage Practices</a><br>

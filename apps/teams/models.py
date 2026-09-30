@@ -66,6 +66,21 @@ class Team(models.Model):
             return ""
         return f"{self.season_year - 1}-{self.season_year}"
 
+    @property
+    def display_name(self):
+        """Team name for authenticated pages, without the redundant club prefix."""
+        prefix = "Choice Select "
+        if self.name.startswith(prefix):
+            return self.name[len(prefix):]
+        return self.name
+
+    @property
+    def short_label(self):
+        """Team name and season, matching __str__ without the club prefix."""
+        if self.is_deleted_placeholder:
+            return self.display_name
+        return f"{self.display_name} ({self.season_label})"
+
     def __str__(self):
         if self.is_deleted_placeholder:
             return self.name
