@@ -193,10 +193,19 @@
           class="gallery-upload"
         >
           {% csrf_token %}
-          {% include "partials/_form_field.html" with field=gallery_form.images %}
-          <p class="form-field__help">
-            {% if player.is_public_profile %}Visible to anyone, since {{ player.first_name }}'s profile is public.{% else %}Visible only to {{ player.first_name }}'s coaches, parents, and club admins.{% endif %}
-          </p>
+          {# Written out (not _form_field.html) so the visibility note can sit beside the label, above the file box. #}
+          <div class="form-field{% if gallery_form.images.errors %} form-field--error{% endif %}">
+            <div class="label-row">
+              <label for="{{ gallery_form.images.id_for_label }}">{{ gallery_form.images.label }}</label>
+              <span class="form-field__help">
+                {% if player.is_public_profile %}Visible to anyone, since {{ player.first_name }}'s profile is public.{% else %}Visible only to {{ player.first_name }}'s coaches, parents, and club admins.{% endif %}
+              </span>
+            </div>
+            {{ gallery_form.images }}
+            {% for error in gallery_form.images.errors %}
+              <p class="form-field__error" role="alert">{{ error }}</p>
+            {% endfor %}
+          </div>
           <button class="btn btn--primary" type="submit">Upload</button>
         </form>
       {% endif %}

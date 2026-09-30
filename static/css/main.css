@@ -311,6 +311,23 @@ legend {
   max-width: 480px;
 }
 
+/* A label with a short note to its right, above the input. */
+.label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.label-row label {
+  margin-bottom: 0;
+}
+
+.label-row .form-field__help {
+  margin: 0;
+}
+
 /* A single checkbox with its label beside it (e.g. "Make profile public"). */
 .form-field--checkbox label {
   display: flex;
