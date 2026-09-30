@@ -327,7 +327,7 @@ class ParentInviteEmailForm(forms.Form):
     """The optional "email this link" action on parent_invite_player -- ParentInvite itself
     doesn't carry a pre-set invitee email, so this is where one gets typed in."""
 
-    email = forms.EmailField(label="Email address")
+    email = forms.EmailField(label="Or email the link to email address:")
 
 
 class TryoutMassEmailForm(forms.Form):

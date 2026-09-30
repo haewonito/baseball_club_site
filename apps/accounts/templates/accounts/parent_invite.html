@@ -27,14 +27,16 @@
         </button>
       </div>
     </div>
-    <p>Expires {{ invite.expires_at|date:"M j, Y" }}.</p>
-
-    {% if invite.emailed_at %}
-      <p>Last emailed to {{ invite.invitee_email }} on {{ invite.emailed_at|date:"M j, Y g:i A" }}.</p>
-    {% endif %}
     <form method="post" action="{% url 'accounts:parent_invite_send_email' player.pk %}">
       {% csrf_token %}
-      {% include "partials/_form_field.html" with field=email_form.email %}
+      {# Written out rather than via _form_field.html so the label matches "Share this link" (no red asterisk). #}
+      <div class="form-field{% if email_form.email.errors %} form-field--error{% endif %}">
+        <label for="{{ email_form.email.id_for_label }}">{{ email_form.email.label }}</label>
+        {{ email_form.email }}
+        {% for error in email_form.email.errors %}
+          <p class="form-field__error" role="alert">{{ error }}</p>
+        {% endfor %}
+      </div>
       <p class="form-field__help">
         Our emails sometimes land in spam. Ask them to check their spam folder, or send them
         the link above yourself.
@@ -43,6 +45,11 @@
         {% if invite.emailed_at %}Resend Email{% else %}Send Email{% endif %}
       </button>
     </form>
+    {% if invite.emailed_at %}
+      <p>Last emailed to {{ invite.invitee_email }} on {{ invite.emailed_at|date:"M j, Y g:i A" }}.</p>
+    {% endif %}
+
+    <p>Expires {{ invite.expires_at|date:"M j, Y" }}.</p>
 
     {# Only an unused link gets here (parent_invite_player shows only open invites). #}
     <form
