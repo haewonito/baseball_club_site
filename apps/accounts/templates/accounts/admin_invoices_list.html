@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Invoices</h1>
+    <p>
+      Waiting to be paid: <strong>${{ waiting }}</strong> &middot; Paid: <strong>${{ paid }}</strong> &middot;
+      Late: <strong>{{ late }}</strong>
+    </p>
+  </section>
+
+  <section class="form-restored">
+    <p><strong>Make sure you have created all the necessary fees before creating invoices.</strong></p>
+    <p>
+      An invoice bundles one parent's open fees (the primary parent of each player) into one email. Payments are still
+      recorded against the fees. Generating again rebuilds your drafts, but never touches invoices already sent.
+    </p>
+  </section>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+  <form method="post" data-unsaved-guard>
+    {% csrf_token %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.team %}
+      {% include "partials/_form_field.html" with field=form.due_date %}
+    </div>
+    <button class="btn btn--primary" type="submit">Generate invoices</button>
+  </form>
+
+  {% if invoices %}
+    {# Click a column heading to sort (static/js/sortable-table.js). #}
+    <table class="roster-table" data-sortable>
+      <thead>
+        <tr>
+          <th tabindex="0">#</th>
+          <th tabindex="0">Parent</th>
+          <th tabindex="0">Players</th>
+          <th tabindex="0">Total</th>
+          <th tabindex="0">Balance</th>
+          <th tabindex="0" class="col-due">Due</th>
+          <th tabindex="0">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+          <tr>
+            <td data-sort="{{ invoice.number }}"><a href="{% url 'accounts:admin_invoice_detail' invoice.pk %}">{{ invoice.number }}</a></td>
+            <td>{{ invoice.parent.get_full_name|default:invoice.parent.email }}</td>
+            <td>{% for line in invoice.lines.all %}{{ line.fee.player.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+            <td data-sort="{{ invoice.total }}">${{ invoice.total }}</td>
+            <td data-sort="{{ invoice.balance }}">${{ invoice.balance }}</td>
+            <td class="col-due" data-sort="{{ invoice.due_date|date:'Y-m-d' }}">{{ invoice.due_date|date:"M j" }}</td>
+            <td>{% if invoice.is_late or invoice.display_status == "sent" %}<span class="status-badge">{{ invoice.display_status_label }}</span>{% else %}{{ invoice.display_status_label }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No invoices yet.</p>
+  {% endif %}
+
+  <p class="back-link"><a href="{% url 'accounts:dashboard_admin' %}">&larr; Back to dashboard</a></p>
+{% endblock %}

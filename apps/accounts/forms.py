@@ -177,6 +177,33 @@ class PaymentForm(forms.ModelForm):
         self.fields["method"].initial = PaymentMethod.CASH
 
 
+class InvoiceGenerateForm(forms.Form):
+    """admin_invoices_list: drafts invoices from open fees, optionally for one team's players only."""
+
+    team = forms.ModelChoiceField(
+        queryset=Team.objects.none(), required=False, empty_label="All teams"
+    )
+    due_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["team"].queryset = Team.objects.filter(
+            is_deleted_placeholder=False, players__isnull=False
+        ).distinct().order_by("-season_year", "division")
+        self.fields["team"].label_from_instance = lambda team: team.short_label
+
+
+class InvoiceDueDateForm(forms.Form):
+    due_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+
+
+class InvoicePaidForm(forms.Form):
+    """Marking an invoice paid records a Payment on each of its fees with these details."""
+
+    method = forms.ChoiceField(choices=PaymentMethod.choices, initial=PaymentMethod.CASH)
+    paid_at = forms.DateField(label="Date paid", widget=forms.DateInput(attrs={"type": "date"}))
+
+
 class CoachProfileForm(forms.ModelForm):
     """`coach` isn't a form field -- the profile is looked up/created from
     the coach page being edited (teams.views.coach_detail)."""

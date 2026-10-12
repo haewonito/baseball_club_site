@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.accounts.admin_mixins import AutoUserFieldsAdminMixin
 
-from .models import Fee, FeeReminder, Payment
+from .models import Fee, FeeReminder, Invoice, Payment
 
 
 @admin.register(Fee)
@@ -34,6 +34,20 @@ class FeeReminderAdmin(admin.ModelAdmin):
     list_display = ("fee", "was_sent", "sent_to_email", "balance_at_send", "sent_at")
     list_filter = ("was_sent", "sent_at")
     search_fields = ("fee__player__first_name", "fee__player__last_name", "sent_to_email")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    """Read-only: invoices are made and handled on the dashboard (accounts.admin_invoices_list)."""
+
+    list_display = ("number", "parent", "status", "due_date", "sent_at")
+    list_filter = ("status",)
 
     def has_add_permission(self, request):
         return False

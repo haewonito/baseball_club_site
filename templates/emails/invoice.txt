@@ -1,0 +1,18 @@
+{% autoescape off %}Hi {{ parent.first_name|default:"there" }},
+
+Here is invoice #{{ invoice.number }} from Choice Select:
+{% for line in lines %}
+  {{ line.description }}: ${{ line.amount }}{% endfor %}
+
+  Total due: ${{ total }}
+  Due by: {{ invoice.due_date|date:"F j, Y" }}
+
+You can see each player's payment history after logging in: {{ dashboard_url }}
+
+Questions? Contact us at {{ contact_email }}. If you've already paid, thank you, and sorry for the overlap.
+
+If this email landed in your spam folder, please mark it "Not spam" or add {{ contact_email }} to your contacts, so our next emails reach your inbox.
+
+Thanks,
+Choice Select
+{% endautoescape %}

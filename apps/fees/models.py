@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 # Fee.status is a plain Python property, not a `choices` field, so there's
 # no model-level get_status_display() -- this is the one shared mapping
@@ -157,3 +160,88 @@ class FeeReminderSettings(models.Model):
     def reminders_enabled(cls):
         row = cls.objects.first()
         return row.enabled if row else True
+
+
+class Invoice(models.Model):
+    """
+    A bundle of one parent's open Fees, emailed to them as one request for
+    payment (apps.fees.invoices). It owns no money state: the Fees and their
+    Payments stay the only record of what's owed and what was paid. So
+    "Paid" is not stored: a sent invoice shows as paid once every fee on it
+    has no balance, whether payments were recorded on the fee pages or with
+    the invoice's "Mark paid" button (which just records ordinary Payments).
+
+    Stored status is draft -> sent, or void. A draft is the app's suggestion
+    for the admin to review; sending makes its lines final.
+    """
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SENT = "sent", "Sent"
+        VOID = "void", "Void"
+
+    parent = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="invoices"
+    )
+    # Counts up club-wide.
+    number = models.PositiveIntegerField(unique=True)
+    due_date = models.DateField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    sent_at = models.DateTimeField(null=True, blank=True)
+    sent_to_email = models.EmailField(blank=True)  # snapshot, like FeeReminder
+
+    class Meta:
+        ordering = ["-number"]
+
+    def __str__(self):
+        return f"Invoice {self.number}"
+
+    # The properties below read self.lines -> fee -> payments; prefetch
+    # "lines__fee__payments" on any list, as with Fee.balance.
+
+    @property
+    def total(self):
+        """What was asked for: the lines' amounts (their balances when drafted or sent)."""
+        return sum((line.amount for line in self.lines.all()), Decimal("0.00"))
+
+    @property
+    def balance(self):
+        """What's still owed on those fees right now."""
+        return sum((max(line.fee.balance, 0) for line in self.lines.all()), Decimal("0.00"))
+
+    @property
+    def display_status(self):
+        if self.status == self.Status.SENT and self.balance <= 0:
+            return "paid"
+        return self.status
+
+    @property
+    def is_late(self):
+        return self.display_status == "sent" and self.due_date < timezone.localdate()
+
+    @property
+    def display_status_label(self):
+        if self.is_late:
+            return "Late"
+        if self.display_status == "paid":
+            return "Paid"
+        return self.get_status_display()
+
+
+class InvoiceLine(models.Model):
+    """One fee on an invoice. `description`/`amount` are snapshots (the fee's balance when drafted, refreshed when sent)."""
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
+    fee = models.ForeignKey(Fee, on_delete=models.PROTECT, related_name="invoice_lines")
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        ordering = ["fee__player__last_name", "fee__player__first_name", "fee__due_date", "id"]
+
+    def __str__(self):
+        return f"{self.description}: {self.amount}"

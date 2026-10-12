@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ invoice.number }} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Invoice #{{ invoice.number }}
+      {% if invoice.is_late or invoice.display_status == "sent" %}<span class="status-badge">{{ invoice.display_status_label }}</span>{% else %}<span class="page-hero__subname">{{ invoice.display_status_label }}</span>{% endif %}
+    </h1>
+    <p>
+      {{ invoice.parent.get_full_name|default:invoice.parent.email }} ({{ invoice.parent.email }}) &middot;
+      Due {{ invoice.due_date }}
+      {% if invoice.sent_at %}&middot; Sent {{ invoice.sent_at|date:"M j, Y" }} to {{ invoice.sent_to_email }}{% endif %}
+    </p>
+  </section>
+
+  <table class="roster-table">
+    <thead>
+      <tr>
+        <th>Fee</th>
+        <th>Amount</th>
+        {% if invoice.status != "draft" %}<th>Balance now</th>{% endif %}
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in invoice.lines.all %}
+        <tr>
+          <td><a href="{% url 'accounts:admin_fee_detail' line.fee.pk %}">{{ line.description }}</a></td>
+          <td>${{ line.amount }}</td>
+          {% if invoice.status != "draft" %}<td>${{ line.fee.balance }}</td>{% endif %}
+          <td>
+            {% if invoice.status == "draft" %}
+              <form method="post" action="{% url 'accounts:admin_invoice_remove_line' invoice.pk line.pk %}" onsubmit="return confirm('Take this fee off the invoice?');">
+                {% csrf_token %}
+                <button class="btn btn--small" type="submit">Remove</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Total: ${{ invoice.total }}</strong>{% if invoice.status != "draft" %} &middot; Still owed: ${{ invoice.balance }}{% endif %}</p>
+
+  {% if invoice.status == "draft" %}
+    <p class="form-field__help">
+      Amounts are each fee's balance, refreshed when you send. To change an amount, edit the fee itself. Removing a line
+      only takes it off this invoice.
+    </p>
+    <form method="post" action="{% url 'accounts:admin_invoice_due_date' invoice.pk %}" data-unsaved-guard>
+      {% csrf_token %}
+      {% include "partials/_form_field.html" with field=due_form.due_date %}
+      <button class="btn" type="submit">Save due date</button>
+    </form>
+    <form method="post" action="{% url 'accounts:admin_invoice_send' invoice.pk %}" onsubmit="return confirm('Send this invoice to {{ invoice.parent.email|escapejs }}? It can no longer be edited afterwards.');">
+      {% csrf_token %}
+      <button class="btn btn--primary" type="submit">Send invoice</button>
+    </form>
+    <form method="post" action="{% url 'accounts:admin_invoice_delete' invoice.pk %}" onsubmit="return confirm('Delete this draft?');">
+      {% csrf_token %}
+      <button class="btn" type="submit">Delete draft</button>
+    </form>
+  {% elif invoice.status == "sent" and invoice.display_status != "paid" %}
+    <h2>Mark paid</h2>
+    <p class="form-field__help">
+      Records a payment for the remaining balance of each fee above. For a partial payment, record it on the fee's own
+      page instead.
+    </p>
+    <form method="post" action="{% url 'accounts:admin_invoice_mark_paid' invoice.pk %}" data-unsaved-guard>
+      {% csrf_token %}
+      <div class="form-row">
+        {% include "partials/_form_field.html" with field=paid_form.method %}
+        {% include "partials/_form_field.html" with field=paid_form.paid_at %}
+      </div>
+      <button class="btn btn--primary" type="submit">Mark paid</button>
+    </form>
+    <form method="post" action="{% url 'accounts:admin_invoice_void' invoice.pk %}" onsubmit="return confirm('Void this invoice? Its fees can be invoiced again.');">
+      {% csrf_token %}
+      <button class="btn" type="submit">Void invoice</button>
+    </form>
+  {% endif %}
+
+  <p class="back-link"><a href="{% url 'accounts:admin_invoices_list' %}" data-cancel>&larr; Back to invoices</a></p>
+{% endblock %}

@@ -80,6 +80,36 @@ urlpatterns = [
         views.admin_fee_record_payment,
         name="admin_fee_record_payment",
     ),
+    path("dashboard/admin/invoices/", views.admin_invoices_list, name="admin_invoices_list"),
+    path(
+        "dashboard/admin/invoices/<int:pk>/", views.admin_invoice_detail, name="admin_invoice_detail"
+    ),
+    path(
+        "dashboard/admin/invoices/<int:pk>/due-date/",
+        views.admin_invoice_due_date,
+        name="admin_invoice_due_date",
+    ),
+    path(
+        "dashboard/admin/invoices/<int:pk>/lines/<int:line_id>/remove/",
+        views.admin_invoice_remove_line,
+        name="admin_invoice_remove_line",
+    ),
+    path(
+        "dashboard/admin/invoices/<int:pk>/delete/",
+        views.admin_invoice_delete,
+        name="admin_invoice_delete",
+    ),
+    path(
+        "dashboard/admin/invoices/<int:pk>/send/", views.admin_invoice_send, name="admin_invoice_send"
+    ),
+    path(
+        "dashboard/admin/invoices/<int:pk>/paid/",
+        views.admin_invoice_mark_paid,
+        name="admin_invoice_mark_paid",
+    ),
+    path(
+        "dashboard/admin/invoices/<int:pk>/void/", views.admin_invoice_void, name="admin_invoice_void"
+    ),
     path("dashboard/admin/coaches/", views.admin_coaches_list, name="admin_coaches_list"),
     path("dashboard/admin/schedule/", views.admin_schedule, name="admin_schedule"),
     path(
