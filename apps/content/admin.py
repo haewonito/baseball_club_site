@@ -11,6 +11,8 @@ class HeroImageAdminForm(forms.ModelForm):
     class Meta:
         model = HeroImage
         fields = "__all__"
+        # Set by dragging the picture in the preview frame (hero-crop.js).
+        widgets = {"focus_x": forms.HiddenInput, "focus_y": forms.HiddenInput}
 
     def clean_image(self):
         image = self.cleaned_data["image"]
@@ -26,16 +28,25 @@ class HeroImageAdmin(admin.ModelAdmin):
     list_display = ("__str__", "sort_order", "is_active", "created_at")
     list_editable = ("sort_order", "is_active")
     readonly_fields = ("preview",)
-    fields = ("image", "alt_text", "focus_y", "preview", "sort_order", "is_active")
+    fields = ("image", "alt_text", "preview", "focus_x", "focus_y", "sort_order", "is_active")
 
-    @admin.display(description="Banner preview")
+    class Media:
+        js = ("js/hero-crop.js",)
+
+    @admin.display(description="Crop")
     def preview(self, obj):
-        # Same shape and crop rule as the home page banner (see .hero-banner in main.css).
-        if not obj or not obj.image:
-            return "Save the picture to see how it will be cropped."
+        # Same shape and crop rule as the home page banner (.hero-banner in
+        # main.css); hero-crop.js lets you drag the picture to choose what stays in view.
+        has_image = bool(obj and obj.image)
         return format_html(
-            '<div style="width:100%;max-width:700px;aspect-ratio:12/5;overflow:hidden;background:#111">'
-            '<img src="{}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center {}%"></div>',
-            obj.image.url,
-            obj.focus_y,
+            '<div data-crop-frame style="width:100%;max-width:700px;aspect-ratio:12/5;overflow:hidden;'
+            'background:#111;cursor:grab;touch-action:none;position:relative">'
+            '<img src="{}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;'
+            'object-position:{}% {}%;user-select:none;display:{}"></div>'
+            '<p class="help">The banner shows this strip. Drag the picture to choose what stays in view, '
+            "then save. Choosing a new file shows it here first.</p>",
+            obj.image.url if has_image else "",
+            obj.focus_x if obj else 50,
+            obj.focus_y if obj else 50,
+            "block" if has_image else "none",
         )

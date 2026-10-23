@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator
 from django.db import models
 
 
@@ -10,22 +11,11 @@ class HeroImage(models.Model):
         blank=True,
         help_text="Describes the picture for screen readers, e.g. \"Players warming up before a game\".",
     )
-    class Focus(models.IntegerChoices):
-        TOP = 0, "Top"
-        UPPER = 25, "Upper middle"
-        MIDDLE = 50, "Middle"
-        LOWER = 75, "Lower middle"
-        BOTTOM = 100, "Bottom"
-
-    focus_y = models.PositiveSmallIntegerField(
-        "Part to keep",
-        choices=Focus.choices,
-        default=Focus.MIDDLE,
-        help_text=(
-            "The banner is a wide strip (about 12:5). A taller picture is cropped to fit, "
-            "and this picks which part stays in view. The preview below shows the result."
-        ),
-    )
+    # Where the banner's crop window sits on the picture, 0-100 on each axis
+    # (CSS object-position percentages). Set by dragging in Django admin
+    # (static/js/hero-crop.js); 50/50 is centered.
+    focus_x = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
+    focus_y = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
     sort_order = models.PositiveSmallIntegerField(
         default=0, help_text="Lower numbers show first."
     )

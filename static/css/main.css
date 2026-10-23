@@ -1357,7 +1357,7 @@ table[data-sortable] th[aria-sort="descending"]::after {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 50%; /* the picture's own focus_y overrides this inline */
+  object-position: 50% 50%; /* the picture's own focus_x/focus_y override this inline */
   opacity: 0;
   transition: opacity 0.9s ease;
 }

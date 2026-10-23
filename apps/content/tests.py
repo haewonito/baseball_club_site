@@ -30,8 +30,30 @@ class SiteContentTests(TestCase):
         self.assertContains(response, "Show picture", count=2)
 
     def test_picture_focus_is_applied(self):
-        HeroImage.objects.create(image="hero/a.jpg", alt_text="x", focus_y=HeroImage.Focus.TOP)
-        self.assertContains(self.client.get(reverse("home")), "object-position: center 0%")
+        HeroImage.objects.create(image="hero/a.jpg", alt_text="x", focus_x=30, focus_y=0)
+        self.assertContains(self.client.get(reverse("home")), "object-position: 30% 0%")
 
     def test_home_without_pictures_still_has_a_heading(self):
         self.assertContains(self.client.get(reverse("home")), "<h1>Choice Select</h1>")
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class HeroImageAdminTests(TestCase):
+    def setUp(self):
+        from apps.accounts.models import User
+
+        self.client.force_login(User.objects.create_superuser(email="su@example.com", password="x"))
+
+    def test_add_and_change_forms_show_the_drag_frame(self):
+        response = self.client.get("/admin/content/heroimage/add/")
+        self.assertContains(response, "data-crop-frame")
+        self.assertContains(response, "js/hero-crop.js")
+        image = HeroImage.objects.create(image="hero/a.jpg", focus_x=20, focus_y=80)
+        response = self.client.get(f"/admin/content/heroimage/{image.pk}/change/")
+        self.assertContains(response, "object-position:20% 80%")
+        self.assertContains(response, 'name="focus_x"')
