@@ -1366,6 +1366,31 @@ table[data-sortable] th[aria-sort="descending"]::after {
   opacity: 1;
 }
 
+/* Mutes the pictures toward the club's black so they blend with the header:
+   solid black where the banner meets the header, easing to a lighter wash
+   (--hero-tint, 0 = none, 1 = black) over the rest. Tune the numbers here. */
+.hero-banner {
+  --hero-tint: 0.32;
+}
+
+.hero-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-black) 0%,
+    rgba(17, 17, 17, 0.55) 18%,
+    rgba(17, 17, 17, var(--hero-tint)) 45%,
+    rgba(17, 17, 17, var(--hero-tint)) 100%
+  );
+  pointer-events: none;
+}
+
+.hero-banner__slide {
+  filter: saturate(0.85);
+}
+
 /* The page's h1. The pictures carry their own lettering, so it's only here
    for screen readers and search engines. */
 .hero-banner__title {

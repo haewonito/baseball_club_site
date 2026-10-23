@@ -2,7 +2,8 @@
 // frame to choose which part of it the home page banner keeps. Writes the
 // position (0-100 on each axis, like CSS object-position) into the hidden
 // focus_x / focus_y inputs. Also previews a newly chosen file before saving.
-(function () {
+// Django admin puts Media scripts in the page head, so wait for the form to exist.
+document.addEventListener("DOMContentLoaded", function () {
   var frame = document.querySelector("[data-crop-frame]");
   if (!frame) return;
   var img = frame.querySelector("img");
@@ -67,4 +68,4 @@
       apply();
     });
   }
-})();
+});
