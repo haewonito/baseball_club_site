@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Unsubscribe · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    {% if invalid %}
+      <h1>That link didn't work</h1>
+      <p>This unsubscribe link isn't valid. You can also log in and turn club emails off under My Account.</p>
+    {% elif done %}
+      <h1>You're unsubscribed</h1>
+      <p>
+        <strong>{{ email }}</strong> won't get club info emails anymore. You'll still get
+        emails about anything you sign up for, like try-out decisions. Changed your mind?
+        Log in and turn them back on under My Account.
+      </p>
+    {% else %}
+      <h1>Unsubscribe from club emails?</h1>
+      <p>
+        Stop sending try-out and club news emails to <strong>{{ email }}</strong>.
+        Your account stays as it is.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn btn--primary" type="submit">Unsubscribe me</button>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -6,7 +6,9 @@
   <section class="page-hero">
     <h1>Email Families</h1>
     <p>
-      {% if audience == "roster" %}
+      {% if audience == "interested" %}
+        Send one email to everyone who registered on the site and opted in to club emails. Every copy has its own unsubscribe link.
+      {% elif audience == "roster" %}
         Send one email to the families of the players currently on {% if user.is_admin %}a team, or on every team{% else %}your teams{% endif %}.
       {% else %}
         Send one email to every family that signed up for try-outs{% if not user.is_admin %} for your teams{% endif %}.
@@ -22,8 +24,10 @@
         <select id="id_audience" name="audience" onchange="this.form.submit()">
           <option value="roster" {% if audience == "roster" %}selected{% endif %}>Current team families</option>
           <option value="tryouts" {% if audience == "tryouts" %}selected{% endif %}>Try-out sign-ups</option>
+          {% if user.is_admin %}<option value="interested" {% if audience == "interested" %}selected{% endif %}>Interested families (registered, opted in)</option>{% endif %}
         </select>
       </div>
+      {% if audience != "interested" %}
       <div class="form-field">
         <label for="id_team">Team</label>
         <select id="id_team" name="team" onchange="this.form.submit()">
@@ -33,6 +37,7 @@
           {% endfor %}
         </select>
       </div>
+      {% endif %}
       {% if audience == "tryouts" %}
       <div class="form-field">
         <label for="id_decision">Decision</label>
@@ -105,7 +110,7 @@
       {% include "partials/_form_field.html" with field=form.subject %}
       {% include "partials/_form_field.html" with field=form.body %}
       <p class="form-field__help" style="margin-bottom: 1.25rem;">
-        Replies go to {{ reply_to }}. A line saying who sent it is added at the bottom.
+        Replies go to {{ reply_to }}. A line saying who sent it is added at the bottom{% if audience == "interested" %}, followed by each person's unsubscribe link{% endif %}.
         Emails from the site often land in spam, so for anything important consider also
         mentioning it in person or by text.
       </p>
@@ -160,8 +165,8 @@
               <td>{{ email.sent_at|date:"M j, Y g:i A" }}</td>
               <td>{{ email.sent_by|default:"(deleted user)" }}</td>
               <td>
-                {% if email.audience == "roster" %}Team families{% else %}Try-out families{% endif %}
-                &middot; {{ email.team.display_name|default:"All teams" }}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
+                {% if email.audience == "roster" %}Team families{% elif email.audience == "interested" %}Interested families{% else %}Try-out families{% endif %}
+                {% if email.audience != "interested" %}&middot; {{ email.team.display_name|default:"All teams" }}{% endif %}{% if email.decision %} &middot; {{ email.get_decision_display }}{% endif %}
                 ({{ email.recipients|length }})
               </td>
               <td>

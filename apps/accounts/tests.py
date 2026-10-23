@@ -262,3 +262,112 @@ class ProspectivePlayerTests(TestCase):
         response = self.client.get(reverse("tryouts:respond", args=[invite.token]))
         self.assertContains(response, "You signed up with an account")
         self.assertNotContains(response, "Create Account")
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class InterestedFamiliesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import UserRole
+
+        admin_role = UserRole.objects.create(role=Role.ADMIN)
+        cls.admin = User.objects.create_user(email="admin@example.com", password="x")
+        cls.admin.roles.add(admin_role)
+        cls.opted = User.objects.create_user(email="in@example.com", password="x", first_name="In")
+        cls.opted.info_emails_opt_in = True
+        cls.opted.save()
+        cls.unverified = User.objects.create_user(email="unv@example.com", password="x")
+        cls.unverified.info_emails_opt_in = True
+        cls.unverified.email_verified = False
+        cls.unverified.save()
+        User.objects.create_user(email="never@example.com", password="x")
+
+    def send(self, **extra):
+        self.client.force_login(self.admin)
+        return self.client.post(
+            reverse("accounts:tryout_mass_email"),
+            {"audience": "interested", "subject": "Tryouts", "body": "Hello!", "recipient": ["in@example.com", "never@example.com"], **extra},
+        )
+
+    def test_only_opted_in_verified_users_are_listed(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("accounts:tryout_mass_email"), {"audience": "interested"})
+        self.assertEqual([r["email"] for r in response.context["all_recipients"]], ["in@example.com"])
+
+    def test_coach_cannot_use_interested_audience(self):
+        coach = User.objects.create_user(email="c@example.com", password="x")
+        from .models import UserRole
+
+        coach.roles.add(UserRole.objects.create(role=Role.COACH))
+        self.client.force_login(coach)
+        response = self.client.get(reverse("accounts:tryout_mass_email"), {"audience": "interested"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_send_gives_each_person_their_own_unsubscribe_link(self):
+        from apps.tryouts.models import TryoutMassEmail
+
+        response = self.send()
+        self.assertEqual(response.status_code, 302)
+        # "never@" wasn't in the computed list, so a forged address is ignored.
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, ["in@example.com"])
+        self.assertIn("/accounts/unsubscribe/", message.body)
+        self.assertIn("/accounts/unsubscribe/", message.extra_headers["List-Unsubscribe"])
+        self.assertEqual(TryoutMassEmail.objects.get().audience, "interested")
+
+    def test_unsubscribe_needs_a_post_and_no_login(self):
+        from .emails import make_unsubscribe_token
+
+        url = reverse("accounts:unsubscribe", args=[make_unsubscribe_token(self.opted)])
+        self.assertContains(self.client.get(url), "Unsubscribe me")
+        self.opted.refresh_from_db()
+        self.assertTrue(self.opted.info_emails_opt_in)  # a GET (e.g. a link scanner) changes nothing
+        self.assertContains(self.client.post(url), "You're unsubscribed")
+        self.opted.refresh_from_db()
+        self.assertFalse(self.opted.info_emails_opt_in)
+        self.assertIsNotNone(self.opted.info_emails_opted_out_at)
+
+    def test_one_click_post_from_mail_app(self):
+        from django.test import Client
+
+        from .emails import make_unsubscribe_token
+
+        url = reverse("accounts:unsubscribe", args=[make_unsubscribe_token(self.opted)])
+        response = Client(enforce_csrf_checks=True).post(url, {"List-Unsubscribe": "One-Click"})
+        self.assertEqual(response.status_code, 200)
+        self.opted.refresh_from_db()
+        self.assertFalse(self.opted.info_emails_opt_in)
+
+    def test_bad_token(self):
+        response = self.client.post(reverse("accounts:unsubscribe", args=["junk"]))
+        self.assertContains(response, "didn't work")
+
+    def test_toggle_from_my_account(self):
+        self.client.force_login(self.opted)
+        self.client.post(reverse("accounts:info_emails_set"), {"opt_in": "no"})
+        self.opted.refresh_from_db()
+        self.assertFalse(self.opted.info_emails_opt_in)
+        self.client.post(reverse("accounts:info_emails_set"), {"opt_in": "yes"})
+        self.opted.refresh_from_db()
+        self.assertTrue(self.opted.info_emails_opt_in)
+        self.assertIsNone(self.opted.info_emails_opted_out_at)
+
+    def test_resend_batch_payload(self):
+        from apps.tryouts.emails import send_personalized_mass_email
+
+        with override_settings(EMAIL_BACKEND="anymail.backends.resend.EmailBackend", ANYMAIL={"RESEND_API_KEY": "k"}):
+            with mock.patch("apps.tryouts.emails.requests.post") as post:
+                sent = send_personalized_mass_email(
+                    "Hi", [("a@x.com", "body A", {"List-Unsubscribe": "<u1>"}), ("b@x.com", "body B", {})], ["r@x.com"]
+                )
+        self.assertEqual(sent, ["a@x.com", "b@x.com"])
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual([m["text"] for m in payload], ["body A", "body B"])
+        self.assertEqual(payload[0]["headers"], {"List-Unsubscribe": "<u1>"})
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer k")

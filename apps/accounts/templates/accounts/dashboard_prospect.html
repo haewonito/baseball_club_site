@@ -12,6 +12,20 @@
   </section>
 
   <section class="team-section">
+    <h2>Club emails</h2>
+    <form method="post" action="{% url 'accounts:info_emails_set' %}">
+      {% csrf_token %}
+      {% if user.info_emails_opt_in %}
+        <p>You're signed up for emails about try-outs and club news.</p>
+        <button class="btn" type="submit" name="opt_in" value="no">Unsubscribe</button>
+      {% else %}
+        <p>You're not getting emails about try-outs and club news.</p>
+        <button class="btn" type="submit" name="opt_in" value="yes">Sign me up</button>
+      {% endif %}
+    </form>
+  </section>
+
+  <section class="team-section">
     <h2>Players</h2>
     {% if kids %}
       <div class="kid-cards">

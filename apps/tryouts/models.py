@@ -351,7 +351,8 @@ class TryoutMassEmail(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
     )
     sent_at = models.DateTimeField(auto_now_add=True)
-    # The filter used. A null team means "all teams the sender could email".
+    # The filter used. A null team means "all teams the sender could email"
+    # (and is always null for the "interested" audience, which has no team).
     team = models.ForeignKey(
         "teams.Team",
         on_delete=models.SET(get_deleted_team),
@@ -363,8 +364,12 @@ class TryoutMassEmail(models.Model):
     # Who the filter drew from: try-out sign-ups, or the families of players
     # currently on a team's roster.
     audience = models.CharField(
-        max_length=10,
-        choices=[("tryouts", "Try-out families"), ("roster", "Team families")],
+        max_length=12,
+        choices=[
+            ("tryouts", "Try-out families"),
+            ("roster", "Team families"),
+            ("interested", "Interested families"),
+        ],
         default="tryouts",
     )
     subject = models.CharField(max_length=200)

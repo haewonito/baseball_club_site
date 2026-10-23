@@ -1,3 +1,4 @@
+import requests
 from django.conf import settings
 from django.core.mail import EmailMessage, get_connection, send_mail
 from django.template.loader import render_to_string
@@ -93,6 +94,62 @@ def send_tryout_mass_email(subject, body, emails, reply_to):
                         settings.DEFAULT_FROM_EMAIL,
                         to=[email],
                         reply_to=reply_to,
+                        connection=connection,
+                    ).send()
+                    sent.append(email)
+    except Exception as exc:
+        raise MassEmailError(sent, exc) from exc
+    return sent
+
+
+RESEND_BATCH_URL = "https://api.resend.com/emails/batch"
+
+
+def send_personalized_mass_email(subject, messages, reply_to):
+    """
+    Like send_tryout_mass_email, but every address gets its own body and
+    headers -- needed for a personal unsubscribe link. `messages` is a list
+    of (email, body, headers) tuples. Returns the addresses sent to, or
+    raises MassEmailError (with the ones already sent).
+
+    anymail's batch send can't vary the body per recipient, so on Resend this
+    posts straight to its batch endpoint (up to 100 different messages per
+    call, which avoids the per-message rate limit). Any other backend
+    (console locally) sends one message each over a single connection.
+    """
+    sent = []
+    try:
+        if settings.EMAIL_BACKEND.startswith("anymail."):
+            for start in range(0, len(messages), MASS_EMAIL_BATCH_SIZE):
+                batch = messages[start : start + MASS_EMAIL_BATCH_SIZE]
+                response = requests.post(
+                    RESEND_BATCH_URL,
+                    headers={"Authorization": f"Bearer {settings.ANYMAIL['RESEND_API_KEY']}"},
+                    json=[
+                        {
+                            "from": settings.DEFAULT_FROM_EMAIL,
+                            "to": [email],
+                            "subject": subject,
+                            "text": body,
+                            "reply_to": reply_to,
+                            "headers": headers,
+                        }
+                        for email, body, headers in batch
+                    ],
+                    timeout=30,
+                )
+                response.raise_for_status()
+                sent.extend(email for email, _, _ in batch)
+        else:
+            with get_connection() as connection:
+                for email, body, headers in messages:
+                    EmailMessage(
+                        subject,
+                        body,
+                        settings.DEFAULT_FROM_EMAIL,
+                        to=[email],
+                        reply_to=reply_to,
+                        headers=headers,
                         connection=connection,
                     ).send()
                     sent.append(email)

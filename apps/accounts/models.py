@@ -87,6 +87,7 @@ class User(AbstractUser):
     # not inferred from a role, because it records consent.
     info_emails_opt_in = models.BooleanField(default=False)
     info_emails_opt_in_at = models.DateTimeField(null=True, blank=True)
+    info_emails_opted_out_at = models.DateTimeField(null=True, blank=True)
     phone = models.CharField(max_length=30, blank=True)
 
     class Meta:

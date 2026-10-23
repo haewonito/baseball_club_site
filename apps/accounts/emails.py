@@ -49,3 +49,19 @@ def send_verification_email(user, request):
     send_mail(
         "Confirm your email for Choice Select", body, settings.DEFAULT_FROM_EMAIL, [user.email]
     )
+
+
+UNSUBSCRIBE_SALT = "accounts.unsubscribe"
+
+
+def make_unsubscribe_token(user):
+    # No expiry: an old email's unsubscribe link should keep working.
+    return signing.dumps({"uid": user.pk}, salt=UNSUBSCRIBE_SALT)
+
+
+def read_unsubscribe_token(token):
+    """The user id in the token, or None if it isn't one we signed."""
+    try:
+        return signing.loads(token, salt=UNSUBSCRIBE_SALT)["uid"]
+    except (signing.BadSignature, KeyError):
+        return None

@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from apps.fees import invoices
@@ -22,6 +23,7 @@ from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Team, TeamCoach
 from apps.tryouts.emails import (
     MassEmailError,
+    send_personalized_mass_email,
     send_response_invite_email,
     send_tryout_mass_email,
 )
@@ -37,7 +39,13 @@ from apps.tryouts.models import (
     TryoutSignup,
 )
 
-from .emails import read_verification_token, send_parent_invite_email, send_verification_email
+from .emails import (
+    make_unsubscribe_token,
+    read_unsubscribe_token,
+    read_verification_token,
+    send_parent_invite_email,
+    send_verification_email,
+)
 from .forms import (
     CoachProfileForm,
     EventForm,
@@ -1105,6 +1113,36 @@ def _mass_email_roster_recipients(teams):
     return list(families.values())
 
 
+def _interested_users():
+    """Accounts that ticked the info-emails opt-in, confirmed their address and haven't left."""
+    return User.objects.filter(
+        info_emails_opt_in=True, email_verified=True, is_active=True
+    ).prefetch_related("prospective_players")
+
+
+def _mass_email_interested_recipients():
+    """Same shape as the other audiences, one entry per opted-in account; `user` is kept for the unsubscribe link."""
+    families = []
+    for user in _interested_users():
+        kids = [k.first_name for k in user.prospective_players.all() if k.promoted_player_id is None]
+        families.append(
+            {
+                "email": user.email.strip(),
+                "parent": str(user),
+                "user": user,
+                "items": [{"player": ", ".join(kids) or "\u2014", "team": "Not on a team", "detail": ""}],
+            }
+        )
+    return families
+
+
+# Appended to every "interested families" email, below the sender line.
+INTERESTED_FOOTER = (
+    "You're getting this because you registered on the Choice Select site and chose to "
+    "receive club emails.\nUnsubscribe any time: {url}\n"
+)
+
+
 @login_required
 def tryout_mass_email(request):
     """
@@ -1126,9 +1164,15 @@ def tryout_mass_email(request):
     team_id = params.get("team", "")
     decision = params.get("decision", "")
     audience = params.get("audience", "roster")
-    if audience not in ("roster", "tryouts"):
+    if audience not in ("roster", "tryouts", "interested"):
         return HttpResponseBadRequest("Invalid audience")
-    if audience == "roster":
+    if audience == "interested":
+        # Not tied to any team, and it's the club's list of registered
+        # families, so it's an admin-only send.
+        if not user.is_admin:
+            raise PermissionDenied
+        team_id = ""
+    if audience != "tryouts":
         decision = ""
     selected_team = None
     if team_id:
@@ -1139,6 +1183,8 @@ def tryout_mass_email(request):
     scope = [selected_team] if selected_team else allowed_teams
     if audience == "roster":
         all_recipients = _mass_email_roster_recipients(scope)
+    elif audience == "interested":
+        all_recipients = _mass_email_interested_recipients()
     else:
         signups = (
             TryoutSignup.objects.filter(team__in=scope)
@@ -1178,9 +1224,32 @@ def tryout_mass_email(request):
             )
             error = None
             try:
-                sent = send_tryout_mass_email(
-                    form.cleaned_data["subject"], body, [r["email"] for r in recipients], [reply_to]
-                )
+                if audience == "interested":
+                    # Each person gets their own unsubscribe link, in the
+                    # body and as a List-Unsubscribe header (mail apps show
+                    # it as an Unsubscribe button).
+                    messages_out = []
+                    for r in recipients:
+                        url = request.build_absolute_uri(
+                            reverse("accounts:unsubscribe", args=[make_unsubscribe_token(r["user"])])
+                        )
+                        messages_out.append(
+                            (
+                                r["email"],
+                                f"{body}\n{INTERESTED_FOOTER.format(url=url)}",
+                                {
+                                    "List-Unsubscribe": f"<{url}>",
+                                    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                                },
+                            )
+                        )
+                    sent = send_personalized_mass_email(
+                        form.cleaned_data["subject"], messages_out, [reply_to]
+                    )
+                else:
+                    sent = send_tryout_mass_email(
+                        form.cleaned_data["subject"], body, [r["email"] for r in recipients], [reply_to]
+                    )
             except MassEmailError as exc:
                 logger.exception("Try-out mass email failed after %s sends", len(exc.sent))
                 sent, error = exc.sent, exc
@@ -1211,7 +1280,9 @@ def tryout_mass_email(request):
     if not user.is_admin:
         history = history.filter(Q(sent_by=user) | Q(team__in=allowed_teams))
 
-    if audience == "roster":
+    if audience == "interested":
+        filter_teams = allowed_teams.none()
+    elif audience == "roster":
         filter_teams = allowed_teams.filter(players__isnull=False)
     else:
         filter_teams = allowed_teams.filter(tryout_signups__isnull=False)
@@ -1232,10 +1303,10 @@ def tryout_mass_email(request):
             "history": history[:25],
             "back_url": reverse(
                 ("accounts:dashboard_admin" if user.is_admin else "accounts:dashboard_coach")
-                if audience == "roster"
+                if audience != "tryouts"
                 else ("accounts:admin_tryouts_list" if user.is_admin else "accounts:coach_tryouts")
             ),
-            "back_label": "Back to dashboard" if audience == "roster" else "Back to try-out sign-ups",
+            "back_label": "Back to dashboard" if audience != "tryouts" else "Back to try-out sign-ups",
         },
     )
 
@@ -1717,4 +1788,47 @@ def prospect_player_delete(request, pk):
     kid = _get_prospect_or_404(request.user, pk)
     kid.delete()
     messages.success(request, f"Removed {kid.first_name}.")
+    return redirect("accounts:dashboard_prospect")
+
+
+@csrf_exempt
+def unsubscribe(request, token):
+    """
+    The link in every "interested families" email. The signed token says who,
+    so no login is needed; the button (a POST, so mail scanners that prefetch
+    links can't unsubscribe anyone) turns the opt-in off. Mail apps'
+    one-click List-Unsubscribe also POSTs here, so it's exempt from CSRF:
+    the token is the credential.
+    """
+    uid = read_unsubscribe_token(token)
+    user = User.objects.filter(pk=uid).first() if uid else None
+    if user is None:
+        return render(request, "accounts/unsubscribe.html", {"invalid": True})
+    if request.method == "POST":
+        user.info_emails_opt_in = False
+        user.info_emails_opted_out_at = timezone.now()
+        user.save(update_fields=["info_emails_opt_in", "info_emails_opted_out_at"])
+        if request.POST.get("List-Unsubscribe") == "One-Click":
+            return HttpResponse(status=200)
+        return render(request, "accounts/unsubscribe.html", {"done": True, "email": user.email})
+    return render(request, "accounts/unsubscribe.html", {"email": user.email})
+
+
+@login_required
+@require_POST
+def info_emails_set(request):
+    """The My Account page's opt-in / opt-out switch."""
+    user = request.user
+    if request.POST.get("opt_in") == "yes":
+        user.info_emails_opt_in = True
+        user.info_emails_opt_in_at = timezone.now()
+        user.info_emails_opted_out_at = None
+        messages.success(request, "You'll get emails about try-outs and club news.")
+    else:
+        user.info_emails_opt_in = False
+        user.info_emails_opted_out_at = timezone.now()
+        messages.success(request, "You won't get club info emails anymore.")
+    user.save(
+        update_fields=["info_emails_opt_in", "info_emails_opt_in_at", "info_emails_opted_out_at"]
+    )
     return redirect("accounts:dashboard_prospect")

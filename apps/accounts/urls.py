@@ -10,6 +10,8 @@ urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("register/", views.register, name="register"),
+    path("unsubscribe/<str:token>/", views.unsubscribe, name="unsubscribe"),
+    path("email-preferences/", views.info_emails_set, name="info_emails_set"),
     path("verify/resend/", views.resend_verification, name="resend_verification"),
     path("verify/<str:token>/", views.verify_email, name="verify_email"),
     # Forgotten password: emailed link -> new password. Django's own views;
