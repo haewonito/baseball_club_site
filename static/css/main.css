@@ -1343,10 +1343,10 @@ table[data-sortable] th[aria-sort="descending"]::after {
 
 .hero-banner {
   position: relative;
-  /* About 2:1, so a wide team photo isn't cropped much; capped on big screens. */
-  aspect-ratio: 2 / 1;
-  max-height: 70vh;
-  min-height: 200px;
+  /* Always the full width, about 12:5 tall (capped on big screens). Not
+     aspect-ratio: with a max-height that shrinks the width instead. */
+  width: 100%;
+  height: clamp(200px, 41.7vw, 70vh);
   background: var(--color-black);
   overflow: hidden;
 }
@@ -1357,7 +1357,7 @@ table[data-sortable] th[aria-sort="descending"]::after {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 65%;
+  object-position: center 50%; /* the picture's own focus_y overrides this inline */
   opacity: 0;
   transition: opacity 0.9s ease;
 }

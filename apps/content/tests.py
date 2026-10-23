@@ -29,5 +29,9 @@ class SiteContentTests(TestCase):
         self.assertNotIn("inactive-pic", html)
         self.assertContains(response, "Show picture", count=2)
 
+    def test_picture_focus_is_applied(self):
+        HeroImage.objects.create(image="hero/a.jpg", alt_text="x", focus_y=HeroImage.Focus.TOP)
+        self.assertContains(self.client.get(reverse("home")), "object-position: center 0%")
+
     def test_home_without_pictures_still_has_a_heading(self):
         self.assertContains(self.client.get(reverse("home")), "<h1>Choice Select</h1>")
