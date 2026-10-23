@@ -1,0 +1,12 @@
+{% autoescape off %}Hi {{ user.first_name }},
+
+Thanks for creating an account with Choice Select. Please confirm your email address with this link:
+{{ verify_url }}
+
+This link expires in 3 days. If you didn't create an account, you can ignore this email.
+
+If this email landed in your spam folder, please mark it "Not spam" so future emails from us reach your inbox.
+
+Thanks,
+Choice Select
+{% endautoescape %}

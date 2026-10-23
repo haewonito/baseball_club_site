@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Create an Account · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Create an Account</h1>
+    <p>
+      Register to get information about try-outs and the club, and to keep your kids' details in one place.
+      You don't have to sign up for a try-out to register.
+    </p>
+  </section>
+
+  <p>
+    Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>.
+  </p>
+
+  {% if form.non_field_errors %}
+    <div class="form-errors">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.first_name %}
+      {% include "partials/_form_field.html" with field=form.last_name %}
+    </div>
+    {% include "partials/_form_field.html" with field=form.email %}
+    {% include "partials/_form_field.html" with field=form.phone %}
+    {% include "partials/_form_field.html" with field=form.password1 %}
+    {% include "partials/_form_field.html" with field=form.password2 %}
+    <div class="form-field">
+      <label for="{{ form.info_emails_opt_in.id_for_label }}">
+        {{ form.info_emails_opt_in }} {{ form.info_emails_opt_in.label }}
+      </label>
+      <p class="form-field__help">{{ form.info_emails_opt_in.help_text }}</p>
+    </div>
+    <button class="btn btn--primary" type="submit">Create Account</button>
+  </form>
+{% endblock %}

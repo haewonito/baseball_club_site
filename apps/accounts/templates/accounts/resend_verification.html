@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Resend Confirmation · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Resend confirmation email</h1>
+  </section>
+
+  {% if sent_to %}
+    <p>
+      If <strong>{{ sent_to }}</strong> has an account waiting for confirmation, we've sent a new link.
+      Check your spam folder if you don't see it. You can request another after a couple of minutes.
+    </p>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      {% include "partials/_form_field.html" with field=form.email %}
+      <button class="btn btn--primary" type="submit">Send Link</button>
+    </form>
+  {% endif %}
+{% endblock %}

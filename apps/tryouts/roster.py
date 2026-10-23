@@ -69,6 +69,10 @@ def promote_signup_to_roster(signup, created_by, existing_player=None):
         )
     signup.promoted_player = player
     signup.save(update_fields=["promoted_player"])
+    if signup.prospective_player_id:
+        # The saved kid is a real Player now; the family manages it from there.
+        signup.prospective_player.promoted_player = player
+        signup.prospective_player.save(update_fields=["promoted_player"])
 
     if signup.responded_by_id:
         ParentPlayerLink.objects.get_or_create(

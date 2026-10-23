@@ -1,10 +1,12 @@
+from datetime import timedelta
 import logging
 
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -23,6 +25,7 @@ from apps.tryouts.emails import (
     send_response_invite_email,
     send_tryout_mass_email,
 )
+from apps.tryouts.forms import ProspectivePlayerForm
 from apps.tryouts.roster import find_existing_player, promote_signup_to_roster
 from apps.tryouts.models import (
     TryoutDecision,
@@ -34,7 +37,7 @@ from apps.tryouts.models import (
     TryoutSignup,
 )
 
-from .emails import send_parent_invite_email
+from .emails import read_verification_token, send_parent_invite_email, send_verification_email
 from .forms import (
     CoachProfileForm,
     EventForm,
@@ -46,6 +49,8 @@ from .forms import (
     InvoiceGenerateForm,
     InvoicePaidForm,
     ParentInviteEmailForm,
+    RegistrationForm,
+    ResendVerificationForm,
     PaymentForm,
     PlayerGalleryPhotoForm,
     PlayerProfileForm,
@@ -68,8 +73,25 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+class LoginForm(AuthenticationForm):
+    """Blocks self-registered accounts until they've confirmed their email."""
+
+    unverified = False
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        # Checked after the password, so this never reveals whether an email is registered.
+        if not user.email_verified:
+            self.unverified = True
+            raise ValidationError(
+                "Please confirm your email address first. We sent you a link when you registered.",
+                code="unverified",
+            )
+
+
 class LoginView(BaseLoginView):
     template_name = "accounts/login.html"
+    authentication_form = LoginForm
 
     def get_initial(self):
         # ?email= prefills the email box (the try-out sign-up form's
@@ -94,6 +116,8 @@ def dashboard_redirect(request):
         return redirect("accounts:dashboard_coach")
     if user.is_parent:
         return redirect("accounts:dashboard_parent")
+    if user.is_prospective_parent:
+        return redirect("accounts:dashboard_prospect")
     if user.is_superuser:
         return redirect("/admin/")
     return render(request, "accounts/no_dashboard.html")
@@ -1574,3 +1598,123 @@ def _complete_invite_claim(invite, user):
     invite.save(update_fields=["claimed_at", "claimed_by"])
     parent_role, _ = UserRole.objects.get_or_create(role=Role.PARENT)
     user.roles.add(parent_role)
+
+
+# How long before a new verification email can be requested, so the resend
+# form can't be used to burn through Resend's 100/day.
+VERIFICATION_RESEND_MINUTES = 2
+
+
+def _send_verification(user, request):
+    """Sends the link and stamps verification_sent_at; returns False if the send failed."""
+    try:
+        send_verification_email(user, request)
+    except Exception:
+        logger.exception("Verification email failed for user %s", user.pk)
+        return False
+    user.verification_sent_at = timezone.now()
+    user.save(update_fields=["verification_sent_at"])
+    return True
+
+
+def register(request):
+    """Public: create an account (roles: prospective parent) before, or without, signing up for a try-out."""
+    if request.user.is_authenticated:
+        return redirect("accounts:dashboard")
+
+    if request.method == "POST":
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            role, _ = UserRole.objects.get_or_create(role=Role.PROSPECTIVE_PARENT)
+            user.roles.add(role)
+            sent = _send_verification(user, request)
+            return render(
+                request, "accounts/register_check_email.html", {"email": user.email, "sent": sent}
+            )
+    else:
+        form = RegistrationForm()
+    return render(request, "accounts/register.html", {"form": form})
+
+
+def verify_email(request, token):
+    payload = read_verification_token(token)
+    user = User.objects.filter(pk=payload["uid"], email=payload["email"]).first() if payload else None
+    if user is None:
+        return render(request, "accounts/verify_email_invalid.html")
+    if not user.email_verified:
+        user.email_verified = True
+        user.save(update_fields=["email_verified"])
+    messages.success(request, "Your email is confirmed. You can log in now.")
+    return redirect("accounts:login")
+
+
+def resend_verification(request):
+    sent_to = None
+    if request.method == "POST":
+        form = ResendVerificationForm(request.POST)
+        if form.is_valid():
+            user = User.objects.filter(email__iexact=form.cleaned_data["email"]).first()
+            recent = user and user.verification_sent_at and (
+                timezone.now() - user.verification_sent_at
+                < timezone.timedelta(minutes=VERIFICATION_RESEND_MINUTES)
+            )
+            if user and not user.email_verified and not recent:
+                _send_verification(user, request)
+            # Same answer whether or not the address is registered.
+            sent_to = form.cleaned_data["email"]
+    else:
+        form = ResendVerificationForm(initial={"email": request.GET.get("email", "")})
+    return render(
+        request, "accounts/resend_verification.html", {"form": form, "sent_to": sent_to}
+    )
+
+
+@login_required
+def dashboard_prospect(request):
+    """A family's saved kids and try-out sign-ups. Open to any logged-in user: it's only their own data."""
+    user = request.user
+    kids = user.prospective_players.filter(promoted_player__isnull=True).prefetch_related("positions")
+    signups = (
+        TryoutSignup.objects.filter(Q(user=user) | Q(parent_email__iexact=user.email))
+        .select_related("team")
+        .order_by("-submitted_at")
+    )
+    return render(
+        request, "accounts/dashboard_prospect.html", {"kids": kids, "signups": signups}
+    )
+
+
+def _get_prospect_or_404(user, pk):
+    return get_object_or_404(user.prospective_players, pk=pk, promoted_player__isnull=True)
+
+
+@login_required
+def prospect_player_add(request):
+    form = ProspectivePlayerForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.instance.user = request.user
+        kid = form.save()
+        messages.success(request, f"Saved {kid.first_name}.")
+        return redirect("accounts:dashboard_prospect")
+    return render(request, "accounts/prospect_player_form.html", {"form": form, "kid": None})
+
+
+@login_required
+def prospect_player_edit(request, pk):
+    kid = _get_prospect_or_404(request.user, pk)
+    form = ProspectivePlayerForm(request.POST or None, instance=kid)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, f"Saved {kid.first_name}.")
+        return redirect("accounts:dashboard_prospect")
+    return render(request, "accounts/prospect_player_form.html", {"form": form, "kid": kid})
+
+
+@login_required
+@require_POST
+def prospect_player_delete(request, pk):
+    kid = _get_prospect_or_404(request.user, pk)
+    kid.delete()
+    messages.success(request, f"Removed {kid.first_name}.")
+    return redirect("accounts:dashboard_prospect")

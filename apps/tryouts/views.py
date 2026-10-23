@@ -12,7 +12,7 @@ from apps.teams.models import Team
 
 from .emails import send_signup_confirmation_email
 from .forms import TryoutSignupForm
-from .models import TryoutDecision, TryoutFamilyResponse, TryoutPoster, TryoutResponseInvite
+from .models import ProspectivePlayer, TryoutDecision, TryoutFamilyResponse, TryoutPoster, TryoutResponseInvite
 from .roster import find_existing_player, promote_signup_to_roster
 
 logger = logging.getLogger(__name__)
@@ -35,9 +35,14 @@ def signup(request):
     )
     form = None
     restored_draft = False
+    saved_players = (
+        request.user.prospective_players.filter(promoted_player__isnull=True).prefetch_related("positions")
+        if request.user.is_authenticated
+        else ProspectivePlayer.objects.none()
+    )
     if accepting_tryouts:
         if request.method == "POST":
-            form = TryoutSignupForm(request.POST)
+            form = TryoutSignupForm(request.POST, user=request.user)
             if form.is_valid():
                 email = form.cleaned_data["parent_email"]
                 account_check = request.POST.get("account_check")
@@ -79,16 +84,20 @@ def signup(request):
         else:
             draft = request.session.pop(SIGNUP_DRAFT_SESSION_KEY, None)
             if draft:
-                form = TryoutSignupForm(initial=_draft_initial(draft))
+                form = TryoutSignupForm(initial=_draft_initial(draft), user=request.user)
                 restored_draft = True
             elif request.user.is_authenticated:
-                form = TryoutSignupForm(
-                    initial={
-                        "parent_first_name": request.user.first_name,
-                        "parent_last_name": request.user.last_name,
-                        "parent_email": request.user.email,
-                    }
-                )
+                initial = {
+                    "parent_first_name": request.user.first_name,
+                    "parent_last_name": request.user.last_name,
+                    "parent_phone": request.user.phone,
+                    "parent_email": request.user.email,
+                    "save_player": True,
+                }
+                kid = saved_players.filter(pk=request.GET.get("kid") or 0).first()
+                if kid:
+                    initial.update(_kid_initial(kid))
+                form = TryoutSignupForm(initial=initial, user=request.user)
             else:
                 form = TryoutSignupForm()
     return render(
@@ -98,8 +107,24 @@ def signup(request):
             "form": form,
             "accepting_tryouts": accepting_tryouts,
             "restored_draft": restored_draft,
+            "saved_players": saved_players,
         },
     )
+
+
+def _kid_initial(kid):
+    """Sign-up form initial values from a saved ProspectivePlayer."""
+    return {
+        "prospective_player": kid.pk,
+        "save_player": False,
+        "player_first_name": kid.first_name,
+        "player_last_name": kid.last_name,
+        "date_of_birth": kid.date_of_birth,
+        "years_experience": kid.years_experience,
+        "previous_team": kid.previous_team,
+        "notes": kid.notes,
+        "positions": [p.position for p in kid.positions.all()],
+    }
 
 
 # Session key for sign-up answers saved while the parent logs in (see signup).
@@ -156,6 +181,9 @@ def respond(request, token):
                 _complete_response(signup, invite, TryoutFamilyResponse.DECLINED)
                 return render(request, "tryouts/respond_done.html", {"signup": signup})
             if action == "accept":
+                if not request.user.is_authenticated and signup.user_id:
+                    # Their account already exists; the page asks them to log in.
+                    return redirect(request.path)
                 if request.user.is_authenticated:
                     returning = request.POST.get("returning")
                     if existing_player and returning not in ("yes", "no"):
@@ -184,7 +212,7 @@ def respond(request, token):
                         "tryouts/respond_done.html",
                         {"signup": signup, "account_created": True},
                     )
-        elif not request.user.is_authenticated:
+        elif not request.user.is_authenticated and not signup.user_id:
             form = InviteClaimSignupForm(
                 initial={
                     "first_name": signup.parent_first_name,
@@ -203,6 +231,7 @@ def respond(request, token):
             "form": form,
             "existing_player": existing_player,
             "confirm_returning": confirm_returning,
+            "has_account": bool(signup.user_id),
         },
     )
 

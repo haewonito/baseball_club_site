@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Link Expired · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>That link didn't work</h1>
+    <p>
+      The confirmation link is invalid or has expired (they last 3 days).
+      <a href="{% url 'accounts:resend_verification' %}">Send a new one</a>.
+    </p>
+  </section>
+{% endblock %}

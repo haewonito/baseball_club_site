@@ -22,7 +22,11 @@ class UserAdmin(DjangoUserAdmin):
     search_fields = ("email", "first_name", "last_name")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "phone")}),
+        (
+            "Registration",
+            {"fields": ("email_verified", "info_emails_opt_in", "info_emails_opt_in_at")},
+        ),
         (
             "Permissions",
             {

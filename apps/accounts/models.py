@@ -14,6 +14,9 @@ class Role(models.TextChoices):
     ADMIN = "admin", "Admin"
     PARENT = "parent", "Parent"
     COACH = "coach", "Coach"
+    # Self-registered family that hasn't joined a team yet (no players on a
+    # roster). They get the Parent role as well once they accept a spot.
+    PROSPECTIVE_PARENT = "prospective_parent", "Prospective Parent"
 
 
 class UserManager(BaseUserManager):
@@ -73,6 +76,19 @@ class User(AbstractUser):
         "UserRole", blank=True, related_name="users"
     )
 
+    # Only self-registered accounts (accounts.views.register) start False and
+    # can't log in until they click the emailed link. Everyone else (invite
+    # claims, try-out accepts, Django admin) is trusted as before.
+    email_verified = models.BooleanField(default=True)
+    verification_sent_at = models.DateTimeField(null=True, blank=True)
+
+    # Consent to club info emails (try-out dates and the like), ticked
+    # unchecked-by-default on the registration form. Kept as its own flag,
+    # not inferred from a role, because it records consent.
+    info_emails_opt_in = models.BooleanField(default=False)
+    info_emails_opt_in_at = models.DateTimeField(null=True, blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+
     class Meta:
         # Belt-and-suspenders on top of the field-level unique=True above --
         # that's a case-sensitive DB index, so "James@x.com"/"james@x.com"
@@ -107,6 +123,10 @@ class User(AbstractUser):
     @property
     def is_coach(self) -> bool:
         return self.has_role(Role.COACH)
+
+    @property
+    def is_prospective_parent(self) -> bool:
+        return self.has_role(Role.PROSPECTIVE_PARENT)
 
 
 class UserRole(models.Model):

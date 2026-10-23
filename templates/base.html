@@ -36,9 +36,12 @@
           {% if user.is_parent %}
             <a href="{% url 'accounts:dashboard_parent' %}">Parent Dashboard</a>
           {% endif %}
+          {% if user.is_prospective_parent and not user.is_superuser and not user.is_parent %}
+            <a href="{% url 'accounts:dashboard_prospect' %}">My Account</a>
+          {% endif %}
           {% if user.is_superuser %}
             <a href="{% url 'admin:index' %}">Super User Dashboard</a>
-          {% elif not user.is_admin and not user.is_coach and not user.is_parent %}
+          {% elif not user.is_admin and not user.is_coach and not user.is_parent and not user.is_prospective_parent %}
             <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
           {% endif %}
           <form method="post" action="{% url 'accounts:logout' %}">
@@ -46,6 +49,7 @@
             <button type="submit">Log Out</button>
           </form>
         {% else %}
+          <a href="{% url 'accounts:register' %}">Register</a>
           <a href="{% url 'accounts:login' %}">Log In</a>
         {% endif %}
       </nav>

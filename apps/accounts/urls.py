@@ -9,6 +9,9 @@ app_name = "accounts"
 urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("register/", views.register, name="register"),
+    path("verify/resend/", views.resend_verification, name="resend_verification"),
+    path("verify/<str:token>/", views.verify_email, name="verify_email"),
     # Forgotten password: emailed link -> new password. Django's own views;
     # the templates live in accounts/templates/accounts/.
     path(
@@ -58,6 +61,18 @@ urlpatterns = [
         name="password_change_done",
     ),
     path("dashboard/", views.dashboard_redirect, name="dashboard"),
+    path("dashboard/prospect/", views.dashboard_prospect, name="dashboard_prospect"),
+    path("dashboard/prospect/players/add/", views.prospect_player_add, name="prospect_player_add"),
+    path(
+        "dashboard/prospect/players/<int:pk>/edit/",
+        views.prospect_player_edit,
+        name="prospect_player_edit",
+    ),
+    path(
+        "dashboard/prospect/players/<int:pk>/delete/",
+        views.prospect_player_delete,
+        name="prospect_player_delete",
+    ),
     path("dashboard/admin/", views.dashboard_admin, name="dashboard_admin"),
     path("dashboard/admin/tryouts/", views.admin_tryouts_list, name="admin_tryouts_list"),
     path("dashboard/admin/tryouts/<int:pk>/", views.admin_tryout_detail, name="admin_tryout_detail"),

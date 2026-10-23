@@ -49,6 +49,12 @@
             <button class="btn btn--primary" type="submit">Accept</button>
           {% endif %}
         </form>
+      {% elif has_account %}
+        <p>
+          You signed up with an account. Please
+          <a class="btn btn--primary" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a>
+          to accept, and you'll come right back to this page.
+        </p>
       {% else %}
         <p>
           Already have an account?

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}My Account · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>My Account <span class="page-hero__subname">{{ user }}</span></h1>
+    <p>
+      Save your kids' information here and it will prefill the try-out sign-up.
+      {% if user.is_prospective_parent and not user.is_parent %}You haven't joined a team yet.{% endif %}
+    </p>
+  </section>
+
+  <section class="team-section">
+    <h2>Players</h2>
+    {% if kids %}
+      <div class="kid-cards">
+        {% for kid in kids %}
+          <div class="kid-card">
+            <h2>{{ kid }}</h2>
+            <p class="kid-card__row"><span>Born</span> {{ kid.date_of_birth|date:"M j, Y" }}</p>
+            {% if kid.positions_display %}
+              <p class="kid-card__row"><span>Positions</span> {{ kid.positions_display }}</p>
+            {% endif %}
+            <p>
+              <a class="btn btn--primary" href="{% url 'tryouts:signup' %}?kid={{ kid.pk }}">Try-Out Sign-Up</a>
+              <a class="btn" href="{% url 'accounts:prospect_player_edit' kid.pk %}">Edit</a>
+            </p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No saved players yet.</p>
+    {% endif %}
+    <p><a class="btn" href="{% url 'accounts:prospect_player_add' %}">Add a Player</a></p>
+  </section>
+
+  <section class="team-section">
+    <h2>Try-Out Sign-Ups</h2>
+    {% if signups %}
+      <table>
+        <thead>
+          <tr><th>Player</th><th>Team</th><th>Submitted</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for signup in signups %}
+            <tr>
+              <td>{{ signup.player_full_name }}</td>
+              <td>{{ signup.team.display_name }}</td>
+              <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
+              <td>
+                {% if signup.promoted_player_id %}On the roster
+                {% elif signup.decision_emailed_at %}Decision emailed {{ signup.decision_emailed_at|date:"M j" }}
+                {% else %}Submitted{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No try-out sign-ups yet.</p>
+    {% endif %}
+    <p><a class="btn btn--primary" href="{% url 'tryouts:signup' %}">New Try-Out Sign-Up</a></p>
+  </section>
+{% endblock %}

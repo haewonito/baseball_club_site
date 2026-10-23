@@ -2,6 +2,7 @@ from io import BytesIO
 from pathlib import Path
 
 from django import forms
+from django.utils import timezone
 from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
 from django.contrib.auth.password_validation import validate_password
@@ -376,6 +377,36 @@ class InviteClaimSignupForm(forms.Form):
             first_name=self.cleaned_data["first_name"],
             last_name=self.cleaned_data["last_name"],
         )
+
+
+class RegistrationForm(InviteClaimSignupForm):
+    """Public "create an account" form for families who haven't joined a team yet."""
+
+    phone = forms.CharField(max_length=30, required=False, label="Phone (optional)")
+    info_emails_opt_in = forms.BooleanField(
+        required=False,
+        label="Email me about try-outs and club news",
+        help_text=(
+            "Optional. We'll send information about upcoming try-outs and the club. "
+            "Every email has a link to unsubscribe, and you can opt out at any time."
+        ),
+    )
+
+    def save(self):
+        user = super().save()
+        user.phone = self.cleaned_data["phone"]
+        user.email_verified = False
+        user.info_emails_opt_in = self.cleaned_data["info_emails_opt_in"]
+        if user.info_emails_opt_in:
+            user.info_emails_opt_in_at = timezone.now()
+        user.save(
+            update_fields=["phone", "email_verified", "info_emails_opt_in", "info_emails_opt_in_at"]
+        )
+        return user
+
+
+class ResendVerificationForm(forms.Form):
+    email = forms.EmailField()
 
 
 class ParentInviteEmailForm(forms.Form):

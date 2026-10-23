@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{% if kid %}Edit {{ kid.first_name }}{% else %}Add a Player{% endif %} · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{% if kid %}Edit {{ kid }}{% else %}Add a Player{% endif %}</h1>
+  </section>
+
+  <form method="post" data-unsaved-guard>
+    {% csrf_token %}
+    <div class="form-row">
+      {% include "partials/_form_field.html" with field=form.first_name %}
+      {% include "partials/_form_field.html" with field=form.last_name %}
+    </div>
+    {% include "partials/_form_field.html" with field=form.date_of_birth %}
+    {% include "partials/_form_field.html" with field=form.positions %}
+    {% include "partials/_form_field.html" with field=form.years_experience %}
+    {% include "partials/_form_field.html" with field=form.previous_team %}
+    {% include "partials/_form_field.html" with field=form.notes %}
+    <button class="btn btn--primary" type="submit">Save</button>
+    <a class="btn" href="{% url 'accounts:dashboard_prospect' %}" data-cancel>Cancel</a>
+  </form>
+
+  {% if kid %}
+    <form
+      method="post"
+      action="{% url 'accounts:prospect_player_delete' kid.pk %}"
+      onsubmit="return confirm('Remove {{ kid.first_name|escapejs }} from your account?');"
+    >
+      {% csrf_token %}
+      <button class="btn" type="submit">Remove Player</button>
+    </form>
+  {% endif %}
+{% endblock %}

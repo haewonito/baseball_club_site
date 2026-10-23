@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Check Your Email · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Check your email</h1>
+    {% if sent %}
+      <p>
+        We sent a confirmation link to <strong>{{ email }}</strong>. Click it to finish creating your account.
+        If you don't see it within a few minutes, check your spam folder.
+      </p>
+    {% else %}
+      <p>
+        Your account was created, but we couldn't send the confirmation email to <strong>{{ email }}</strong> right now.
+        <a href="{% url 'accounts:resend_verification' %}?email={{ email|urlencode }}">Try sending it again</a>.
+      </p>
+    {% endif %}
+  </section>
+{% endblock %}

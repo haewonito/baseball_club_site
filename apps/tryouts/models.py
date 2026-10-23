@@ -65,6 +65,74 @@ class TryoutFamilyResponse(models.TextChoices):
     DECLINED = "declined", "Declined"
 
 
+class ProspectivePlayer(models.Model):
+    """
+    A kid a registered family has saved to their account before (or without)
+    joining a team. Deliberately not accounts.Player: every Player is roster
+    material (team lists, fees, email audiences), and a prospect isn't. It
+    prefills the try-out sign-up form, and when the kid is promoted to a
+    roster Player (apps.tryouts.roster) `promoted_player` is set and the
+    prospect drops off the family's list.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="prospective_players"
+    )
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    date_of_birth = models.DateField()
+    years_experience = models.PositiveSmallIntegerField(null=True, blank=True)
+    previous_team = models.CharField(max_length=150, blank=True)
+    notes = models.TextField(blank=True)
+    promoted_player = models.ForeignKey(
+        "accounts.Player",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="prospective_records",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["last_name", "first_name"]
+
+    def save(self, *args, **kwargs):
+        # Same name normalizing as TryoutSignup.save.
+        self.first_name = self.first_name.strip().title()
+        self.last_name = self.last_name.strip().title()
+        super().save(*args, **kwargs)
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def positions_display(self):
+        return ", ".join(p.get_position_display() for p in self.positions.all())
+
+    def __str__(self):
+        return self.full_name
+
+
+class ProspectivePlayerPosition(models.Model):
+    """One position for a ProspectivePlayer; same canonical codes as TryoutSignupPosition."""
+
+    prospect = models.ForeignKey(
+        ProspectivePlayer, on_delete=models.CASCADE, related_name="positions"
+    )
+    position = models.CharField(max_length=5, choices=Position.choices)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["prospect", "position"], name="unique_prospect_position"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.prospect} - {self.get_position_display()}"
+
+
 class TryoutSignup(models.Model):
     """Public, no-login submission from a prospective family."""
 
@@ -92,6 +160,24 @@ class TryoutSignup(models.Model):
     parent_last_name = models.CharField(max_length=100)
     parent_phone = models.CharField(max_length=30)
     parent_email = models.EmailField()
+    # The account that was logged in when this was submitted, if any (guests
+    # can still sign up). The family's dashboard also picks up guest signups
+    # by matching parent_email to their verified address.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tryout_signups",
+    )
+    # The saved kid this was filled from, so promotion can mark it joined.
+    prospective_player = models.ForeignKey(
+        ProspectivePlayer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tryout_signups",
+    )
 
     submitted_at = models.DateTimeField(auto_now_add=True)
 

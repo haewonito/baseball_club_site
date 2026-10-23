@@ -73,4 +73,9 @@
       <p>No players linked to your account yet. Contact the club to get set up.</p>
     {% endif %}
   {% endif %}
+
+  <p class="form-field__help">
+    Have another child who hasn't joined a team?
+    <a href="{% url 'accounts:dashboard_prospect' %}">Saved players &amp; try-out sign-ups</a>
+  </p>
 {% endblock %}
