@@ -8,6 +8,8 @@
 :root {
   --color-black: #111111;
   --color-white: #ffffff;
+  /* Text on the black header/footer bars: a touch softer than pure white. */
+  --color-white-soft: #dcdcdc;
   --color-red: #c8102e;
   --color-red-pale: #fbe9ec;
   --color-gray-line: #e2e2e2;
@@ -90,7 +92,7 @@ a:hover {
 .site-header,
 .site-footer {
   background: var(--color-black);
-  color: var(--color-white);
+  color: var(--color-white-soft);
 }
 
 .site-header__inner,
@@ -102,6 +104,8 @@ a:hover {
 }
 
 .site-header__inner {
+  /* Wider than the 720px content column so more menu items fit on one line. */
+  max-width: 1280px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -126,7 +130,7 @@ a:hover {
 }
 
 .site-nav a {
-  color: var(--color-white);
+  color: var(--color-white-soft);
   font-weight: 500;
 }
 
@@ -137,7 +141,7 @@ a:hover {
 .site-nav button {
   background: none;
   border: none;
-  color: var(--color-white);
+  color: var(--color-white-soft);
   font: inherit;
   font-weight: 500;
   padding: 0;
@@ -162,7 +166,7 @@ a:hover {
 }
 
 .site-footer__welcome {
-  color: var(--color-white);
+  color: var(--color-white-soft);
 }
 
 /* --- Main content (white surface) ------------------------------------ */
