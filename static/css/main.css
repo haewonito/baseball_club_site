@@ -152,6 +152,88 @@ a:hover {
   text-decoration: underline;
 }
 
+/* One-line mode, switched on by static/js/nav-overflow.js: the row never wraps,
+   and items that don't fit live in the "More" dropdown. */
+.site-nav--collapsible {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.site-nav--collapsible > *,
+.site-nav__menu > * {
+  white-space: nowrap;
+}
+
+.site-nav__more {
+  position: relative;
+}
+
+.site-nav__more[hidden] {
+  display: none;
+}
+
+.site-nav__more-button {
+  background: none;
+  border: none;
+  color: var(--color-white-soft);
+  font: inherit;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* The menu starts flush under the button (no gap), so moving the mouse
+   down onto it doesn't lose the hover. */
+.site-nav__menu {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  right: 0;
+  min-width: 11rem;
+  padding: 0.5rem 0;
+  background: var(--color-black);
+  border: 1px solid #333333;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.site-nav__more:hover .site-nav__menu,
+.site-nav__more:focus-within .site-nav__menu,
+.site-nav__more.is-open .site-nav__menu {
+  display: block;
+}
+
+.site-nav__menu > a,
+.site-nav__menu > form,
+.site-nav__menu > form button {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 1rem;
+  text-align: left;
+}
+
+.site-nav__menu > a:hover,
+.site-nav__menu > form button:hover {
+  background: #222222;
+  text-decoration: none;
+}
+
+/* On phones the menu gets its own row under the brand. */
+@media (max-width: 640px) {
+  .site-nav--collapsible {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+
+  .site-nav__menu {
+    right: auto;
+    left: 0;
+  }
+}
+
 /* Who's logged in, at the far right of the nav. */
 .site-footer__inner {
   display: flex;

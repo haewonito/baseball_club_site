@@ -57,6 +57,8 @@
       </nav>
     </div>
   </header>
+  {# Not deferred: it must run before first paint so the menu doesn't jump from wrapped to one line. #}
+  <script src="{% static 'js/nav-overflow.js' %}"></script>
 
   {% block hero %}{% endblock %}
 
