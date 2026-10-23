@@ -3,6 +3,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as BaseLoginView
@@ -1832,3 +1833,34 @@ def info_emails_set(request):
         update_fields=["info_emails_opt_in", "info_emails_opt_in_at", "info_emails_opted_out_at"]
     )
     return redirect("accounts:dashboard_prospect")
+
+
+def account_delete_blocker(user):
+    """Why `user` can't delete their own account from the site, or None if they can.
+
+    Only families who never joined a team are self-service: anyone who has been
+    linked to a player (even a removed link, which is audit history), holds a
+    staff role, or has invoices goes through the club instead.
+    """
+    if user.is_staff or user.is_superuser or user.roles.filter(role__in=[Role.ADMIN, Role.COACH]).exists():
+        return "This is a staff account."
+    if user.player_links.exists() or user.invoices.exists():
+        return "Your account is linked to a player on a team, so the club keeps its records."
+    return None
+
+
+@login_required
+def account_delete(request):
+    """Self-service "delete my account" for families who haven't joined a team. Asks for the password again."""
+    user = request.user
+    blocker = account_delete_blocker(user)
+    error = None
+    if request.method == "POST" and not blocker:
+        if user.check_password(request.POST.get("password", "")):
+            user.delete()
+            auth_logout(request)
+            return render(request, "accounts/account_deleted.html")
+        error = "That password isn't right."
+    return render(
+        request, "accounts/account_delete.html", {"blocker": blocker, "error": error}
+    )

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Delete My Account · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Delete my account</h1>
+  </section>
+
+  {% if blocker %}
+    <p>{{ blocker }} To close this account, please <a href="mailto:{{ general_contact_email }}">contact the club</a>.</p>
+  {% else %}
+    <p>
+      This removes your login, your saved players and your email preferences. It can't be undone.
+      Try-out sign-ups you already submitted stay on file with the coaches; contact the club if you want those withdrawn too.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      {% if error %}<div class="form-errors"><p>{{ error }}</p></div>{% endif %}
+      <div class="form-field">
+        <label for="id_password">Enter your password to confirm</label>
+        <input type="password" id="id_password" name="password" required autocomplete="current-password">
+      </div>
+      <button class="btn btn--primary" type="submit" onclick="return confirm('Permanently delete your account?');">Delete my account</button>
+      <a class="btn" href="{% url 'accounts:dashboard' %}">Cancel</a>
+    </form>
+  {% endif %}
+{% endblock %}

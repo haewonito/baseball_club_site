@@ -11,6 +11,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("register/", views.register, name="register"),
     path("unsubscribe/<str:token>/", views.unsubscribe, name="unsubscribe"),
+    path("delete/", views.account_delete, name="account_delete"),
     path("email-preferences/", views.info_emails_set, name="info_emails_set"),
     path("verify/resend/", views.resend_verification, name="resend_verification"),
     path("verify/<str:token>/", views.verify_email, name="verify_email"),

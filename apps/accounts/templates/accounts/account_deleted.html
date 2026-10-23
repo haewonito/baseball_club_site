@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Account Deleted · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Your account is deleted</h1>
+    <p>Thanks for your interest in Choice Select. You're welcome to <a href="{% url 'accounts:register' %}">register again</a> any time.</p>
+  </section>
+{% endblock %}

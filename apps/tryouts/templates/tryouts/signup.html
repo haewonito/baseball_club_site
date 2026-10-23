@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Try-Out Sign-Up · Choice Select{% endblock %}
+{% block title %}Join Us · Choice Select{% endblock %}
 
 {% block content %}
   <section class="page-hero">
-    <h1>Try-Out Sign-Up</h1>
+    <h1>Join Us</h1>
     <p>
-      Fill out the form below to register for an upcoming try-out.
+      Fill out the form below to sign up for an upcoming try-out.
+      {% if not user.is_authenticated %}
+        Not ready yet? <a href="{% url 'accounts:register' %}">Create an account</a> to hear about try-outs and keep your kids' details handy.
+      {% endif %}
     </p>
   </section>
 

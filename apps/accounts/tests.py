@@ -371,3 +371,65 @@ class InterestedFamiliesTests(TestCase):
         self.assertEqual([m["text"] for m in payload], ["body A", "body B"])
         self.assertEqual(payload[0]["headers"], {"List-Unsubscribe": "<u1>"})
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer k")
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class AccountDeleteTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="fam@example.com", password="pw-12345-long")
+        self.client.force_login(self.user)
+
+    def test_prospective_family_can_delete_with_password(self):
+        from apps.tryouts.models import ProspectivePlayer
+
+        ProspectivePlayer.objects.create(
+            user=self.user, first_name="Sam", last_name="Lee", date_of_birth="2015-05-01"
+        )
+        response = self.client.post(reverse("accounts:account_delete"), {"password": "wrong"})
+        self.assertContains(response, "isn&#x27;t right")
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+        response = self.client.post(reverse("accounts:account_delete"), {"password": "pw-12345-long"})
+        self.assertContains(response, "Your account is deleted")
+        self.assertFalse(User.objects.exists())
+        self.assertFalse(ProspectivePlayer.objects.exists())
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_signup_stays_after_account_deleted(self):
+        from apps.teams.models import Team
+        from apps.tryouts.models import TryoutSignup
+
+        team = Team.objects.create(name="11U", season_year=2027)
+        signup = TryoutSignup.objects.create(
+            team=team, player_first_name="a", player_last_name="b", parent_first_name="c",
+            parent_last_name="d", parent_phone="1", parent_email="fam@example.com", user=self.user,
+        )
+        self.client.post(reverse("accounts:account_delete"), {"password": "pw-12345-long"})
+        signup.refresh_from_db()
+        self.assertIsNone(signup.user)
+
+    def test_linked_parent_and_staff_are_refused(self):
+        from datetime import date
+
+        from .models import ParentPlayerLink, Player, UserRole
+
+        player = Player.objects.create(first_name="K", last_name="L", date_of_birth=date(2015, 1, 1))
+        ParentPlayerLink.objects.create(parent=self.user, player=player)
+        response = self.client.post(reverse("accounts:account_delete"), {"password": "pw-12345-long"})
+        self.assertContains(response, "linked to a player")
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+
+        coach = User.objects.create_user(email="coach@example.com", password="pw-12345-long")
+        coach.roles.add(UserRole.objects.create(role=Role.COACH))
+        self.client.force_login(coach)
+        self.client.post(reverse("accounts:account_delete"), {"password": "pw-12345-long"})
+        self.assertTrue(User.objects.filter(pk=coach.pk).exists())
+
+    def test_requires_login(self):
+        self.client.logout()
+        response = self.client.get(reverse("accounts:account_delete"))
+        self.assertEqual(response.status_code, 302)
