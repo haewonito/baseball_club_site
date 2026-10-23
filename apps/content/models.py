@@ -1,4 +1,4 @@
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -16,6 +16,11 @@ class HeroImage(models.Model):
     # (static/js/hero-crop.js); 50/50 is centered.
     focus_x = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
     focus_y = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
+    # Percent: 100 shows the whole picture (as far as the banner shape allows),
+    # higher zooms in evenly, which is how a side is "cut". Never stretches.
+    zoom = models.PositiveSmallIntegerField(
+        default=100, validators=[MinValueValidator(100), MaxValueValidator(300)]
+    )
     sort_order = models.PositiveSmallIntegerField(
         default=0, help_text="Lower numbers show first."
     )

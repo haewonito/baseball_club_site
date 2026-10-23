@@ -1,5 +1,5 @@
 // Banner slideshow (home page): cross-fades the .hero-banner__slide images,
-// advancing every few seconds, with dots to jump. Stays still for visitors who
+// advancing every few seconds, with dots to jump and chevrons for previous/next. Stays still for visitors who
 // ask for reduced motion, and does nothing with a single picture.
 (function () {
   var banner = document.querySelector("[data-hero-slideshow]");
@@ -25,12 +25,19 @@
     timer = setInterval(function () { show(current + 1); }, 6000);
   }
 
+  function go(index) {
+    clearInterval(timer);
+    show(index);
+    start();
+  }
+
+  var prev = banner.querySelector(".hero-banner__arrow--prev");
+  var next = banner.querySelector(".hero-banner__arrow--next");
+  if (prev) prev.addEventListener("click", function () { go(current - 1); });
+  if (next) next.addEventListener("click", function () { go(current + 1); });
+
   dots.forEach(function (dot, index) {
-    dot.addEventListener("click", function () {
-      clearInterval(timer);
-      show(index);
-      start();
-    });
+    dot.addEventListener("click", function () { go(index); });
   });
   start();
 })();

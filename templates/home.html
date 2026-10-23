@@ -14,10 +14,16 @@
   {% if hero_images %}
     <section class="hero-banner" aria-label="Choice Select photos" data-hero-slideshow>
       {% for image in hero_images %}
-        <img class="hero-banner__slide{% if forloop.first %} is-active{% endif %}" src="{{ image.image.url }}" alt="{{ image.alt_text }}" style="object-position: {{ image.focus_x }}% {{ image.focus_y }}%"{% if not forloop.first %} loading="lazy"{% endif %}>
+        <img class="hero-banner__slide{% if forloop.first %} is-active{% endif %}" src="{{ image.image.url }}" alt="{{ image.alt_text }}" style="object-position: {{ image.focus_x }}% {{ image.focus_y }}%; transform-origin: {{ image.focus_x }}% {{ image.focus_y }}%; transform: scale(calc({{ image.zoom }} / 100))"{% if not forloop.first %} loading="lazy"{% endif %}>
       {% endfor %}
       <h1 class="hero-banner__title">Choice Select</h1>
       {% if hero_images|length > 1 %}
+        <button type="button" class="hero-banner__arrow hero-banner__arrow--prev" aria-label="Previous picture">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
+        </button>
+        <button type="button" class="hero-banner__arrow hero-banner__arrow--next" aria-label="Next picture">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg>
+        </button>
         <div class="hero-banner__dots">
           {% for image in hero_images %}
             <button type="button" class="hero-banner__dot{% if forloop.first %} is-active{% endif %}" aria-label="Show picture {{ forloop.counter }}"></button>

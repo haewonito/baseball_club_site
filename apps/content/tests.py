@@ -28,10 +28,18 @@ class SiteContentTests(TestCase):
         self.assertLess(html.index("first"), html.index("second"))
         self.assertNotIn("inactive-pic", html)
         self.assertContains(response, "Show picture", count=2)
+        self.assertContains(response, "Next picture")
+        self.assertContains(response, "Previous picture")
 
     def test_picture_focus_is_applied(self):
-        HeroImage.objects.create(image="hero/a.jpg", alt_text="x", focus_x=30, focus_y=0)
-        self.assertContains(self.client.get(reverse("home")), "object-position: 30% 0%")
+        HeroImage.objects.create(image="hero/a.jpg", alt_text="x", focus_x=30, focus_y=0, zoom=150)
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "object-position: 30% 0%")
+        self.assertContains(response, "scale(calc(150 / 100))")
+
+    def test_single_picture_has_no_chevrons(self):
+        HeroImage.objects.create(image="hero/a.jpg", alt_text="only")
+        self.assertNotContains(self.client.get(reverse("home")), "Next picture")
 
     def test_home_without_pictures_still_has_a_heading(self):
         self.assertContains(self.client.get(reverse("home")), "<h1>Choice Select</h1>")

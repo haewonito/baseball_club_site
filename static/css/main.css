@@ -1402,6 +1402,49 @@ table[data-sortable] th[aria-sort="descending"]::after {
   white-space: nowrap;
 }
 
+.hero-banner__arrow {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(17, 17, 17, 0.45);
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.hero-banner__arrow:hover,
+.hero-banner__arrow:focus-visible {
+  opacity: 1;
+  background: rgba(17, 17, 17, 0.75);
+}
+
+.hero-banner__arrow--prev {
+  left: 0.75rem;
+}
+
+.hero-banner__arrow--next {
+  right: 0.75rem;
+}
+
+.hero-banner__arrow svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: none;
+  stroke: var(--color-white);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .hero-banner__dots {
   position: absolute;
   z-index: 1;

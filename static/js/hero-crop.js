@@ -1,7 +1,10 @@
 // Django admin, Banner Pictures: drag the picture inside the banner-shaped
-// frame to choose which part of it the home page banner keeps. Writes the
-// position (0-100 on each axis, like CSS object-position) into the hidden
-// focus_x / focus_y inputs. Also previews a newly chosen file before saving.
+// frame, and zoom with the slider, to choose which part the home page banner
+// keeps. Writes the position (0-100 on each axis, like CSS object-position) and
+// the zoom (100-300 percent) into the hidden focus_x / focus_y / zoom inputs.
+// Also previews a newly chosen file before saving. The display rule matches
+// templates/home.html: object-position and transform-origin share the same
+// point, so zooming keeps that point fixed and the picture never stretches.
 // Django admin puts Media scripts in the page head, so wait for the form to exist.
 document.addEventListener("DOMContentLoaded", function () {
   var frame = document.querySelector("[data-crop-frame]");
@@ -9,28 +12,37 @@ document.addEventListener("DOMContentLoaded", function () {
   var img = frame.querySelector("img");
   var xInput = document.getElementById("id_focus_x");
   var yInput = document.getElementById("id_focus_y");
+  var zoomInput = document.getElementById("id_zoom");
+  var slider = document.querySelector("[data-crop-zoom]");
   var fileInput = document.getElementById("id_image");
-  if (!img || !xInput || !yInput) return;
+  if (!img || !xInput || !yInput || !zoomInput) return;
 
   var x = parseFloat(xInput.value);
   var y = parseFloat(yInput.value);
+  var zoom = parseFloat(zoomInput.value);
   if (isNaN(x)) x = 50;
   if (isNaN(y)) y = 50;
+  if (isNaN(zoom)) zoom = 100;
 
   function clamp(n) { return Math.max(0, Math.min(100, n)); }
 
   function apply() {
     img.style.objectPosition = x + "% " + y + "%";
+    img.style.transformOrigin = x + "% " + y + "%";
+    img.style.transform = "scale(" + zoom / 100 + ")";
     xInput.value = Math.round(x);
     yInput.value = Math.round(y);
+    zoomInput.value = Math.round(zoom);
+    if (slider) slider.value = zoom;
   }
 
-  // How far the picture overhangs the frame on each axis (object-fit: cover).
+  // How far the (zoomed) picture overhangs the frame on each axis.
   function overhang() {
     var nw = img.naturalWidth, nh = img.naturalHeight;
     if (!nw || !nh) return { x: 0, y: 0 };
-    var scale = Math.max(frame.clientWidth / nw, frame.clientHeight / nh);
-    return { x: nw * scale - frame.clientWidth, y: nh * scale - frame.clientHeight };
+    var fw = frame.clientWidth, fh = frame.clientHeight;
+    var scale = Math.max(fw / nw, fh / nh) * (zoom / 100);
+    return { x: nw * scale - fw, y: nh * scale - fh };
   }
 
   var drag = null;
@@ -57,6 +69,13 @@ document.addEventListener("DOMContentLoaded", function () {
   frame.addEventListener("pointerup", endDrag);
   frame.addEventListener("pointercancel", endDrag);
 
+  if (slider) {
+    slider.addEventListener("input", function () {
+      zoom = parseFloat(slider.value);
+      apply();
+    });
+  }
+
   if (fileInput) {
     fileInput.addEventListener("change", function () {
       var file = fileInput.files && fileInput.files[0];
@@ -65,6 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
       img.style.display = "block";
       x = 50;
       y = 50;
+      zoom = 100;
       apply();
     });
   }
