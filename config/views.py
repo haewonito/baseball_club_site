@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.shortcuts import render
 from django.utils import timezone
 
+from apps.content.models import HeroImage
 from apps.tryouts.models import TryoutPoster, TryoutYearSettings
 
 HOME_FIELD_ADDRESS = "1833 E Harmony Rd, Fort Collins, CO, United States, 80528"
@@ -26,8 +27,13 @@ def home(request):
             "next_tryout_date": next_tryout_date,
             "show_tryout_banner": show_tryout_banner,
             "tryout_posters": tryout_posters,
+            "hero_images": HeroImage.objects.filter(is_active=True),
         },
     )
+
+
+def about(request):
+    return render(request, "about.html")
 
 
 def location(request):

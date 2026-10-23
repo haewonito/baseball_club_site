@@ -10,17 +10,30 @@
   {% endif %}
 {% endblock %}
 
+{% block hero %}
+  {% if hero_images %}
+    <section class="hero-banner" aria-label="Choice Select photos" data-hero-slideshow>
+      {% for image in hero_images %}
+        <img class="hero-banner__slide{% if forloop.first %} is-active{% endif %}" src="{{ image.image.url }}" alt="{{ image.alt_text }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+      {% endfor %}
+      <h1 class="hero-banner__title">Choice Select</h1>
+      {% if hero_images|length > 1 %}
+        <div class="hero-banner__dots">
+          {% for image in hero_images %}
+            <button type="button" class="hero-banner__dot{% if forloop.first %} is-active{% endif %}" aria-label="Show picture {{ forloop.counter }}"></button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
-  <section class="page-hero">
-    <h1>Choice Select</h1>
-    {# TODO: placeholder copy -- replace with the club's real mission statement #}
-    <p>
-      ***this is just a fake website I am making for fun.***
-    </p>    
-    <p>
-      Choice Select is a competitive baseball & softball program based in Fort Collins, CO.  Blah blah blah...  please join us, especially if you are a good catcher or a left-handed pitcher. 
-    </p>
-  </section>
+  {% if not hero_images %}
+    <section class="page-hero">
+      <h1>Choice Select</h1>
+    </section>
+  {% endif %}
 
   {% if tryout_posters %}
     <section class="team-section" id="tryouts">
