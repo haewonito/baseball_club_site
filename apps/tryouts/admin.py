@@ -49,6 +49,9 @@ class TryoutSignupAdmin(admin.ModelAdmin):
 class TryoutYearSettingsAdmin(admin.ModelAdmin):
     list_display = ("next_tryout_date",)
 
+    class Media:
+        js = ("js/admin-shift-sync.js",)
+
 
 @admin.register(TryoutResponseInvite)
 class TryoutResponseInviteAdmin(AutoUserFieldsAdminMixin, admin.ModelAdmin):

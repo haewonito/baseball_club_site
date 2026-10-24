@@ -33,7 +33,7 @@ class TryoutYearSettings(models.Model):
 
     @classmethod
     def get_next_tryout_date(cls):
-        row = cls.objects.first()
+        row = cls.objects.order_by("-pk").first()
         return row.next_tryout_date if row else None
 
 

@@ -158,7 +158,8 @@ a:hover {
   flex: 1 1 0;
   min-width: 0;
   flex-wrap: nowrap;
-  justify-content: flex-end;
+  /* Next to the brand rather than pushed to the far right edge. */
+  justify-content: flex-start;
 }
 
 .site-nav--collapsible > *,
@@ -211,8 +212,18 @@ a:hover {
 .site-nav__menu > form button {
   display: block;
   width: 100%;
-  padding: 0.4rem 1rem;
   text-align: left;
+}
+
+/* Padding goes on the link/button only: the form wraps the button, so
+   padding both would indent "Log Out" twice. */
+.site-nav__menu > a,
+.site-nav__menu > form button {
+  padding: 0.4rem 1rem;
+}
+
+.site-nav__menu > form {
+  padding: 0;
 }
 
 .site-nav__menu > a:hover,
@@ -225,7 +236,6 @@ a:hover {
 @media (max-width: 640px) {
   .site-nav--collapsible {
     flex-basis: 100%;
-    justify-content: flex-start;
   }
 
   .site-nav__menu {
