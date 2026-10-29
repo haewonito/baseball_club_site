@@ -1,4 +1,4 @@
-// Banner slideshow (home page): cross-fades the .hero-banner__slide images,
+// Banner slideshow (home and Teams pages): cross-fades the .hero-banner__slide images,
 // advancing every few seconds, with dots to jump and chevrons for previous/next. Stays still for visitors who
 // ask for reduced motion, and does nothing with a single picture.
 (function () {
@@ -10,6 +10,9 @@
 
   var current = 0;
   var timer = null;
+  // Teams page: one link over the banner that follows the visible slide.
+  var link = banner.querySelector(".hero-banner__link");
+  var caption = banner.querySelector(".hero-banner__caption");
 
   function show(index) {
     slides[current].classList.remove("is-active");
@@ -17,6 +20,8 @@
     current = (index + slides.length) % slides.length;
     slides[current].classList.add("is-active");
     if (dots[current]) dots[current].classList.add("is-active");
+    if (link && slides[current].dataset.href) link.href = slides[current].dataset.href;
+    if (caption && slides[current].dataset.caption) caption.textContent = slides[current].dataset.caption;
   }
 
   function start() {

@@ -58,6 +58,51 @@
     {% endif %}
   </section>
 
+  {% if photo_form %}
+    <section class="team-section" id="photos">
+      <h2>Team Photos</h2>
+      <p class="form-field__help">
+        Only you, the team's other coaches, and club admins see this gallery. The one picture you
+        choose for the Teams page is shown there to everyone.
+      </p>
+      {% if team_photos %}
+        <ul class="gallery-grid">
+          {% for photo in team_photos %}
+            <li class="gallery-grid__item">
+              <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:team.name }}" loading="lazy">
+              </a>
+              <div class="gallery-grid__actions">
+                {% if photo.is_featured %}<span class="badge">On Teams page</span>{% endif %}
+                <form method="post" action="{% url 'teams:photo_feature' team.pk photo.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="link-button">{% if photo.is_featured %}Remove from Teams page{% else %}Show on Teams page{% endif %}</button>
+                </form>
+                <form method="post" action="{% url 'teams:photo_delete' team.pk photo.pk %}" onsubmit="return confirm('Delete this photo? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="link-button">Delete</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No photos yet.</p>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'teams:photo_add' team.pk %}" class="gallery-upload">
+        {% csrf_token %}
+        <div class="form-field">
+          <div class="label-row">
+            <label for="{{ photo_form.images.id_for_label }}">{{ photo_form.images.label }}</label>
+            <span class="form-field__help">- up to {{ team_photos_max }} per team.</span>
+          </div>
+          {{ photo_form.images }}
+        </div>
+        <button class="btn btn--primary" type="submit">Upload</button>
+      </form>
+    </section>
+  {% endif %}
+
   <section class="team-section">
     <h2>Schedule</h2>
     {% if can_manage_schedule %}

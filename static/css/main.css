@@ -1571,3 +1571,100 @@ table[data-sortable] th[aria-sort="descending"]::after {
     transition: none;
   }
 }
+
+/* --- Teams page banner: the whole banner links to the visible team ------ */
+
+.hero-banner__link {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem 1.5rem 2.25rem;
+  color: var(--color-white);
+}
+
+.hero-banner__link:hover {
+  text-decoration: none;
+}
+
+.hero-banner__caption {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+}
+
+.hero-banner__link:hover .hero-banner__caption,
+.hero-banner__link:focus-visible .hero-banner__caption {
+  text-decoration: underline;
+}
+
+/* --- Header: Teams dropdown ------------------------------------------- */
+
+.site-nav__dropdown {
+  position: relative;
+}
+
+.site-nav__submenu {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  min-width: 11rem;
+  padding: 0.5rem 0;
+  background: var(--color-black);
+  border: 1px solid #333333;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.site-nav__dropdown:hover .site-nav__submenu,
+.site-nav__dropdown:focus-within .site-nav__submenu {
+  display: block;
+}
+
+.site-nav__submenu a {
+  display: block;
+  padding: 0.4rem 1rem;
+  white-space: nowrap;
+}
+
+.site-nav__submenu a:hover {
+  background: #222222;
+  text-decoration: none;
+}
+
+/* Inside the "More" dropdown (no room in the row) the team links are just
+   listed under "Teams", indented. */
+.site-nav__menu .site-nav__dropdown > a {
+  display: block;
+  padding: 0.4rem 1rem;
+}
+
+.site-nav__menu .site-nav__submenu {
+  display: block;
+  position: static;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.site-nav__menu .site-nav__submenu a {
+  padding-left: 2rem;
+}
+
+/* --- Team photos (team detail page) ------------------------------------- */
+
+.gallery-grid__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.gallery-grid__actions form {
+  margin: 0;
+}

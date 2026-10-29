@@ -327,6 +327,30 @@ class PlayerGalleryPhotoForm(forms.Form):
         return images
 
 
+TEAM_PHOTOS_MAX = 30
+
+
+class TeamPhotoForm(forms.Form):
+    images = _MultipleImageField(label="Add team photos")
+
+    def __init__(self, *args, team, **kwargs):
+        self.team = team
+        super().__init__(*args, **kwargs)
+
+    def clean_images(self):
+        images = self.cleaned_data["images"]
+        for image in images:
+            if image.size > GALLERY_MAX_UPLOAD_BYTES:
+                raise forms.ValidationError(f"\"{image.name}\" is too large (20 MB max per photo).")
+        remaining = TEAM_PHOTOS_MAX - self.team.photos.count()
+        if len(images) > remaining:
+            raise forms.ValidationError(
+                f"A team holds up to {TEAM_PHOTOS_MAX} photos -- "
+                f"there's room for {max(remaining, 0)} more. Delete some first to add more."
+            )
+        return images
+
+
 class TryoutPosterForm(forms.ModelForm):
     class Meta:
         model = TryoutPoster

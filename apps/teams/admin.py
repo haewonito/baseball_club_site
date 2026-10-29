@@ -5,11 +5,34 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import CoachProfile, Team, TeamCoach
+from django import forms
+
+from apps.accounts.forms import downsize_image
+
+from .models import CoachProfile, Team, TeamCoach, TeamPhoto
 
 
 class TeamCoachInline(admin.TabularInline):
     model = TeamCoach
+    extra = 1
+
+
+class TeamPhotoAdminForm(forms.ModelForm):
+    class Meta:
+        model = TeamPhoto
+        fields = ("image", "caption", "is_featured")
+
+    def clean_image(self):
+        image = self.cleaned_data["image"]
+        # Only a fresh upload is re-encoded; an unchanged field is a FieldFile.
+        if hasattr(image, "content_type"):
+            return downsize_image(image)
+        return image
+
+
+class TeamPhotoInline(admin.TabularInline):
+    model = TeamPhoto
+    form = TeamPhotoAdminForm
     extra = 1
 
 
@@ -24,7 +47,17 @@ class TeamAdmin(admin.ModelAdmin):
     )
     list_filter = ("division", "season_year", "is_public", "accepting_tryouts")
     list_editable = ("is_public", "accepting_tryouts")
-    inlines = [TeamCoachInline]
+    inlines = [TeamCoachInline, TeamPhotoInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for obj in instances:
+            if isinstance(obj, TeamPhoto) and obj.uploaded_by_id is None:
+                obj.uploaded_by = request.user
+            obj.save()
+        formset.save_m2m()
 
     def get_urls(self):
         custom = [

@@ -90,6 +90,53 @@ class Team(models.Model):
 DELETED_TEAM_NAME = "Deleted team"
 
 
+class TeamPhoto(models.Model):
+    """
+    A picture of a team, added by that team's coaches or an admin (on the
+    team detail page, or in Django admin). Only the ones marked
+    ``is_featured`` are public: the single featured photo per team is a slide
+    in the Teams page banner (teams.views.team_index). The rest are visible
+    only to the people who can manage the team, since there is no
+    per-family photo consent yet (see "Team photo gallery" in CLAUDE.md).
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="photos")
+    image = models.ImageField(upload_to="team_photos/")
+    caption = models.CharField(max_length=200, blank=True)
+    is_featured = models.BooleanField(
+        default=False,
+        help_text="Shown in the Teams page banner. Only one picture per team can be; ticking this unticks the others.",
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        verbose_name = "Team Photo"
+        verbose_name_plural = "Team Photos"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team"],
+                condition=models.Q(is_featured=True),
+                name="one_featured_photo_per_team",
+            )
+        ]
+
+    def __str__(self):
+        return self.caption or f"{self.team.name} photo {self.pk}"
+
+    def save(self, *args, **kwargs):
+        # Featuring a photo un-features the team's previous one, wherever the
+        # save comes from (site button or Django admin).
+        if self.is_featured:
+            TeamPhoto.objects.filter(team_id=self.team_id, is_featured=True).exclude(pk=self.pk).update(
+                is_featured=False
+            )
+        super().save(*args, **kwargs)
+
+
 def get_deleted_team():
     """
     The "Deleted team" placeholder that a TryoutSignup moves to when its

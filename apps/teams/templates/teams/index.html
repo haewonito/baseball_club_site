@@ -2,6 +2,35 @@
 
 {% block title %}Teams · {{ block.super }}{% endblock %}
 
+{% block hero %}
+  {% if banner_teams %}
+    <section class="hero-banner" aria-label="Team photos" data-hero-slideshow>
+      {% for team in banner_teams %}
+        {% with photo=team.featured_photos.0 %}
+          <img class="hero-banner__slide{% if forloop.first %} is-active{% endif %}" src="{{ photo.image.url }}" alt="{{ photo.caption|default:team.name }}" data-href="{% url 'teams:detail' team.pk %}" data-caption="{{ team.name }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+        {% endwith %}
+      {% endfor %}
+      {# One link over the whole banner; hero-slideshow.js points it at the visible slide's team. #}
+      <a class="hero-banner__link" href="{% url 'teams:detail' banner_teams.0.pk %}">
+        <span class="hero-banner__caption">{{ banner_teams.0.name }}</span>
+      </a>
+      {% if banner_teams|length > 1 %}
+        <button type="button" class="hero-banner__arrow hero-banner__arrow--prev" aria-label="Previous team">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
+        </button>
+        <button type="button" class="hero-banner__arrow hero-banner__arrow--next" aria-label="Next team">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg>
+        </button>
+        <div class="hero-banner__dots">
+          {% for team in banner_teams %}
+            <button type="button" class="hero-banner__dot{% if forloop.first %} is-active{% endif %}" aria-label="Show {{ team.name }}"></button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
   <section class="page-hero">
     <h1>Teams</h1>

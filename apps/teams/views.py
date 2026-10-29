@@ -1,3 +1,7 @@
+from django.db import transaction
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.db.models import Case, F, IntegerField, Prefetch, Value, When
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
@@ -8,6 +12,9 @@ from django.utils import timezone
 from apps.accounts.forms import (
     CoachProfileForm,
     GALLERY_MAX_PHOTOS,
+    TEAM_PHOTOS_MAX,
+    TeamPhotoForm,
+    downsize_image,
     PlayerGalleryPhotoForm,
     PlayerProfileForm,
     PlayerRosterForm,
@@ -15,7 +22,7 @@ from apps.accounts.forms import (
 from apps.accounts.models import ParentPlayerLink, Player, Role, User
 from apps.fees.models import FEE_STATUS_LABELS
 
-from .models import CoachProfile, Team, TeamCoach, TeamCoachRole
+from .models import CoachProfile, Team, TeamCoach, TeamCoachRole, TeamPhoto
 
 # Head coach listed before assistants -- explicit Case/When rather than
 # relying on "head" sorting before "assistant" alphabetically, which would
@@ -29,8 +36,23 @@ _HEAD_FIRST = Case(
 
 def team_index(request):
     """Public teams index. No login required."""
-    teams = Team.objects.filter(is_public=True, is_deleted_placeholder=False).order_by("-season_year", "division")
-    return render(request, "teams/index.html", {"teams": teams})
+    teams = (
+        Team.objects.filter(is_public=True, is_deleted_placeholder=False)
+        .prefetch_related(
+            Prefetch("photos", queryset=TeamPhoto.objects.filter(is_featured=True), to_attr="featured_photos")
+        )
+        .order_by("-season_year", "division")
+    )
+    # One banner slide per team that has a featured photo; each links to the team.
+    banner_teams = [team for team in teams if team.featured_photos]
+    return render(request, "teams/index.html", {"teams": teams, "banner_teams": banner_teams})
+
+
+def _can_manage_team(user, team):
+    """This team's coaches, or any admin -- same rule as the schedule buttons."""
+    return user.is_authenticated and (
+        user.is_admin or TeamCoach.objects.filter(coach=user, team=team).exists()
+    )
 
 
 def team_detail(request, pk):
@@ -51,18 +73,69 @@ def team_detail(request, pk):
     # Same rule as the coach/admin schedule pages this links into
     # (accounts.coach_events): this team's coaches, or any admin.
     user = request.user
-    can_manage_schedule = user.is_authenticated and (
-        user.is_admin or TeamCoach.objects.filter(coach=user, team=team).exists()
-    )
-    return render(
-        request,
-        "teams/detail.html",
-        {
-            "team": team,
-            "upcoming_events": upcoming_events,
-            "can_manage_schedule": can_manage_schedule,
-        },
-    )
+    can_manage_schedule = _can_manage_team(user, team)
+    context = {
+        "team": team,
+        "upcoming_events": upcoming_events,
+        "can_manage_schedule": can_manage_schedule,
+    }
+    if can_manage_schedule:
+        context["team_photos"] = team.photos.all()
+        context["photo_form"] = TeamPhotoForm(team=team)
+        context["team_photos_max"] = TEAM_PHOTOS_MAX
+    return render(request, "teams/detail.html", context)
+
+
+def _get_managed_team_or_403(user, team_id):
+    team = get_object_or_404(Team, pk=team_id, is_deleted_placeholder=False)
+    if not _can_manage_team(user, team):
+        raise PermissionDenied
+    return team
+
+
+@login_required
+@require_POST
+def team_photo_add(request, team_id):
+    team = _get_managed_team_or_403(request.user, team_id)
+    form = TeamPhotoForm(request.POST, request.FILES, team=team)
+    if form.is_valid():
+        images = form.cleaned_data["images"]
+        for image in images:
+            TeamPhoto.objects.create(team=team, image=downsize_image(image), uploaded_by=request.user)
+        messages.success(request, f"Added {len(images)} photo{'s' if len(images) != 1 else ''}.")
+    else:
+        for error in form.errors.get("images", []):
+            messages.error(request, error)
+    return redirect(reverse("teams:detail", args=[team.pk]) + "#photos")
+
+
+@login_required
+@require_POST
+def team_photo_feature(request, team_id, photo_id):
+    """Pick the picture shown on the Teams page, or clear the choice."""
+    team = _get_managed_team_or_403(request.user, team_id)
+    photo = get_object_or_404(TeamPhoto, pk=photo_id, team=team)
+    with transaction.atomic():
+        if photo.is_featured:
+            photo.is_featured = False
+            photo.save(update_fields=["is_featured"])
+            messages.success(request, "That photo is no longer shown on the Teams page.")
+        else:
+            photo.is_featured = True  # save() un-features the previous one
+            photo.save(update_fields=["is_featured"])
+            messages.success(request, "That photo is now shown on the Teams page.")
+    return redirect(reverse("teams:detail", args=[team.pk]) + "#photos")
+
+
+@login_required
+@require_POST
+def team_photo_delete(request, team_id, photo_id):
+    team = _get_managed_team_or_403(request.user, team_id)
+    photo = get_object_or_404(TeamPhoto, pk=photo_id, team=team)
+    photo.image.delete(save=False)  # also remove the stored file
+    photo.delete()
+    messages.success(request, "Photo deleted.")
+    return redirect(reverse("teams:detail", args=[team.pk]) + "#photos")
 
 
 def coach_index(request):

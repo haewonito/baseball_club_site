@@ -72,6 +72,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.general_contact_email",
+                "config.context_processors.nav_teams",
             ],
         },
     },
