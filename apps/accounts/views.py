@@ -439,8 +439,8 @@ def admin_fee_record_payment(request, player_pk):
     open_fees = [f for f in player.fees.prefetch_related("payments") if f.balance > 0]
     form = PlayerPaymentForm(request.POST, open_fees=open_fees)
     if form.is_valid():
-        # Latest due date first, then older ones; fees with no due date last.
-        open_fees.sort(key=lambda f: (f.due_date is not None, f.due_date or date.min), reverse=True)
+        # Earliest due date first; fees with no due date last.
+        open_fees.sort(key=lambda f: (f.due_date is None, f.due_date or date.min))
         remaining = form.cleaned_data["amount"]
         for fee in open_fees:
             if remaining <= 0:

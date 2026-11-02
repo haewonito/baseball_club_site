@@ -329,10 +329,10 @@ class PlayerPaymentTests(TestCase):
             {"amount": amount, "method": "cash", "paid_at": "2030-02-01", "notes": ""},
         )
 
-    def test_payment_goes_to_latest_due_first_then_spills_over(self):
-        self.pay("70")
-        self.assertEqual(self.new.balance, 0)
-        self.assertEqual(Fee.objects.get(pk=self.old.pk).balance, 80)
+    def test_payment_goes_to_earliest_due_first_then_spills_over(self):
+        self.pay("120")
+        self.assertEqual(Fee.objects.get(pk=self.old.pk).balance, 0)
+        self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, 30)
         self.assertEqual(Payment.objects.count(), 2)
 
     def test_cannot_overpay(self):
