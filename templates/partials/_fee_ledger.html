@@ -1,27 +1,57 @@
-{# Usage: {% include "partials/_fee_ledger.html" with fee=fee payment_form=payment_form %} -- also the htmx swap target/response fragment for recording a payment. #}
+{# One player's unpaid fees and full payment history; also the htmx swap target/response for recording a payment. #}
 <div id="fee-ledger">
   <p class="kid-card__row">
-    <span>Amount due</span> ${{ fee.amount_due }}
+    <span>Total owed</span>
+    {% if total_balance > 0 %}<span class="status-badge">${{ total_balance }} due</span>{% else %}$0.00{% endif %}
   </p>
-  <p class="kid-card__row">
-    <span>Amount paid</span> ${{ fee.amount_paid }}
-  </p>
-  <p class="kid-card__row">
-    <span>Balance</span>
-    {% if fee.balance > 0 %}
-      <span class="status-badge">${{ fee.balance }} due</span>
-    {% else %}
-      $0.00
-    {% endif %}
-  </p>
+  <p class="kid-card__row"><span>Total paid</span> ${{ total_paid }}</p>
 
-  <h2>Payments</h2>
-  {% if fee.payments.all %}
-    {# Click a column heading to sort (static/js/sortable-table.js); data-sort holds the raw value where the shown text doesn't sort right. #}
+  <h2>Unpaid Fees</h2>
+  {% if open_fees %}
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Due</th>
+          <th>Amount</th>
+          <th>Balance</th>
+          <th>Status</th>
+          <th>Reminder</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in open_fees %}
+          <tr>
+            <td>{{ row.fee.description }}</td>
+            <td>{{ row.fee.due_date|date:"M j, Y"|default:"—" }}</td>
+            <td>${{ row.fee.amount_due }}</td>
+            <td>${{ row.balance }}</td>
+            <td>{{ row.status_label }}</td>
+            <td>
+              {% if row.fee.reminder.was_sent %}
+                <span class="status-badge" title="Sent to {{ row.fee.reminder.sent_to_email }}">Sent {{ row.fee.reminder.sent_at|date:"M j" }}</span>
+              {% elif row.fee.reminder %}
+                <span title="Already overdue when automatic reminders started, so no email was sent">Skipped</span>
+              {% else %}&mdash;{% endif %}
+            </td>
+            <td><a href="{% url 'accounts:admin_fee_edit' row.fee.pk %}">Edit</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Nothing owed.</p>
+  {% endif %}
+
+  <h2>Payment History</h2>
+  {% if payments %}
+    {# Click a column heading to sort (static/js/sortable-table.js). #}
     <table class="roster-table" data-sortable>
       <thead>
         <tr>
           <th tabindex="0">Date</th>
+          <th tabindex="0">Fee</th>
           <th tabindex="0">Method</th>
           <th tabindex="0">Amount</th>
           <th tabindex="0">Notes</th>
@@ -29,9 +59,10 @@
         </tr>
       </thead>
       <tbody>
-        {% for payment in fee.payments.all %}
+        {% for payment in payments %}
           <tr>
             <td data-sort="{{ payment.paid_at|date:'Y-m-d' }}">{{ payment.paid_at }}</td>
+            <td>{{ payment.fee.description }}</td>
             <td>{{ payment.get_method_display }}</td>
             <td data-sort="{{ payment.amount }}">${{ payment.amount }}</td>
             <td>{{ payment.notes }}</td>
@@ -44,23 +75,26 @@
     <p>No payments recorded yet.</p>
   {% endif %}
 
-  <h2>Record a Payment</h2>
-  {% if payment_form.non_field_errors %}
-    <div class="form-errors">
-      {% for error in payment_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-    </div>
+  {% if open_fees %}
+    <h2>Record a Payment</h2>
+    <p>A payment is applied to the fee with the latest due date first, then to the next one, and so on.</p>
+    {% if payment_form.non_field_errors %}
+      <div class="form-errors">
+        {% for error in payment_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <form hx-post="{% url 'accounts:admin_fee_record_payment' player.pk %}" hx-target="#fee-ledger" hx-swap="outerHTML" data-unsaved-guard>
+      {% csrf_token %}
+      <div class="form-row">
+        {% include "partials/_form_field.html" with field=payment_form.amount %}
+        {% include "partials/_form_field.html" with field=payment_form.method %}
+      </div>
+      <div class="form-row">
+        {% include "partials/_form_field.html" with field=payment_form.paid_at %}
+        {% include "partials/_form_field.html" with field=payment_form.notes %}
+      </div>
+      <button class="btn btn--primary" type="submit">Record Payment</button>
+      <button class="btn" type="button" data-cancel>Cancel</button>
+    </form>
   {% endif %}
-  <form hx-post="{% url 'accounts:admin_fee_record_payment' fee.pk %}" hx-target="#fee-ledger" hx-swap="outerHTML" data-unsaved-guard>
-    {% csrf_token %}
-    <div class="form-row">
-      {% include "partials/_form_field.html" with field=payment_form.amount %}
-      {% include "partials/_form_field.html" with field=payment_form.method %}
-    </div>
-    <div class="form-row">
-      {% include "partials/_form_field.html" with field=payment_form.paid_at %}
-      {% include "partials/_form_field.html" with field=payment_form.notes %}
-    </div>
-    <button class="btn btn--primary" type="submit">Record Payment</button>
-    <button class="btn" type="button" data-cancel>Cancel</button>
-  </form>
 </div>

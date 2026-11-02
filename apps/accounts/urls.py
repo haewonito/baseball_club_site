@@ -91,10 +91,10 @@ urlpatterns = [
         name="admin_fee_reminders_toggle",
     ),
     path("dashboard/admin/fees/add/", views.admin_fee_add, name="admin_fee_add"),
-    path("dashboard/admin/fees/<int:pk>/", views.admin_fee_detail, name="admin_fee_detail"),
+    path("dashboard/admin/fees/player/<int:player_pk>/", views.admin_fee_player, name="admin_fee_player"),
     path("dashboard/admin/fees/<int:pk>/edit/", views.admin_fee_edit, name="admin_fee_edit"),
     path(
-        "dashboard/admin/fees/<int:pk>/payments/add/",
+        "dashboard/admin/fees/player/<int:player_pk>/payments/add/",
         views.admin_fee_record_payment,
         name="admin_fee_record_payment",
     ),

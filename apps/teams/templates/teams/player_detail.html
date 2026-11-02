@@ -144,7 +144,7 @@
                 <td>${{ row.fee.amount_due }}</td>
                 <td>${{ row.balance }}</td>
                 <td>{{ row.status_label }}</td>
-                <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">Manage</a></td>
+                <td><a href="{% url 'accounts:admin_fee_player' player.pk %}">Manage</a></td>
               </tr>
             {% endfor %}
           </tbody>

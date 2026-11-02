@@ -311,3 +311,36 @@ class InvoiceViewTests(InvoiceTestCase):
         )
         self.assertFalse(Invoice.objects.exists())
         self.assertTrue(Fee.objects.exists())
+
+
+@override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}, "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})
+class PlayerPaymentTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("pay-admin@example.com", "pw")
+        self.client.force_login(self.admin)
+        team = make_team("10U", "10U")
+        self.kid = Player.objects.create(first_name="Kid", last_name="One", date_of_birth="2016-01-01", team=team)
+        self.old = Fee.objects.create(player=self.kid, description="Old", amount_due=100, due_date=datetime.date(2030, 1, 1))
+        self.new = Fee.objects.create(player=self.kid, description="New", amount_due=50, due_date=datetime.date(2030, 3, 1))
+
+    def pay(self, amount):
+        return self.client.post(
+            reverse("accounts:admin_fee_record_payment", args=[self.kid.pk]),
+            {"amount": amount, "method": "cash", "paid_at": "2030-02-01", "notes": ""},
+        )
+
+    def test_payment_goes_to_latest_due_first_then_spills_over(self):
+        self.pay("70")
+        self.assertEqual(self.new.balance, 0)
+        self.assertEqual(Fee.objects.get(pk=self.old.pk).balance, 80)
+        self.assertEqual(Payment.objects.count(), 2)
+
+    def test_cannot_overpay(self):
+        self.pay("151")
+        self.assertEqual(Payment.objects.count(), 0)
+
+    def test_pages_render_one_row_per_player(self):
+        Fee.objects.create(player=self.kid, description="Third", amount_due=10)
+        list_page = self.client.get(reverse("accounts:admin_fees_list"))
+        self.assertEqual(len(list_page.context["rows"]), 1)
+        self.assertEqual(self.client.get(reverse("accounts:admin_fee_player", args=[self.kid.pk])).status_code, 200)

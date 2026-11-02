@@ -58,7 +58,7 @@
     </div>
     <button class="btn btn--primary" type="submit">Save</button>
     {% if fee %}
-      <a class="btn" href="{% url 'accounts:admin_fee_detail' fee.pk %}" data-cancel>Cancel</a>
+      <a class="btn" href="{% url 'accounts:admin_fee_player' fee.player_id %}" data-cancel>Cancel</a>
     {% else %}
       <a class="btn" href="{% url 'accounts:admin_fees_list' %}" data-cancel>Cancel</a>
     {% endif %}
@@ -95,7 +95,7 @@
   {% endif %}
 
   {% if fee %}
-    <p class="back-link"><a href="{% url 'accounts:admin_fee_detail' fee.pk %}" data-cancel>&larr; Back to fee</a></p>
+    <p class="back-link"><a href="{% url 'accounts:admin_fee_player' fee.player_id %}" data-cancel>&larr; Back to fee</a></p>
   {% else %}
     <p class="back-link"><a href="{% url 'accounts:admin_fees_list' %}" data-cancel>&larr; Back to fees list</a></p>
   {% endif %}

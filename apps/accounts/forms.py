@@ -178,6 +178,23 @@ class PaymentForm(forms.ModelForm):
         self.fields["method"].initial = PaymentMethod.CASH
 
 
+class PlayerPaymentForm(PaymentForm):
+    """One payment for a player (admin_fee_player). The view splits it across
+    their unpaid fees, so it can't exceed what they owe in total."""
+
+    def __init__(self, *args, open_fees=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.total_owed = sum(f.balance for f in open_fees)
+
+    def clean_amount(self):
+        amount = self.cleaned_data["amount"]
+        if amount <= 0:
+            raise forms.ValidationError("Enter an amount greater than zero.")
+        if amount > self.total_owed:
+            raise forms.ValidationError(f"That is more than the ${self.total_owed} this player owes.")
+        return amount
+
+
 class InvoiceGenerateForm(forms.Form):
     """admin_invoices_list: drafts invoices from open fees, optionally for one team's players only."""
 

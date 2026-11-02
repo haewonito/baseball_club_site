@@ -26,7 +26,7 @@
     <tbody>
       {% for line in invoice.lines.all %}
         <tr>
-          <td><a href="{% url 'accounts:admin_fee_detail' line.fee.pk %}">{{ line.description }}</a></td>
+          <td><a href="{% url 'accounts:admin_fee_player' line.fee.player_id %}">{{ line.description }}</a></td>
           <td>${{ line.amount }}</td>
           {% if invoice.status != "draft" %}<td>${{ line.fee.balance }}</td>{% endif %}
           <td>

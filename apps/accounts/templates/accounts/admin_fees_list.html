@@ -28,36 +28,30 @@
     <table class="roster-table" data-sortable id="fees-table">
       <thead>
         <tr>
-          <th tabindex="0">Description</th>
-          <th tabindex="0">Player / Team</th>
-          <th tabindex="0" class="col-due">Due</th>
+          <th tabindex="0">Player</th>
+          <th tabindex="0">Team</th>
+          <th tabindex="0">Unpaid fees</th>
+          <th tabindex="0" class="col-due">Next due</th>
           <th tabindex="0">Balance</th>
           <th tabindex="0">Status</th>
-          <th tabindex="0">Reminder</th>
         </tr>
       </thead>
       <tbody>
         {% for row in rows %}
           <tr>
-            <td><a href="{% url 'accounts:admin_fee_detail' row.fee.pk %}">{{ row.fee.description }}</a></td>
-            <td>{% if row.fee.player %}{{ row.fee.player }}{% elif row.fee.team %}{{ row.fee.team.short_label }}{% endif %}</td>
-            <td class="col-due" data-sort="{{ row.fee.due_date|date:'Y-m-d' }}">{{ row.fee.due_date|date:"M j"|default:"—" }}</td>
+            <td><a href="{% url 'accounts:admin_fee_player' row.player.pk %}">{{ row.player }}</a></td>
+            <td>{{ row.player.team.short_label|default:"—" }}</td>
+            <td>{% for fee in row.open_fees %}{{ fee.description }}{% if not forloop.last %}, {% endif %}{% empty %}&mdash;{% endfor %}</td>
+            <td class="col-due" data-sort="{{ row.next_due|date:'Y-m-d' }}">{{ row.next_due|date:"M j"|default:"—" }}</td>
             <td data-sort="{{ row.balance }}">${{ row.balance }}</td>
             <td>{{ row.status_label }}</td>
-            <td>
-              {% if row.fee.reminder.was_sent %}
-                <span class="status-badge" title="Sent to {{ row.fee.reminder.sent_to_email }}">Sent {{ row.fee.reminder.sent_at|date:"M j" }}</span>
-              {% elif row.fee.reminder %}
-                <span title="Already overdue when automatic reminders started, so no email was sent">Skipped</span>
-              {% else %}&mdash;{% endif %}
-            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
-    <p id="fee-search-empty" hidden>No fees match that name.</p>
+    <p id="fee-search-empty" hidden>No players match that name.</p>
     <script>
-      // Filters the rows as you type, on the Description and Player / Team cells.
+      // Filters the rows as you type, on the Player and Team cells.
       (function () {
         var input = document.getElementById("fee-search");
         var rows = document.querySelectorAll("#fees-table tbody tr");
@@ -77,7 +71,7 @@
       })();
     </script>
   {% else %}
-    <p>No fees{% if only_outstanding %} outstanding{% endif %}.</p>
+    <p>No players with fees{% if only_outstanding %} outstanding{% endif %}.</p>
   {% endif %}
 
   <section class="form-restored" id="reminder-note">

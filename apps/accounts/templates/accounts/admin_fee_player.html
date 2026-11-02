@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}{{ player }} fees · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>{{ player }}</h1>
+    <p>{{ player.team.short_label|default:"No team" }}</p>
+    <a href="{% url 'teams:player_detail' player.pk %}">Player page</a>
+  </section>
+
+  {% include "partials/_fee_ledger.html" %}
+
+  <p class="back-link"><a href="{% url 'accounts:admin_fees_list' %}" data-cancel>&larr; Back to fees list</a></p>
+{% endblock %}

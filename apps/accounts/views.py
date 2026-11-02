@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 import logging
 
 from django.contrib import messages
@@ -61,6 +61,7 @@ from .forms import (
     RegistrationForm,
     ResendVerificationForm,
     PaymentForm,
+    PlayerPaymentForm,
     PlayerGalleryPhotoForm,
     PlayerProfileForm,
     PlayerRosterForm,
@@ -259,27 +260,43 @@ def admin_fees_list(request):
 
     only_outstanding = request.GET.get("outstanding") == "1"
     fees = (
-        Fee.objects.select_related("player", "team", "reminder")
+        Fee.objects.filter(player__isnull=False)
+        .select_related("player", "player__team", "reminder")
         .prefetch_related("payments")
-        .order_by("-created_at")
+        .order_by("due_date", "created_at")
     )
 
-    rows = []
+    # One row per player: their unpaid fees and the total still owed.
+    by_player = {}
     total_outstanding = 0
     for fee in fees:
+        row = by_player.setdefault(
+            fee.player_id,
+            {"player": fee.player, "open_fees": [], "balance": 0, "overdue": False, "partial": False},
+        )
         balance = fee.balance
         if balance > 0:
             total_outstanding += balance
-        if only_outstanding and balance <= 0:
+            row["open_fees"].append(fee)
+            row["balance"] += balance
+            status = fee.status
+            row["overdue"] = row["overdue"] or status == "overdue"
+            row["partial"] = row["partial"] or status == "partially_paid"
+
+    rows = []
+    for row in by_player.values():
+        if only_outstanding and not row["open_fees"]:
             continue
-        status = fee.status
-        rows.append(
-            {
-                "fee": fee,
-                "balance": balance,
-                "status_label": FEE_STATUS_LABELS.get(status, status),
-            }
+        due_dates = [f.due_date for f in row["open_fees"] if f.due_date]
+        row["next_due"] = min(due_dates) if due_dates else None
+        row["status_label"] = (
+            "Overdue" if row["overdue"]
+            else "Partially Paid" if row["partial"]
+            else "Unpaid" if row["open_fees"]
+            else "Paid"
         )
+        rows.append(row)
+    rows.sort(key=lambda r: (r["player"].last_name.lower(), r["player"].first_name.lower()))
 
     return render(
         request,
@@ -338,7 +355,7 @@ def admin_fee_add(request):
                 for player in players
             )
             if len(players) == 1:
-                return redirect("accounts:admin_fee_detail", pk=fees[0].pk)
+                return redirect("accounts:admin_fee_player", player_pk=players[0].pk)
             messages.success(
                 request,
                 f"Added a ${form.cleaned_data['amount_due']} "
@@ -372,7 +389,7 @@ def admin_fee_edit(request, pk):
         form = FeeForm(request.POST, instance=fee)
         if form.is_valid():
             form.save()
-            return redirect("accounts:admin_fee_detail", pk=fee.pk)
+            return redirect("accounts:admin_fee_player", player_pk=fee.player_id)
     else:
         form = FeeForm(instance=fee)
     return render(
@@ -380,45 +397,69 @@ def admin_fee_edit(request, pk):
     )
 
 
+def _player_fee_context(player, payment_form=None):
+    """Unpaid fees plus every payment ever recorded for one player."""
+    fees = list(player.fees.select_related("reminder").prefetch_related("payments").order_by("due_date", "created_at"))
+    open_fees = [
+        {"fee": f, "balance": f.balance, "status_label": FEE_STATUS_LABELS.get(f.status, f.status)}
+        for f in fees
+        if f.balance > 0
+    ]
+    payments = sorted(
+        (p for f in fees for p in f.payments.all()), key=lambda p: (p.paid_at, p.recorded_at), reverse=True
+    )
+    if payment_form is None:
+        payment_form = PlayerPaymentForm(open_fees=[r["fee"] for r in open_fees])
+    return {
+        "player": player,
+        "open_fees": open_fees,
+        "total_balance": sum(r["balance"] for r in open_fees),
+        "total_paid": sum(p.amount for p in payments),
+        "payments": payments,
+        "payment_form": payment_form,
+    }
+
+
 @login_required
-def admin_fee_detail(request, pk):
+def admin_fee_player(request, player_pk):
     if not request.user.is_admin:
         raise PermissionDenied
 
-    fee = get_object_or_404(
-        Fee.objects.select_related("player", "team", "reminder").prefetch_related("payments"), pk=pk
-    )
-    return render(
-        request,
-        "accounts/admin_fee_detail.html",
-        {"fee": fee, "payment_form": PaymentForm()},
-    )
+    player = get_object_or_404(Player.objects.select_related("team"), pk=player_pk)
+    return render(request, "accounts/admin_fee_player.html", _player_fee_context(player))
 
 
 @login_required
 @require_POST
-def admin_fee_record_payment(request, pk):
+def admin_fee_record_payment(request, player_pk):
     if not request.user.is_admin:
         raise PermissionDenied
 
-    fee = get_object_or_404(Fee, pk=pk)
-    form = PaymentForm(request.POST)
+    player = get_object_or_404(Player.objects.select_related("team"), pk=player_pk)
+    open_fees = [f for f in player.fees.prefetch_related("payments") if f.balance > 0]
+    form = PlayerPaymentForm(request.POST, open_fees=open_fees)
     if form.is_valid():
-        payment = form.save(commit=False)
-        payment.fee = fee
-        payment.recorded_by = request.user
-        payment.save()
-        payment_form = PaymentForm()
-    else:
-        payment_form = form
+        # Latest due date first, then older ones; fees with no due date last.
+        open_fees.sort(key=lambda f: (f.due_date is not None, f.due_date or date.min), reverse=True)
+        remaining = form.cleaned_data["amount"]
+        for fee in open_fees:
+            if remaining <= 0:
+                break
+            part = min(remaining, fee.balance)
+            Payment.objects.create(
+                fee=fee,
+                amount=part,
+                method=form.cleaned_data["method"],
+                paid_at=form.cleaned_data["paid_at"],
+                notes=form.cleaned_data["notes"],
+                recorded_by=request.user,
+            )
+            remaining -= part
+        form = None
 
-    # Re-fetch with a fresh prefetch -- the queryset above didn't prefetch
-    # payments, and even if it had, the cache wouldn't include the row just
-    # created, so fee.balance/amount_paid (which iterate fee.payments.all())
-    # would read stale data.
-    fee = Fee.objects.select_related("player", "team").prefetch_related("payments").get(pk=fee.pk)
+    # Rebuild from fresh queries so the new payment is included in balances.
     return render(
-        request, "partials/_fee_ledger.html", {"fee": fee, "payment_form": payment_form}
+        request, "partials/_fee_ledger.html", _player_fee_context(player, payment_form=form)
     )
 
 
