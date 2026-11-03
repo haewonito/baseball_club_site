@@ -65,3 +65,62 @@ class HeroImageAdminTests(TestCase):
         response = self.client.get(f"/admin/content/heroimage/{image.pk}/change/")
         self.assertContains(response, "object-position:20% 80%")
         self.assertContains(response, 'name="focus_x"')
+
+
+from django.core import mail
+from django.test import TestCase, override_settings
+from django.urls import reverse
+
+from .models import BugReport
+
+
+@override_settings(
+    BUG_REPORT_DAILY_LIMIT=2,
+    BUG_REPORT_EMAIL="manager@example.com",
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    },
+)
+class BugReportTests(TestCase):
+    def send(self, message="The schedule page is blank", **extra):
+        return self.client.post(
+            reverse("report_bug"), {"message": message, "page": "/schedule/", **extra}
+        )
+
+    def test_report_is_emailed_to_manager_with_reply_to(self):
+        response = self.send(reporter_email="fan@example.com")
+        self.assertRedirects(response, reverse("report_bug") + "?sent=1", fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, ["manager@example.com"])
+        self.assertEqual(message.reply_to, ["fan@example.com"])
+        self.assertIn("The schedule page is blank", message.body)
+        self.assertIn("/schedule/", message.body)
+
+    def test_daily_limit_blocks_further_reports(self):
+        self.send()
+        self.send()
+        self.assertEqual(len(mail.outbox), 2)
+        self.send("third")
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(BugReport.objects.count(), 2)
+        page = self.client.get(reverse("report_bug"))
+        self.assertContains(page, "reached today")
+        self.assertNotContains(page, "Send Report")
+
+    def test_failed_send_does_not_use_up_the_limit(self):
+        from unittest import mock
+
+        with mock.patch("django.core.mail.EmailMessage.send", side_effect=OSError("down")):
+            response = self.send()
+        self.assertContains(response, "couldn't be sent")
+        self.assertEqual(BugReport.objects.count(), 0)
+
+    def test_honeypot_and_empty_message_send_nothing(self):
+        self.send(website="http://spam.example")
+        self.client.post(reverse("report_bug"), {"message": ""})
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_footer_links_to_form(self):
+        self.assertContains(self.client.get(reverse("home")), reverse("report_bug"))

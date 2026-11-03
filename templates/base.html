@@ -87,6 +87,7 @@
       <p>&copy; {% now "Y" %} Choice Select</p>
       <p>{% include "partials/_contact_email.html" %}</p>
       <p><a href="https://www.facebook.com/ChoiceSelectBaseball/" target="_blank" rel="noopener noreferrer">Facebook</a></p>
+      <p>See something broken? <a href="{% url 'report_bug' %}?page={{ request.get_full_path|urlencode }}">Report it to the website manager</a></p>
       {% if user.is_authenticated %}
         <p class="site-footer__welcome">Welcome, {{ user.first_name|default:user.email }}</p>
         <p><a href="{% url 'accounts:password_change' %}">Change password</a></p>

@@ -4,7 +4,7 @@ from django.utils.html import format_html
 
 from apps.accounts.forms import downsize_image
 
-from .models import HeroImage
+from .models import BugReport, HeroImage
 
 
 class HeroImageAdminForm(forms.ModelForm):
@@ -61,3 +61,12 @@ class HeroImageAdmin(admin.ModelAdmin):
             "block" if has_image else "none",
             zoom,
         )
+
+
+@admin.register(BugReport)
+class BugReportAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "reporter_email", "page", "user")
+    readonly_fields = ("message", "reporter_email", "page", "user", "created_at")
+
+    def has_add_permission(self, request):
+        return False

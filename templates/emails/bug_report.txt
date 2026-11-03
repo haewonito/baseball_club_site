@@ -1,0 +1,10 @@
+{% autoescape off %}A visitor reported a problem on the Choice Select website.
+
+{{ report.message }}
+
+---
+Page: {% if report.page %}{{ site_url }}{{ report.page }}{% else %}(not given){% endif %}
+Reporter: {% if user %}{{ user.get_full_name|default:user.email }} <{{ user.email }}> (logged in){% else %}not logged in{% endif %}
+Reply-to email given: {{ report.reporter_email|default:"none" }}
+Browser: {{ user_agent|default:"unknown" }}
+{% endautoescape %}

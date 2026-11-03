@@ -1,5 +1,9 @@
+from datetime import datetime, time
+
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 class HeroImage(models.Model):
@@ -47,3 +51,35 @@ class HeroImage(models.Model):
 
     def __str__(self):
         return self.alt_text or f"Banner picture {self.pk}"
+
+
+class BugReport(models.Model):
+    """A "see something broken?" message from the site footer, emailed to the website manager.
+
+    Only reports whose email actually went out are kept, so today's rows are what the daily limit
+    (settings.BUG_REPORT_DAILY_LIMIT) counts. Viewable read-only in Django admin.
+    """
+
+    message = models.TextField(max_length=2000)
+    reporter_email = models.EmailField(blank=True, help_text="Optional; where the website manager can reply.")
+    page = models.CharField(max_length=300, blank=True, help_text="The page the reporter was on.")
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Bug report {self.pk} ({self.created_at:%Y-%m-%d})"
+
+    @classmethod
+    def sent_today(cls):
+        today = timezone.localdate()
+        start = timezone.make_aware(datetime.combine(today, time.min))
+        return cls.objects.filter(created_at__gte=start).count()
+
+    @classmethod
+    def limit_reached(cls):
+        return cls.sent_today() >= settings.BUG_REPORT_DAILY_LIMIT

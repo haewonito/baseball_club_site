@@ -185,6 +185,10 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="info@choiceselectleag
 # Base URL for links in emails sent outside a request (e.g. the daily
 # overdue-fee reminder command), where build_absolute_uri isn't available.
 # Moves to the club domain along with DEFAULT_FROM_EMAIL (see CLAUDE.md).
+# "See something broken?" reports from the footer go here, at most this many a day
+# (apps.content.views.report_bug).
+BUG_REPORT_EMAIL = config("BUG_REPORT_EMAIL", default="haewonito@gmail.com")
+BUG_REPORT_DAILY_LIMIT = 10
 SITE_URL = config("SITE_URL", default="https://choiceselectleague.org").rstrip("/")
 
 ANYMAIL = {

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Report a Problem · {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="page-hero">
+    <h1>Report a Problem</h1>
+    <p>See something broken? Tell the website manager.</p>
+  </section>
+
+  {% if sent %}
+    <p class="form-restored"><strong>Thank you!</strong> Your report was sent to the website manager.</p>
+    <p class="back-link"><a href="{% url 'home' %}">&larr; Back to the home page</a></p>
+  {% elif limit_reached %}
+    <div class="form-errors" role="alert">
+      <p>
+        We've reached today's limit for problem reports, so we can't accept another one right now.
+        Please try again tomorrow{% if request.user.is_authenticated %}, or email the club directly{% endif %}.
+      </p>
+    </div>
+    <p class="back-link"><a href="{% url 'home' %}">&larr; Back to the home page</a></p>
+  {% else %}
+    {% if send_failed %}
+      <div class="form-errors" role="alert">
+        <p>Sorry, your report couldn't be sent. Please try again in a few minutes.</p>
+      </div>
+    {% endif %}
+    <form method="post" data-unsaved-guard>
+      {% csrf_token %}
+      {% include "partials/_form_field.html" with field=form.message %}
+      {% include "partials/_form_field.html" with field=form.reporter_email %}
+      {{ form.page }}
+      <div style="position:absolute;left:-9999px" aria-hidden="true">
+        <label for="{{ form.website.id_for_label }}">Leave this empty</label>
+        {{ form.website }}
+      </div>
+      <button class="btn btn--primary" type="submit">Send Report</button>
+    </form>
+  {% endif %}
+{% endblock %}
