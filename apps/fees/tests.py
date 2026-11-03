@@ -335,9 +335,34 @@ class PlayerPaymentTests(TestCase):
         self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, 30)
         self.assertEqual(Payment.objects.count(), 2)
 
-    def test_cannot_overpay(self):
-        self.pay("151")
+    def test_overpayment_asks_for_confirmation_first(self):
+        response = self.pay("151")
+        self.assertContains(response, "more than the $150.00 owed")
         self.assertEqual(Payment.objects.count(), 0)
+
+    def test_confirmed_overpayment_becomes_a_credit_on_the_last_fee(self):
+        self.client.post(
+            reverse("accounts:admin_fee_record_payment", args=[self.kid.pk]),
+            {"amount": "160", "method": "cash", "paid_at": "2030-02-01", "notes": "", "confirm_credit": "1"},
+        )
+        self.assertEqual(Fee.objects.get(pk=self.old.pk).balance, 0)
+        self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, -10)
+
+    def test_next_payment_uses_up_the_credit_first(self):
+        self.client.post(
+            reverse("accounts:admin_fee_record_payment", args=[self.kid.pk]),
+            {"amount": "160", "method": "cash", "paid_at": "2030-02-01", "notes": "", "confirm_credit": "1"},
+        )
+        extra = Fee.objects.create(player=self.kid, description="Extra", amount_due=30, due_date=datetime.date(2030, 6, 1))
+        self.pay("20")  # $10 credit + $20 cash settles the $30 fee
+        self.assertEqual(Fee.objects.get(pk=extra.pk).balance, 0)
+        self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, 0)
+        self.assertEqual(sum(p.amount for p in Payment.objects.all()), 180)  # cash actually received
+
+    def test_payment_date_defaults_to_today(self):
+        from apps.accounts.forms import PlayerPaymentForm
+
+        self.assertEqual(PlayerPaymentForm()["paid_at"].value(), timezone.localdate())
 
     def test_pages_render_one_row_per_player(self):
         Fee.objects.create(player=self.kid, description="Third", amount_due=10)

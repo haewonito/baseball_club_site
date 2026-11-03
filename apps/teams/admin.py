@@ -3,6 +3,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.html import format_html
 
 from django import forms
@@ -30,7 +31,9 @@ class TeamPhotoAdminForm(forms.ModelForm):
         return image
 
 
-class TeamPhotoInline(admin.TabularInline):
+class TeamPhotoInline(admin.StackedInline):
+    # Stacked rather than tabular so each field's help text (e.g. what "Is featured" does) is
+    # printed under it; the tabular layout only shows it as a tiny "?" with a hover tooltip.
     model = TeamPhoto
     form = TeamPhotoAdminForm
     extra = 1
@@ -48,6 +51,22 @@ class TeamAdmin(admin.ModelAdmin):
     list_filter = ("division", "season_year", "is_public", "accepting_tryouts")
     list_editable = ("is_public", "accepting_tryouts")
     inlines = [TeamCoachInline, TeamPhotoInline]
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "season_year":
+            # Stored as the year the season ends (2027 = "2026-2027", see Team.season_label).
+            field.label = "Season Ending Year"
+            field.help_text = "The year the season ends: enter 2027 for the 2026-2027 season."
+        return field
+
+    def get_changeform_initial_data(self, request):
+        # The Add Team form's season year starts at the season now under way or about to start:
+        # from August on that is the one ending next year (e.g. 2026-2027), otherwise this year's.
+        initial = super().get_changeform_initial_data(request)
+        today = timezone.localdate()
+        initial.setdefault("season_year", today.year + 1 if today.month >= 8 else today.year)
+        return initial
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)

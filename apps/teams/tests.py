@@ -1,4 +1,4 @@
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 
 from apps.teams.models import Team
 
@@ -128,3 +128,33 @@ class TeamPhotoTests(TestCase):
         self.assertContains(response, "site-nav__submenu")
         self.assertContains(response, reverse("teams:detail", args=[self.team.pk]))
         self.assertNotContains(response, reverse("teams:detail", args=[self.other.pk]))
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class TeamAdminDefaultsTests(TestCase):
+    def test_add_form_season_year_defaults_to_the_season_ending_year(self):
+        from django.utils import timezone
+
+        from apps.accounts.models import User
+
+        today = timezone.localdate()
+
+        self.client.force_login(User.objects.create_superuser("root@example.com", "pw"))
+        response = self.client.get("/admin/teams/team/add/")
+        self.assertEqual(response.context["adminform"].form["season_year"].value(), today.year + 1 if today.month >= 8 else today.year)
+        self.assertContains(response, "Season Ending Year")
+
+    def test_team_photo_help_text_is_visible_not_a_tooltip(self):
+        from apps.accounts.models import User
+        from apps.teams.models import Team
+
+        self.client.force_login(User.objects.create_superuser("root2@example.com", "pw"))
+        team = Team.objects.create(name="T", division="10U", season_year=2030)
+        response = self.client.get(f"/admin/teams/team/{team.pk}/change/")
+        self.assertContains(response, "Shown in the Teams page banner. Only one picture per team can be")
+        self.assertContains(response, 'class="help"')

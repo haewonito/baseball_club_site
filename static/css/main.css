@@ -109,11 +109,21 @@ a:hover {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  flex-wrap: wrap;
+  /* No wrapping on wide screens: the brand stays beside the menu, and a menu that
+     is too long shrinks into the "More" dropdown (nav-overflow.js). Phones wrap, below. */
+  flex-wrap: nowrap;
   gap: 0.5rem 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .site-header__inner {
+    flex-wrap: wrap;
+  }
+}
+
 .site-header__brand {
+  flex: none;
+  white-space: nowrap;
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.02em;
@@ -124,6 +134,7 @@ a:hover {
    indented. */
 .site-nav {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 1.5rem;

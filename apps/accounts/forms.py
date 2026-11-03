@@ -170,28 +170,25 @@ class PaymentForm(forms.ModelForm):
         model = Payment
         fields = ["amount", "method", "paid_at", "notes"]
         widgets = {
-            "paid_at": forms.DateInput(attrs={"type": "date"}),
+            "paid_at": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["method"].initial = PaymentMethod.CASH
+        # Today, by default; the admin changes it when entering an older payment.
+        self.fields["paid_at"].initial = timezone.localdate
 
 
 class PlayerPaymentForm(PaymentForm):
     """One payment for a player (admin_fee_player). The view splits it across
-    their unpaid fees, so it can't exceed what they owe in total."""
-
-    def __init__(self, *args, open_fees=(), **kwargs):
-        super().__init__(*args, **kwargs)
-        self.total_owed = sum(f.balance for f in open_fees)
+    their unpaid fees; anything over what they owe is only recorded, as a
+    credit, once the admin confirms."""
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]
         if amount <= 0:
             raise forms.ValidationError("Enter an amount greater than zero.")
-        if amount > self.total_owed:
-            raise forms.ValidationError(f"That is more than the ${self.total_owed} this player owes.")
         return amount
 
 

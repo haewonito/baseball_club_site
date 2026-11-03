@@ -2,7 +2,7 @@
 <div id="fee-ledger">
   <p class="kid-card__row">
     <span>Total owed</span>
-    {% if total_balance > 0 %}<span class="status-badge">${{ total_balance }} due</span>{% else %}$0.00{% endif %}
+    {% if total_balance > 0 %}<span class="status-badge">${{ total_balance }} due</span>{% elif total_balance < 0 %}-${{ total_balance|cut:"-" }} credit{% else %}$0.00{% endif %}
   </p>
   <p class="kid-card__row"><span>Total paid</span> ${{ total_paid }}</p>
 
@@ -44,6 +44,19 @@
     <p>Nothing owed.</p>
   {% endif %}
 
+  {% if credit_fees %}
+    <h2>Credits</h2>
+    <p>Overpayments, kept as a credit (shown with a minus sign). The next payment you record uses this up first.</p>
+    <table class="roster-table">
+      <thead><tr><th>Fee overpaid</th><th>Credit</th></tr></thead>
+      <tbody>
+        {% for row in credit_fees %}
+          <tr><td>{{ row.fee.description }}</td><td>-${{ row.credit }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
   <h2>Payment History</h2>
   {% if payments %}
     {# Click a column heading to sort (static/js/sortable-table.js). #}
@@ -83,6 +96,15 @@
         {% for error in payment_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
       </div>
     {% endif %}
+    {% if overpay %}
+      <div class="form-errors" role="alert">
+        <p>
+          <strong>${{ overpay.amount }} is more than the ${{ overpay.owed }} owed.</strong>
+          If you continue, the extra ${{ overpay.extra }} is recorded as a credit of
+          -${{ overpay.new_credit }}. Check the amount, or confirm to record it as a credit.
+        </p>
+      </div>
+    {% endif %}
     <form hx-post="{% url 'accounts:admin_fee_record_payment' player.pk %}" hx-target="#fee-ledger" hx-swap="outerHTML" data-unsaved-guard>
       {% csrf_token %}
       <div class="form-row">
@@ -93,7 +115,11 @@
         {% include "partials/_form_field.html" with field=payment_form.paid_at %}
         {% include "partials/_form_field.html" with field=payment_form.notes %}
       </div>
-      <button class="btn btn--primary" type="submit">Record Payment</button>
+      {% if overpay %}
+        <button class="btn btn--primary" type="submit" name="confirm_credit" value="1">Yes, record the extra as a credit</button>
+      {% else %}
+        <button class="btn btn--primary" type="submit">Record Payment</button>
+      {% endif %}
       <button class="btn" type="button" data-cancel>Cancel</button>
     </form>
   {% endif %}
