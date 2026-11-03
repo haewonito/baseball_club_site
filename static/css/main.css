@@ -108,7 +108,7 @@ a:hover {
   max-width: 1280px;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 0.5rem 1.5rem;
 }
@@ -155,11 +155,12 @@ a:hover {
 /* One-line mode, switched on by static/js/nav-overflow.js: the row never wraps,
    and items that don't fit live in the "More" dropdown. */
 .site-nav--collapsible {
-  flex: 1 1 0;
   min-width: 0;
   flex-wrap: nowrap;
-  /* Next to the brand rather than pushed to the far right edge. */
-  justify-content: flex-start;
+  /* Sized to its items (shrinking only when they don't fit) so the brand and
+     menu are centered together in the header. */
+  flex: 0 1 auto;
+  justify-content: center;
 }
 
 .site-nav--collapsible > *,
@@ -1462,6 +1463,11 @@ table[data-sortable] th[aria-sort="descending"]::after {
   opacity: 1;
 }
 
+/* Try-out posters: shown whole on the black banner rather than cropped. */
+.hero-banner__slide--poster {
+  object-fit: contain;
+}
+
 /* Mutes the pictures toward the club's black so they blend with the header:
    solid black where the banner meets the header, easing to a lighter wash
    (--hero-tint, 0 = none, 1 = black) over the rest. Tune the numbers here. */
@@ -1581,6 +1587,10 @@ table[data-sortable] th[aria-sort="descending"]::after {
   align-items: flex-end;
   padding: 1rem 1.5rem 2.25rem;
   color: var(--color-white);
+}
+
+.hero-banner__link[hidden] {
+  display: none;
 }
 
 .hero-banner__link:hover {

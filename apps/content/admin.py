@@ -29,10 +29,10 @@ class HeroImageAdminForm(forms.ModelForm):
 @admin.register(HeroImage)
 class HeroImageAdmin(admin.ModelAdmin):
     form = HeroImageAdminForm
-    list_display = ("__str__", "sort_order", "is_active", "created_at")
+    list_display = ("__str__", "team", "sort_order", "is_active", "created_at")
     list_editable = ("sort_order", "is_active")
     readonly_fields = ("preview",)
-    fields = ("image", "alt_text", "preview", "focus_x", "focus_y", "zoom", "sort_order", "is_active")
+    fields = ("image", "team", "alt_text", "preview", "focus_x", "focus_y", "zoom", "sort_order", "is_active")
 
     class Media:
         js = ("js/hero-crop.js",)

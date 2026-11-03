@@ -11,13 +11,27 @@
 {% endblock %}
 
 {% block hero %}
-  {% if hero_images %}
-    <section class="hero-banner" aria-label="Choice Select photos" data-hero-slideshow>
-      {% for image in hero_images %}
-        <img class="hero-banner__slide{% if forloop.first %} is-active{% endif %}" src="{{ image.image.url }}" alt="{{ image.alt_text }}" style="object-position: {{ image.focus_x }}% {{ image.focus_y }}%; transform-origin: {{ image.focus_x }}% {{ image.focus_y }}%; transform: scale(calc({{ image.zoom }} / 100))"{% if not forloop.first %} loading="lazy"{% endif %}>
+  {% if banner_slides %}
+    <section class="hero-banner" aria-label="Choice Select" data-hero-slideshow>
+      {% for slide in banner_slides %}
+        {% if slide.kind == "poster" %}
+          <img class="hero-banner__slide hero-banner__slide--poster{% if forloop.first %} is-active{% endif %}" src="{{ slide.poster.image.url }}" alt="{{ slide.poster.title }}" data-href="{% url 'tryouts:signup' %}" data-label="Sign up for try-outs"{% if not forloop.first %} loading="lazy"{% endif %}>
+        {% else %}
+          <img class="hero-banner__slide{% if forloop.first %} is-active{% endif %}" src="{{ slide.image.image.url }}" alt="{{ slide.image.alt_text }}"{% if slide.image.team %} data-href="{% url 'teams:detail' slide.image.team.pk %}" data-label="{{ slide.image.team.name }}"{% endif %} style="object-position: {{ slide.image.focus_x }}% {{ slide.image.focus_y }}%; transform-origin: {{ slide.image.focus_x }}% {{ slide.image.focus_y }}%; transform: scale(calc({{ slide.image.zoom }} / 100))"{% if not forloop.first %} loading="lazy"{% endif %}>
+        {% endif %}
       {% endfor %}
+      {# One link over the whole banner; hero-slideshow.js points it at the visible slide (hidden when that picture has no team). #}
+      {% with first=banner_slides.0 %}
+        {% if first.kind == "poster" %}
+          <a class="hero-banner__link" href="{% url 'tryouts:signup' %}" aria-label="Sign up for try-outs"></a>
+        {% elif first.image.team %}
+          <a class="hero-banner__link" href="{% url 'teams:detail' first.image.team.pk %}" aria-label="{{ first.image.team.name }}"></a>
+        {% else %}
+          <a class="hero-banner__link" hidden></a>
+        {% endif %}
+      {% endwith %}
       <h1 class="hero-banner__title">Choice Select</h1>
-      {% if hero_images|length > 1 %}
+      {% if banner_slides|length > 1 %}
         <button type="button" class="hero-banner__arrow hero-banner__arrow--prev" aria-label="Previous picture">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
         </button>
@@ -25,7 +39,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg>
         </button>
         <div class="hero-banner__dots">
-          {% for image in hero_images %}
+          {% for slide in banner_slides %}
             <button type="button" class="hero-banner__dot{% if forloop.first %} is-active{% endif %}" aria-label="Show picture {{ forloop.counter }}"></button>
           {% endfor %}
         </div>
@@ -35,22 +49,9 @@
 {% endblock %}
 
 {% block content %}
-  {% if not hero_images %}
+  {% if not banner_slides %}
     <section class="page-hero">
       <h1>Choice Select</h1>
-    </section>
-  {% endif %}
-
-  {% if tryout_posters %}
-    <section class="team-section" id="tryouts">
-      <h2>Upcoming Try-Outss</h2>
-      <div class="tryout-posters">
-        {% for poster in tryout_posters %}
-          <a class="tryout-poster-card" href="{% url 'tryouts:signup' %}">
-            <img src="{{ poster.image.url }}" alt="{{ poster.title }}">
-          </a>
-        {% endfor %}
-      </div>
     </section>
   {% endif %}
 

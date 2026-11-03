@@ -6,6 +6,17 @@ class HeroImage(models.Model):
     """One picture in the banner slideshow right below the site header (home page). Managed in Django admin."""
 
     image = models.ImageField(upload_to="hero/")
+    # Where clicking the picture goes: this team's detail page. Required in the
+    # admin form; nullable in the database so existing rows could be migrated
+    # and so deleting a team just leaves its pictures unlinked.
+    team = models.ForeignKey(
+        "teams.Team",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="hero_images",
+        limit_choices_to={"is_public": True, "is_deleted_placeholder": False},
+        help_text="Clicking this picture on the home page opens this team's page.",
+    )
     alt_text = models.CharField(
         max_length=200,
         blank=True,

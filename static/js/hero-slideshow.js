@@ -20,7 +20,12 @@
     current = (index + slides.length) % slides.length;
     slides[current].classList.add("is-active");
     if (dots[current]) dots[current].classList.add("is-active");
-    if (link && slides[current].dataset.href) link.href = slides[current].dataset.href;
+    if (link) {
+      var href = slides[current].dataset.href;
+      link.hidden = !href;
+      if (href) link.href = href;
+      if (slides[current].dataset.label) link.setAttribute("aria-label", slides[current].dataset.label);
+    }
     if (caption && slides[current].dataset.caption) caption.textContent = slides[current].dataset.caption;
   }
 

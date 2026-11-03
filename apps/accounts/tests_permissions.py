@@ -262,3 +262,32 @@ class PromoteSignupTests(ScopingTestCase):
         signup = make_signup(self.team_a)
         self.assertIsNone(find_existing_player(signup, self.parent))  # not linked
         self.assertIsNone(find_existing_player(signup, None))
+
+
+@PLAIN_STORAGE
+class HomeBannerTests(ScopingTestCase):
+    def test_posters_come_first_and_link_to_signup_pictures_link_to_team(self):
+        from apps.content.models import HeroImage
+        from apps.tryouts.models import TryoutPoster
+
+        HeroImage.objects.create(image="hero/a.jpg", team=self.team_a)
+        TryoutPoster.objects.create(title="P1", image="p1.jpg", poster_type="initial", display_order=2)
+        TryoutPoster.objects.create(title="P2", image="p2.jpg", poster_type="initial", display_order=1)
+        TryoutPoster.objects.create(title="Off", image="p3.jpg", poster_type="initial", is_active=False)
+        slides = self.client.get(reverse("home")).context["banner_slides"]
+        self.assertEqual(
+            [(s["kind"], s["poster"].title if s["kind"] == "poster" else None) for s in slides],
+            [("poster", "P2"), ("poster", "P1"), ("picture", None)],
+        )
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn(reverse("tryouts:signup"), html)
+        self.assertIn(reverse("teams:detail", args=[self.team_a.pk]), html)
+
+    def test_several_posters_can_be_active_together(self):
+        from apps.tryouts.models import TryoutPoster
+
+        for n in range(2):
+            poster = TryoutPoster(title=f"P{n}", image="p.jpg", poster_type="initial", is_active=True)
+            poster.full_clean(exclude=["image", "uploaded_by"])
+            poster.save()
+        self.assertEqual(TryoutPoster.objects.filter(is_active=True).count(), 2)

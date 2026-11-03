@@ -392,7 +392,7 @@ class TryoutPosterType(models.TextChoices):
 class TryoutPoster(models.Model):
     """
     A ready-made poster image an admin uploads for the home page's
-    upcoming-tryouts section (see config.views.home). Manual upload only
+    home page banner (see config.views.home). Manual upload only
     for now -- auto-generating one from a background photo/logo/time/
     location is a planned follow-up once the source assets (the exact
     background photo and font used) are available; see CLAUDE.md.
@@ -404,14 +404,14 @@ class TryoutPoster(models.Model):
     # flattened image has no other way to be described for accessibility.
     title = models.CharField(max_length=200)
     image = models.ImageField(upload_to="tryout_posters/")
-    # Only one poster may be active at a time (see clean() below) -- the
-    # active poster *is* the currently open try-out: it's what the home
-    # page shows, and the public sign-up form is closed without one.
+    # Any number of posters can be active. Active posters are the first
+    # slides of the home page banner (linking to the sign-up form), and the
+    # public sign-up form is closed unless at least one is active.
     is_active = models.BooleanField(
         default=True,
         help_text=(
-            "Whether this poster currently shows on the home page. Only one poster "
-            "can be active at a time, and the try-out sign-up form is closed unless one is."
+            "Whether this poster currently shows in the home page banner. "
+            "The try-out sign-up form is closed unless at least one poster is active."
         ),
     )
     display_order = models.PositiveIntegerField(
@@ -429,23 +429,6 @@ class TryoutPoster(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_poster_type_display()})"
-
-    def clean(self):
-        # Enforced here rather than as a DB constraint so it applies to both
-        # the dashboard form and Django admin without a migration that would
-        # fail on any existing data with two active posters.
-        if self.is_active:
-            others = TryoutPoster.objects.filter(is_active=True).exclude(pk=self.pk)
-            active = others.first()
-            if active:
-                raise ValidationError(
-                    {
-                        "is_active": (
-                            f"Only one try-out can be active at a time -- "
-                            f"\"{active.title}\" is already active. Deactivate it first."
-                        )
-                    }
-                )
 
     @classmethod
     def get_active(cls):
