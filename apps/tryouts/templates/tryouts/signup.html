@@ -20,15 +20,6 @@
       your player is invited to join a team and you decide to accept, we ask
       for a $500 deposit to confirm your commitment.
     </p>
-    <p>
-      We'll email you a confirmation and updates about this sign-up, including the try-out result.
-      Please look into your spam folder if you don't see our confirmation email in your inbox after registering.
-      {% if not user.is_authenticated %}
-        <a href="{% url 'accounts:register' %}">Create an account</a> to save your kids' information and
-        skip retyping it, or <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">log in</a>.
-        You can also sign up without one.
-      {% endif %}
-    </p>
   </section>
 
   <section class="form-section">
