@@ -14,6 +14,15 @@
       there, marking it "Not spam" helps our future emails (including try-out results)
       reach your inbox.
     </p>
+    <p>
+      Signing up more than one child? Your details will already be filled in.
+      {% if saved_players %}
+        Sign up another child:
+        {% for kid in saved_players %}
+          <a href="{% url 'tryouts:signup' %}?kid={{ kid.pk }}">{{ kid.first_name }}</a>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      {% endif %}
+    </p>
     <a class="btn btn--primary" href="{% url 'tryouts:signup' %}">Submit another sign-up</a>
   </section>
 {% endblock %}

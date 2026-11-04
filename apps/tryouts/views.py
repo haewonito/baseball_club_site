@@ -61,7 +61,8 @@ def signup(request):
                 if (
                     account_check != "skip"
                     and not request.user.is_authenticated
-                    and User.objects.filter(email__iexact=email).exists()
+                    # Unverified accounts can't log in yet, so "log in first" would be a dead end.
+                    and User.objects.filter(email__iexact=email, email_verified=True).exists()
                 ):
                     # Don't save yet: the template pops up "log in first?".
                     return render(
@@ -80,6 +81,12 @@ def signup(request):
                     send_signup_confirmation_email(signup)
                 except Exception:
                     logger.exception("Try-out sign-up confirmation email failed for signup %s", signup.pk)
+                if not request.user.is_authenticated:
+                    # So a second child's form doesn't mean retyping the parent's details.
+                    request.session[SIGNUP_PARENT_SESSION_KEY] = {
+                        key: form.cleaned_data[key]
+                        for key in ("parent_first_name", "parent_last_name", "parent_phone", "parent_email")
+                    }
                 return redirect("tryouts:signup_success")
         else:
             draft = request.session.pop(SIGNUP_DRAFT_SESSION_KEY, None)
@@ -99,7 +106,7 @@ def signup(request):
                     initial.update(_kid_initial(kid))
                 form = TryoutSignupForm(initial=initial, user=request.user)
             else:
-                form = TryoutSignupForm()
+                form = TryoutSignupForm(initial=request.session.get(SIGNUP_PARENT_SESSION_KEY))
     return render(
         request,
         "tryouts/signup.html",
@@ -127,6 +134,9 @@ def _kid_initial(kid):
     }
 
 
+# Parent details remembered for a guest's next sign-up in the same browser session (see signup).
+SIGNUP_PARENT_SESSION_KEY = "tryout_signup_parent"
+
 # Session key for sign-up answers saved while the parent logs in (see signup).
 SIGNUP_DRAFT_SESSION_KEY = "tryout_signup_draft"
 
@@ -140,7 +150,12 @@ def _draft_initial(draft):
 
 
 def signup_success(request):
-    return render(request, "tryouts/signup_success.html")
+    saved_players = (
+        request.user.prospective_players.filter(promoted_player__isnull=True)
+        if request.user.is_authenticated
+        else ()
+    )
+    return render(request, "tryouts/signup_success.html", {"saved_players": saved_players})
 
 
 def respond(request, token):
@@ -164,6 +179,11 @@ def respond(request, token):
 
     signup = invite.signup
     can_respond = signup.coach_decision == TryoutDecision.INVITE
+    # The family may have an account even if they signed up as a guest (same email); then they
+    # log in rather than creating a second one (which would fail with "already exists").
+    account = User.objects.filter(email__iexact=signup.parent_email).first()
+    has_account = bool(signup.user_id or account)
+    account_unverified = bool(account and not account.email_verified)
 
     # A logged-in parent may already have this kid in the system (a
     # returning player). They confirm whether it's the same child; "yes"
@@ -181,7 +201,7 @@ def respond(request, token):
                 _complete_response(signup, invite, TryoutFamilyResponse.DECLINED)
                 return render(request, "tryouts/respond_done.html", {"signup": signup})
             if action == "accept":
-                if not request.user.is_authenticated and signup.user_id:
+                if not request.user.is_authenticated and has_account:
                     # Their account already exists; the page asks them to log in.
                     return redirect(request.path)
                 if request.user.is_authenticated:
@@ -212,7 +232,7 @@ def respond(request, token):
                         "tryouts/respond_done.html",
                         {"signup": signup, "account_created": True},
                     )
-        elif not request.user.is_authenticated and not signup.user_id:
+        elif not request.user.is_authenticated and not has_account:
             form = InviteClaimSignupForm(
                 initial={
                     "first_name": signup.parent_first_name,
@@ -231,7 +251,8 @@ def respond(request, token):
             "form": form,
             "existing_player": existing_player,
             "confirm_returning": confirm_returning,
-            "has_account": bool(signup.user_id),
+            "has_account": has_account,
+            "account_unverified": account_unverified,
         },
     )
 

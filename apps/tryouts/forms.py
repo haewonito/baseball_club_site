@@ -102,6 +102,31 @@ class TryoutSignupForm(forms.ModelForm):
         # sign-ups may lack it -- Player needs it for roster promotion
         # (apps.tryouts.roster.promote_signup_to_roster).
         self.fields["date_of_birth"].required = True
+        if self.user:
+            self.fields["parent_email"].help_text = (
+                "Updates and the try-out result are emailed here. It can differ from your account email. "
+                "Our emails sometimes land in spam, so please check there."
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        team, first, last, dob = (
+            cleaned.get(k) for k in ("team", "player_first_name", "player_last_name", "date_of_birth")
+        )
+        if team and first and last and dob:
+            same = TryoutSignup.objects.filter(
+                team=team,
+                player_first_name__iexact=first.strip(),
+                player_last_name__iexact=last.strip(),
+                date_of_birth=dob,
+                withdrawn_at__isnull=True,
+            ).exclude(pk=self.instance.pk)
+            if same.exists():
+                raise forms.ValidationError(
+                    f"{first} {last} already has a sign-up for {team.display_name}. "
+                    "To change it, log in and use My Account; otherwise contact the club."
+                )
+        return cleaned
 
     def save(self, commit=True):
         # Standard ModelForm only saves TryoutSignup's own fields; `positions`

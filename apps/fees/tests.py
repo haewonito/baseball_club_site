@@ -348,16 +348,40 @@ class PlayerPaymentTests(TestCase):
         self.assertEqual(Fee.objects.get(pk=self.old.pk).balance, 0)
         self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, -10)
 
-    def test_next_payment_uses_up_the_credit_first(self):
+    def overpay(self):
         self.client.post(
             reverse("accounts:admin_fee_record_payment", args=[self.kid.pk]),
             {"amount": "160", "method": "cash", "paid_at": "2030-02-01", "notes": "", "confirm_credit": "1"},
         )
+
+    def test_credit_is_applied_automatically_to_a_new_fee_with_a_clear_record(self):
+        self.overpay()  # leaves a $10 credit on the "New" fee
         extra = Fee.objects.create(player=self.kid, description="Extra", amount_due=30, due_date=datetime.date(2030, 6, 1))
-        self.pay("20")  # $10 credit + $20 cash settles the $30 fee
-        self.assertEqual(Fee.objects.get(pk=extra.pk).balance, 0)
+        self.assertEqual(Fee.objects.get(pk=extra.pk).balance, 20)
         self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, 0)
-        self.assertEqual(sum(p.amount for p in Payment.objects.all()), 180)  # cash actually received
+        moves = Payment.objects.filter(method="credit").order_by("amount")
+        self.assertEqual([(p.fee.description, p.amount) for p in moves], [("New", -10), ("Extra", 10)])
+        self.assertEqual(sum(p.amount for p in Payment.objects.all()), 160)  # cash actually received
+
+    def test_credit_larger_than_the_new_fee_leaves_the_rest_as_credit(self):
+        self.overpay()
+        extra = Fee.objects.create(player=self.kid, description="Small", amount_due=4)
+        self.assertEqual(Fee.objects.get(pk=extra.pk).balance, 0)
+        self.assertEqual(Fee.objects.get(pk=self.new.pk).balance, -6)
+
+    def test_fee_added_from_the_admin_page_gets_the_credit_too(self):
+        self.overpay()
+        self.client.post(
+            reverse("accounts:admin_fee_add"),
+            {"description": "Hat", "amount_due": "25", "players": [self.kid.pk]},
+        )
+        self.assertEqual(Fee.objects.get(description="Hat").balance, 15)
+
+    def test_nothing_due_says_so_instead_of_showing_the_form(self):
+        self.pay("150")
+        page = self.client.get(reverse("accounts:admin_fee_player", args=[self.kid.pk]))
+        self.assertContains(page, "No payment due.")
+        self.assertNotContains(page, "Record Payment")
 
     def test_payment_date_defaults_to_today(self):
         from apps.accounts.forms import PlayerPaymentForm

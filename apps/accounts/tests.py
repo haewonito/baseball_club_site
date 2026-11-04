@@ -267,7 +267,7 @@ class ProspectivePlayerTests(TestCase):
         invite = TryoutResponseInvite.objects.create(signup=signup)
         self.client.logout()
         response = self.client.get(reverse("tryouts:respond", args=[invite.token]))
-        self.assertContains(response, "You signed up with an account")
+        self.assertContains(response, "You already have an account")
         self.assertNotContains(response, "Create Account")
 
 

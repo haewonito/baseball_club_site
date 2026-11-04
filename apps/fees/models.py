@@ -80,6 +80,8 @@ class PaymentMethod(models.TextChoices):
     CHECK = "check", "Check"
     VENMO = "venmo", "Venmo"
     OTHER = "other", "Other"
+    # Only ever written by apps.fees.credits (a credit moved between fees), never chosen by hand.
+    CREDIT = "credit", "Credit applied"
 
 
 class Payment(models.Model):

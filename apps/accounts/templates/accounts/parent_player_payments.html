@@ -28,7 +28,7 @@
             <td>{{ row.payment.paid_at }}</td>
             <td>{{ row.payment.fee.description }}</td>
             <td>{{ row.payment.get_method_display }}</td>
-            <td>${{ row.payment.amount }}</td>
+            <td>{% if row.payment.amount < 0 %}-${{ row.payment.amount|cut:"-" }}{% else %}${{ row.payment.amount }}{% endif %}</td>
             <td>${{ row.running_total }}</td>
           </tr>
         {% endfor %}

@@ -176,6 +176,7 @@ class PaymentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["method"].initial = PaymentMethod.CASH
+        self.fields["method"].choices = [c for c in PaymentMethod.choices if c[0] != PaymentMethod.CREDIT]
         # Today, by default; the admin changes it when entering an older payment.
         self.fields["paid_at"].initial = timezone.localdate
 

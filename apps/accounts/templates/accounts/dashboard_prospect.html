@@ -65,8 +65,12 @@
               <td>
                 {% if signup.is_withdrawn %}Withdrawn
                 {% elif signup.promoted_player_id %}On the roster
-                {% elif signup.decision_emailed_at %}Decision emailed {{ signup.decision_emailed_at|date:"M j" }}
-                {% else %}Submitted{% endif %}
+                {% elif signup.family_response == "declined" %}Declined
+                {% elif signup.decision_emailed_at %}
+                  {% if signup.coach_decision == "invite" %}Invited (emailed {{ signup.decision_emailed_at|date:"M j" }}): use the link in that email to accept or decline
+                  {% elif signup.coach_decision == "not_selected" %}Not selected this time (emailed {{ signup.decision_emailed_at|date:"M j" }})
+                  {% else %}Decision emailed {{ signup.decision_emailed_at|date:"M j" }}{% endif %}
+                {% else %}Submitted: waiting for a coach's decision{% endif %}
               </td>
               <td>
                 {% if signup.family_can_change %}

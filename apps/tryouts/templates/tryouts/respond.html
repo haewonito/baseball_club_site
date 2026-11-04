@@ -50,11 +50,20 @@
           {% endif %}
         </form>
       {% elif has_account %}
-        <p>
-          You signed up with an account. Please
-          <a class="btn btn--primary" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a>
-          to accept, and you'll come right back to this page.
-        </p>
+        {% if account_unverified %}
+          <p>
+            There is already an account for {{ signup.parent_email }}, but its email address hasn't been confirmed yet.
+            Click the link in the confirmation email we sent when it was created (check spam), or
+            <a href="{% url 'accounts:resend_verification' %}">send the confirmation email again</a>.
+            Then log in and come back to this page.
+          </p>
+        {% else %}
+          <p>
+            You already have an account. Please
+            <a class="btn btn--primary" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}&email={{ signup.parent_email|urlencode }}">Log in</a>
+            to accept, and you'll come right back to this page.
+          </p>
+        {% endif %}
       {% else %}
         <p>
           Already have an account?

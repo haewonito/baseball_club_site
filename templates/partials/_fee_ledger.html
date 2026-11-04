@@ -41,12 +41,12 @@
       </tbody>
     </table>
   {% else %}
-    <p>Nothing owed.</p>
+    <p>No payment due.</p>
   {% endif %}
 
   {% if credit_fees %}
     <h2>Credits</h2>
-    <p>Overpayments, kept as a credit (shown with a minus sign). The next payment you record uses this up first.</p>
+    <p>Overpayments, kept as a credit (shown with a minus sign). A credit is applied to the player's next fee automatically; the payment history shows each move as "Credit applied".</p>
     <table class="roster-table">
       <thead><tr><th>Fee overpaid</th><th>Credit</th></tr></thead>
       <tbody>
@@ -77,7 +77,7 @@
             <td data-sort="{{ payment.paid_at|date:'Y-m-d' }}">{{ payment.paid_at }}</td>
             <td>{{ payment.fee.description }}</td>
             <td>{{ payment.get_method_display }}</td>
-            <td data-sort="{{ payment.amount }}">${{ payment.amount }}</td>
+            <td data-sort="{{ payment.amount }}">{% if payment.amount < 0 %}-${{ payment.amount|cut:"-" }}{% else %}${{ payment.amount }}{% endif %}</td>
             <td>{{ payment.notes }}</td>
             <td>{{ payment.recorded_by|default:"—" }}</td>
           </tr>
@@ -88,7 +88,10 @@
     <p>No payments recorded yet.</p>
   {% endif %}
 
-  {% if open_fees %}
+  {% if not open_fees %}
+    <h2>Record a Payment</h2>
+    <p>No payment due.</p>
+  {% else %}
     <h2>Record a Payment</h2>
     <p>A payment is applied to the fee with the earliest due date first, then to the next one, and so on.</p>
     {% if payment_form.non_field_errors %}

@@ -7,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from apps.fees.credits import apply_credit
 from apps.fees.models import FEE_STATUS_LABELS, Fee, FeeReminderSettings, Payment
 from apps.fees.reminders import OVERDUE_REMINDER_AFTER_DAYS
 from apps.teams.models import Team
@@ -106,16 +107,16 @@ def admin_fee_add(request):
             # fee/payment view (admin list, parent dashboard, payment
             # history) needs no bulk-fee-aware logic of its own.
             players = list(form.cleaned_data["players"])
-            Fee.objects.bulk_create(
-                Fee(
+            # Created one at a time (not bulk_create) so a player's existing credit is
+            # applied to their new fee automatically (apps.fees.signals).
+            for player in players:
+                Fee.objects.create(
                     player=player,
                     description=form.cleaned_data["description"],
                     amount_due=form.cleaned_data["amount_due"],
                     due_date=form.cleaned_data["due_date"],
                     created_by=request.user,
                 )
-                for player in players
-            )
             if len(players) == 1:
                 return redirect("accounts:admin_fee_player", player_pk=players[0].pk)
             messages.success(
@@ -195,39 +196,37 @@ def admin_fee_player(request, player_pk):
     return render(request, "accounts/admin_fee_player.html", _player_fee_context(player))
 
 
-def _record_player_payment(user, data, open_fees, credit_fees):
+def _record_player_payment(user, data, player, open_fees):
     """Splits one payment over the player's unpaid fees, earliest due date first (undated last).
 
-    An existing credit is used up first (moved off the overpaid fee with an offsetting
-    negative row), and whatever is still left over is recorded as a credit: an extra
-    payment on the last fee paid, so that fee's balance goes negative.
+    Any credit they already hold is moved onto those fees first (apply_credit, shown in the
+    history as "Credit applied"). If the cash is more than what's then left, the extra is recorded
+    as a credit: an additional payment on the last fee paid, so that fee's balance goes negative.
     """
-
-    def add(fee, amount, notes):
-        Payment.objects.create(
-            fee=fee,
-            amount=amount,
-            method=data["method"],
-            paid_at=data["paid_at"],
-            notes=notes,
-            recorded_by=user,
-        )
-
+    apply_credit(player, user)
+    fees = list(player.fees.prefetch_related("payments"))
+    still_open = sorted(
+        (f for f in fees if f.balance > 0), key=lambda f: (f.due_date is None, f.due_date or date.min)
+    )
     pool = data["amount"]
-    for fee in credit_fees:
-        add(fee, fee.balance, "Credit applied to a new payment")
-        pool -= fee.balance
-    open_fees = sorted(open_fees, key=lambda f: (f.due_date is None, f.due_date or date.min))
     last = None
-    for fee in open_fees:
+    for fee in still_open:
         if pool <= 0:
             break
         part = min(pool, fee.balance)
-        add(fee, part, data["notes"])
+        Payment.objects.create(
+            fee=fee, amount=part, method=data["method"], paid_at=data["paid_at"],
+            notes=data["notes"], recorded_by=user,
+        )
         pool -= part
         last = fee
     if pool > 0:
-        add(last, pool, "Credit (overpayment)")
+        # Credit alone covered every fee: hang the extra on the fee that was open before.
+        target = last or sorted(open_fees, key=lambda f: (f.due_date is None, f.due_date or date.min))[-1]
+        Payment.objects.create(
+            fee=target, amount=pool, method=data["method"], paid_at=data["paid_at"],
+            notes="Credit (overpayment)", recorded_by=user,
+        )
 
 
 @login_required
@@ -243,7 +242,7 @@ def admin_fee_record_payment(request, player_pk):
     form = PlayerPaymentForm(request.POST)
     overpay = None
     if form.is_valid() and not open_fees:
-        form.add_error("amount", "Nothing is owed, so there is no fee to apply a payment to.")
+        form.add_error("amount", "No payment is due, so there is nothing to apply a payment to.")
     if form.is_valid():
         amount = form.cleaned_data["amount"]
         owed = sum(f.balance for f in open_fees)
@@ -258,7 +257,7 @@ def admin_fee_record_payment(request, player_pk):
                 "new_credit": amount + credit - owed,
             }
         else:
-            _record_player_payment(request.user, form.cleaned_data, open_fees, credit_fees)
+            _record_player_payment(request.user, form.cleaned_data, player, open_fees)
             form = None
 
     # Rebuild from fresh queries so the new payment is included in balances.

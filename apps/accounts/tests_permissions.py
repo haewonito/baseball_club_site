@@ -382,3 +382,68 @@ class FamilySignupChangeTests(ScopingTestCase):
         self.assertEqual(decide.status_code, 400)
         recipients = self.client.get(reverse("accounts:tryout_mass_email") + "?audience=tryouts").context["recipients"]
         self.assertEqual(recipients, [])
+
+
+@PLAIN_STORAGE
+class TryoutSignupGapTests(ScopingTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        from apps.tryouts.models import TryoutPoster
+
+        cls.team_a.accepting_tryouts = True
+        cls.team_a.save()
+        TryoutPoster.objects.create(title="P", image="p.jpg", poster_type="initial")
+
+    def form_data(self, **extra):
+        data = {
+            "team": self.team_a.pk,
+            "player_first_name": "Ann",
+            "player_last_name": "Kid",
+            "date_of_birth": "2016-05-05",
+            "parent_first_name": "Pat",
+            "parent_last_name": "Kid",
+            "parent_phone": "555-0100",
+            "parent_email": "newfamily@example.com",
+        }
+        data.update(extra)
+        return data
+
+    def test_same_kid_cannot_be_signed_up_twice_for_a_team(self):
+        self.client.post(reverse("tryouts:signup"), self.form_data())
+        again = self.client.post(reverse("tryouts:signup"), self.form_data(player_first_name="ann"))
+        self.assertContains(again, "already has a sign-up")
+        self.assertEqual(TryoutSignup.objects.count(), 1)
+
+    def test_withdrawn_signup_does_not_block_a_new_one(self):
+        from django.utils import timezone
+
+        make_signup(self.team_a, withdrawn_at=timezone.now())
+        self.client.post(reverse("tryouts:signup"), self.form_data())
+        self.assertEqual(TryoutSignup.objects.filter(withdrawn_at__isnull=True).count(), 1)
+
+    def test_guest_parent_details_are_prefilled_for_the_next_child(self):
+        self.client.post(reverse("tryouts:signup"), self.form_data())
+        page = self.client.get(reverse("tryouts:signup"))
+        self.assertEqual(page.context["form"]["parent_email"].value(), "newfamily@example.com")
+
+    def test_unverified_account_does_not_trigger_the_log_in_first_dialog(self):
+        User.objects.create_user("newfamily@example.com", "pw", email_verified=False)
+        self.client.post(reverse("tryouts:signup"), self.form_data())
+        self.assertEqual(TryoutSignup.objects.count(), 1)
+
+    def test_verified_account_still_gets_the_dialog(self):
+        User.objects.create_user("newfamily@example.com", "pw")
+        response = self.client.post(reverse("tryouts:signup"), self.form_data())
+        self.assertContains(response, "You already have an account")
+        self.assertEqual(TryoutSignup.objects.count(), 0)
+
+    def test_response_page_asks_a_guest_signup_with_an_account_to_log_in(self):
+        from apps.tryouts.models import TryoutResponseInvite
+
+        User.objects.create_user("newfamily@example.com", "pw")
+        signup = make_signup(self.team_a, parent_email="newfamily@example.com", coach_decision="invite")
+        invite = TryoutResponseInvite.objects.create(signup=signup)
+        page = self.client.get(reverse("tryouts:respond", args=[invite.token]))
+        self.assertContains(page, "You already have an account")
+        self.assertNotContains(page, "Create Account")
