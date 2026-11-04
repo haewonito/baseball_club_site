@@ -9,6 +9,13 @@ from django.utils import timezone
 from .emails import make_verification_token
 from .models import Role, User
 
+KID_MANAGEMENT = {
+    "kid-TOTAL_FORMS": "3",
+    "kid-INITIAL_FORMS": "0",
+    "kid-MIN_NUM_FORMS": "0",
+    "kid-MAX_NUM_FORMS": "1000",
+}
+
 REGISTER_DATA = {
     "first_name": "Pat",
     "last_name": "Lee",
@@ -28,7 +35,7 @@ REGISTER_DATA = {
 )
 class RegistrationTests(TestCase):
     def register(self, **extra):
-        return self.client.post(reverse("accounts:register"), {**REGISTER_DATA, **extra})
+        return self.client.post(reverse("accounts:register"), {**REGISTER_DATA, **KID_MANAGEMENT, **extra})
 
     def test_register_creates_unverified_prospective_parent_and_sends_link(self):
         response = self.register(info_emails_opt_in="on")
@@ -433,3 +440,51 @@ class AccountDeleteTests(TestCase):
         self.client.logout()
         response = self.client.get(reverse("accounts:account_delete"))
         self.assertEqual(response.status_code, 302)
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class RegistrationKidsTests(TestCase):
+    def register(self, **extra):
+        return self.client.post(reverse("accounts:register"), {**REGISTER_DATA, **KID_MANAGEMENT, **extra})
+
+    def test_kids_entered_at_registration_are_saved_to_the_account(self):
+        self.register(**{
+            "kid-0-first_name": "Sam", "kid-0-last_name": "Lee", "kid-0-date_of_birth": "2015-04-02",
+            "kid-1-first_name": "Alex", "kid-1-last_name": "Lee", "kid-1-date_of_birth": "2017-09-12",
+        })
+        user = User.objects.get(email="pat@example.com")
+        self.assertEqual(sorted(k.first_name for k in user.prospective_players.all()), ["Alex", "Sam"])
+
+    def test_blank_kid_rows_are_ignored(self):
+        self.register()
+        self.assertEqual(User.objects.get(email="pat@example.com").prospective_players.count(), 0)
+
+    def test_half_filled_kid_row_blocks_registration(self):
+        response = self.register(**{"kid-0-first_name": "Sam"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(email="pat@example.com").exists())
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class RegistrationAddKidTests(TestCase):
+    def test_page_has_the_add_another_child_button_and_a_blank_row_template(self):
+        html = self.client.get(reverse("accounts:register")).content.decode()
+        self.assertIn("Add another child", html)
+        self.assertIn("kid-__prefix__-first_name", html)
+
+    def test_more_than_three_kids_are_saved(self):
+        data = {**REGISTER_DATA, **KID_MANAGEMENT, "kid-TOTAL_FORMS": "5"}
+        for i in range(5):
+            data.update({f"kid-{i}-first_name": f"K{i}", f"kid-{i}-last_name": "Lee", f"kid-{i}-date_of_birth": "2015-04-02"})
+        self.client.post(reverse("accounts:register"), data)
+        self.assertEqual(User.objects.get(email="pat@example.com").prospective_players.count(), 5)

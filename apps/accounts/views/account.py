@@ -12,9 +12,10 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from apps.tryouts.models import ProspectivePlayer
 
 from ..emails import read_unsubscribe_token, read_verification_token, send_verification_email
-from ..forms import RegistrationForm, ResendVerificationForm
+from ..forms import RegistrationForm, RegistrationKidFormSet, ResendVerificationForm
 from ..models import Role, User, UserRole
 
 logger = logging.getLogger(__name__)
@@ -94,17 +95,23 @@ def register(request):
 
     if request.method == "POST":
         form = RegistrationForm(request.POST)
-        if form.is_valid():
+        kids = RegistrationKidFormSet(request.POST, prefix="kid")
+        if form.is_valid() and kids.is_valid():
             user = form.save()
             role, _ = UserRole.objects.get_or_create(role=Role.PROSPECTIVE_PARENT)
             user.roles.add(role)
+            # Saved kids (not roster players): they prefill future try-out sign-ups.
+            for kid in kids:
+                if kid.cleaned_data:
+                    ProspectivePlayer.objects.create(user=user, **kid.cleaned_data)
             sent = _send_verification(user, request)
             return render(
                 request, "accounts/register_check_email.html", {"email": user.email, "sent": sent}
             )
     else:
         form = RegistrationForm()
-    return render(request, "accounts/register.html", {"form": form})
+        kids = RegistrationKidFormSet(prefix="kid")
+    return render(request, "accounts/register.html", {"form": form, "kids": kids})
 
 
 def verify_email(request, token):

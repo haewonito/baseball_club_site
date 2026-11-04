@@ -443,6 +443,17 @@ class RegistrationForm(InviteClaimSignupForm):
         return user
 
 
+class RegistrationKidForm(forms.Form):
+    """One optional child row on the registration page; a row left blank is ignored."""
+
+    first_name = forms.CharField(max_length=100, label="First name")
+    last_name = forms.CharField(max_length=100, label="Last name")
+    date_of_birth = forms.DateField(label="Date of birth", widget=forms.DateInput(attrs={"type": "date"}))
+
+
+RegistrationKidFormSet = forms.formset_factory(RegistrationKidForm, extra=3, max_num=10, validate_max=True)
+
+
 class ResendVerificationForm(forms.Form):
     email = forms.EmailField()
 

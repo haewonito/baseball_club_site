@@ -37,6 +37,54 @@
       </label>
       <p class="form-field__help">{{ form.info_emails_opt_in.help_text }}</p>
     </div>
+
+    <fieldset>
+      <legend>Your kids (optional)</legend>
+      <p class="form-field__help">
+        Save your kids' details now, even if they aren't trying out yet. They'll be ready to pick when you
+        sign up for a try-out. You can add, change or remove them later from My Account.
+      </p>
+      {{ kids.management_form }}
+      <div id="kid-rows">
+        {% for kid in kids %}
+          <div class="form-row">
+            {% include "partials/_form_field.html" with field=kid.first_name %}
+            {% include "partials/_form_field.html" with field=kid.last_name %}
+            {% include "partials/_form_field.html" with field=kid.date_of_birth %}
+          </div>
+        {% endfor %}
+      </div>
+      {# Blank row copied by the "Add another child" button below (up to the formset's maximum of {{ kids.max_num }}). #}
+      <template id="kid-row-template">
+        <div class="form-row">
+          {% include "partials/_form_field.html" with field=kids.empty_form.first_name %}
+          {% include "partials/_form_field.html" with field=kids.empty_form.last_name %}
+          {% include "partials/_form_field.html" with field=kids.empty_form.date_of_birth %}
+        </div>
+      </template>
+      <button class="btn btn--small" type="button" id="add-kid" hidden>Add another child</button>
+    </fieldset>
+    <script>
+      (function () {
+        var button = document.getElementById("add-kid");
+        var rows = document.getElementById("kid-rows");
+        var template = document.getElementById("kid-row-template");
+        var total = document.getElementById("id_kid-TOTAL_FORMS");
+        var max = {{ kids.max_num }};
+        button.hidden = false; // without JavaScript the three rows above are all there is
+        button.addEventListener("click", function () {
+          var index = parseInt(total.value, 10);
+          if (index >= max) return;
+          var html = template.innerHTML.replace(/__prefix__/g, index);
+          rows.insertAdjacentHTML("beforeend", html);
+          total.value = index + 1;
+          if (index + 1 >= max) button.hidden = true;
+          rows.lastElementChild.querySelector("input").focus();
+        });
+        if (parseInt(total.value, 10) >= max) button.hidden = true;
+      })();
+    </script>
+
     <button class="btn btn--primary" type="submit">Create Account</button>
   </form>
 {% endblock %}
