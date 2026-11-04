@@ -37,14 +37,26 @@
       </thead>
       <tbody>
         {% for signup in signups %}
-          <tr>
-            <td>{{ signup.player_full_name }}</td>
-            <td>{{ signup.positions_display }}</td>
-            <td>{{ signup.parent_full_name }}</td>
-            <td>{{ signup.parent_phone }}</td>
-            <td>{% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}</td>
-            <td>{% include "partials/_tryout_email_action.html" with signup=signup %}</td>
-          </tr>
+          {% if signup.is_withdrawn %}
+            {# Withdrawn after the try-out: the name stays, the rest is crossed out, no controls. #}
+            <tr class="is-withdrawn">
+              <td>{{ signup.player_full_name }} <span class="status-badge">Withdrawn {{ signup.withdrawn_at|date:"M j" }}</span></td>
+              <td><s>{{ signup.positions_display }}</s></td>
+              <td><s>{{ signup.parent_full_name }}</s></td>
+              <td><s>{{ signup.parent_phone }}</s></td>
+              <td><s>{{ signup.get_coach_decision_display }}</s></td>
+              <td>&mdash;</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td>{{ signup.player_full_name }}{% if signup.family_edited_at %} <span class="form-field__help" title="The family changed this sign-up on {{ signup.family_edited_at|date:'M j' }}">(edited)</span>{% endif %}</td>
+              <td>{{ signup.positions_display }}</td>
+              <td>{{ signup.parent_full_name }}</td>
+              <td>{{ signup.parent_phone }}</td>
+              <td>{% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}</td>
+              <td>{% include "partials/_tryout_email_action.html" with signup=signup %}</td>
+            </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>

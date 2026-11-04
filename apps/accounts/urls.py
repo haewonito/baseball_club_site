@@ -150,6 +150,16 @@ urlpatterns = [
         views.admin_tryout_poster_delete,
         name="admin_tryout_poster_delete",
     ),
+    path(
+        "dashboard/prospect/signups/<int:pk>/edit/",
+        views.prospect_signup_edit,
+        name="prospect_signup_edit",
+    ),
+    path(
+        "dashboard/prospect/signups/<int:pk>/withdraw/",
+        views.prospect_signup_withdraw,
+        name="prospect_signup_withdraw",
+    ),
     path("dashboard/coach/", views.dashboard_coach, name="dashboard_coach"),
     path("dashboard/coach/tryouts/", views.coach_tryouts, name="coach_tryouts"),
     path("dashboard/tryouts/email/", views.tryout_mass_email, name="tryout_mass_email"),

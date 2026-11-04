@@ -54,7 +54,7 @@
     {% if signups %}
       <table>
         <thead>
-          <tr><th>Player</th><th>Team</th><th>Submitted</th><th>Status</th></tr>
+          <tr><th>Player</th><th>Team</th><th>Submitted</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
           {% for signup in signups %}
@@ -63,9 +63,26 @@
               <td>{{ signup.team.display_name }}</td>
               <td>{{ signup.submitted_at|date:"M j, Y" }}</td>
               <td>
-                {% if signup.promoted_player_id %}On the roster
+                {% if signup.is_withdrawn %}Withdrawn
+                {% elif signup.promoted_player_id %}On the roster
                 {% elif signup.decision_emailed_at %}Decision emailed {{ signup.decision_emailed_at|date:"M j" }}
                 {% else %}Submitted{% endif %}
+              </td>
+              <td>
+                {% if signup.family_can_change %}
+                  <a href="{% url 'accounts:prospect_signup_edit' signup.pk %}">Edit</a>
+                  <form
+                    method="post"
+                    action="{% url 'accounts:prospect_signup_withdraw' signup.pk %}"
+                    style="display:inline"
+                    onsubmit="return confirm('Withdraw {{ signup.player_first_name|escapejs }} from the {{ signup.team.display_name|escapejs }} try-out?');"
+                  >
+                    {% csrf_token %}
+                    <button class="btn btn--small" type="submit">Withdraw</button>
+                  </form>
+                {% elif not signup.is_withdrawn and not signup.promoted_player_id %}
+                  <span class="form-field__help">Locked: contact the club</span>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}

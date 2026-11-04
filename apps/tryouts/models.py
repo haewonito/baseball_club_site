@@ -2,7 +2,6 @@ import uuid
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -180,6 +179,12 @@ class TryoutSignup(models.Model):
     )
 
     submitted_at = models.DateTimeField(auto_now_add=True)
+    # Set when the family changes the sign-up from their account, or withdraws it
+    # after the try-out (before it, the row is simply deleted; see
+    # apps.accounts.views.prospect.prospect_signup_withdraw). A withdrawn sign-up
+    # stays on the coaches' lists, crossed out at the end, with no decision or email.
+    family_edited_at = models.DateTimeField(null=True, blank=True)
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
 
     admin_notes = models.TextField(blank=True)
 
@@ -230,6 +235,31 @@ class TryoutSignup(models.Model):
         ordering = ["player_last_name", "player_first_name"]
         verbose_name = "Try-Out Sign-Up"
         verbose_name_plural = "Try-Out Sign-Ups"
+
+    @property
+    def is_withdrawn(self):
+        return self.withdrawn_at is not None
+
+    @property
+    def family_can_change(self):
+        """Whether the family may still edit or withdraw this from their account:
+        until a decision email has gone out (or it's on a roster / withdrawn)."""
+        return (
+            not self.is_withdrawn
+            and not self.promoted_player_id
+            and not self.decision_emailed_at
+            and self.family_response == TryoutFamilyResponse.PENDING
+            and not self.team.is_deleted_placeholder
+        )
+
+    @property
+    def tryout_has_happened(self):
+        """Whether this sign-up's try-out is over: a coach already set a decision, or the
+        club's next try-out date came and went after the sign-up was submitted."""
+        if self.coach_decision != TryoutDecision.UNDECIDED:
+            return True
+        date = TryoutYearSettings.get_next_tryout_date()
+        return bool(date and self.submitted_at.date() <= date < timezone.localdate())
 
     def save(self, *args, **kwargs):
         # Public form, no input validation on casing -- normalize names so

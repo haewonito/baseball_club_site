@@ -1,5 +1,6 @@
 
 from django.contrib import messages
+from django.db.models import F
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
@@ -28,7 +29,7 @@ def admin_tryouts_list(request):
     signups = (
         TryoutSignup.objects.select_related("team", "promoted_player")
         .prefetch_related("positions")
-        .order_by("player_last_name", "player_first_name")
+        .order_by(F("withdrawn_at").asc(nulls_first=True), "player_last_name", "player_first_name")
     )
     years = [
         (year, f"{year - 1}-{year}")

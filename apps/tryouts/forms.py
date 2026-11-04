@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 
 from apps.teams.models import Position, Team
 
@@ -123,6 +124,10 @@ class TryoutSignupForm(forms.ModelForm):
             return
         if kid is None:
             kid = ProspectivePlayer(user=self.user)
+        self._write_kid(kid, signup)
+
+    def _write_kid(self, kid, signup):
+        """Copies the sign-up's player details onto a saved kid and links the two."""
         kid.first_name = signup.player_first_name
         kid.last_name = signup.player_last_name
         kid.date_of_birth = signup.date_of_birth
@@ -144,6 +149,27 @@ class TryoutSignupForm(forms.ModelForm):
             TryoutSignupPosition(signup=signup, position=code)
             for code in self.cleaned_data.get("positions", [])
         )
+
+
+class TryoutSignupEditForm(TryoutSignupForm):
+    """A family changing an existing sign-up from their account (accounts.prospect_signup_edit).
+    Same fields as the sign-up page, minus the saved-player controls; the team can be changed,
+    and the current one stays selectable even if it has stopped accepting try-outs."""
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, user=user, **kwargs)
+        self.fields.pop("prospective_player", None)
+        self.fields.pop("save_player", None)
+        self.fields["team"].queryset = Team.objects.filter(
+            Q(accepting_tryouts=True) | Q(pk=self.instance.team_id), is_deleted_placeholder=False
+        ).order_by("-season_year", "division")
+        self.initial.setdefault("positions", [p.position for p in self.instance.positions.all()])
+
+    def _sync_prospect(self, signup):
+        # Keep the saved kid this sign-up came from in step with the changes.
+        kid = signup.prospective_player
+        if kid is not None and kid.promoted_player_id is None:
+            self._write_kid(kid, signup)
 
 
 class ProspectivePlayerForm(forms.ModelForm):

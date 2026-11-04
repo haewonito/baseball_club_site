@@ -15,9 +15,17 @@
     </p>
   </section>
 
+  {% if signup.is_withdrawn %}
+    <p class="form-restored"><strong>Withdrawn by the family</strong> on {{ signup.withdrawn_at|date:"M j, Y" }}. No decision or email can be set.</p>
+  {% endif %}
+
   <section class="team-section">
     <h2>Decision</h2>
-    {% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}
+    {% if signup.is_withdrawn %}
+      <p>{{ signup.get_coach_decision_display }} (set before the withdrawal)</p>
+    {% else %}
+      {% include "partials/_tryout_decision_select.html" with signup=signup decision_choices=decision_choices %}
+    {% endif %}
   </section>
 
   <section class="team-section">

@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import F
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -41,7 +42,8 @@ def coach_tryouts(request):
         signups = (
             TryoutSignup.objects.filter(team=selected_team)
             .prefetch_related("positions")
-            .order_by("player_last_name", "player_first_name")
+            # Withdrawn sign-ups (crossed out on the page) go at the end.
+            .order_by(F("withdrawn_at").asc(nulls_first=True), "player_last_name", "player_first_name")
         )
     return render(
         request,
@@ -61,6 +63,9 @@ def coach_tryout_decision_change(request, pk):
     signup = get_object_or_404(TryoutSignup.objects.select_related("team"), pk=pk)
     if not _can_manage_tryout_signup(request.user, signup.team):
         raise PermissionDenied
+
+    if signup.is_withdrawn:
+        return HttpResponseBadRequest("This sign-up was withdrawn")
 
     new_decision = request.POST.get("coach_decision", "")
     if new_decision not in dict(TryoutDecision.choices):
@@ -114,6 +119,8 @@ def coach_tryout_send_email(request, pk):
     if not TeamCoach.objects.filter(coach=request.user, team=signup.team).exists():
         raise PermissionDenied
 
+    if signup.is_withdrawn:
+        return HttpResponseBadRequest("This sign-up was withdrawn")
     if signup.coach_decision not in (TryoutDecision.INVITE, TryoutDecision.NOT_SELECTED):
         return HttpResponseBadRequest("Set a decision before sending an email")
     if signup.decision_emailed_at:

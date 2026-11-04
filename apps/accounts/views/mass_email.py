@@ -148,7 +148,7 @@ def tryout_mass_email(request):
         all_recipients = _mass_email_interested_recipients()
     else:
         signups = (
-            TryoutSignup.objects.filter(team__in=scope)
+            TryoutSignup.objects.filter(team__in=scope, withdrawn_at__isnull=True)
             .select_related("team")
             .order_by("parent_last_name", "parent_first_name", "player_first_name")
         )

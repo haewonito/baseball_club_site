@@ -42,8 +42,22 @@
       </thead>
       <tbody>
         {% for signup in signups %}
+          {% if signup.is_withdrawn %}
+            <tr class="is-withdrawn">
+              <td><a href="{% url 'accounts:admin_tryout_detail' signup.pk %}">{{ signup.player_full_name }}</a> <span class="status-badge">Withdrawn {{ signup.withdrawn_at|date:"M j" }}</span></td>
+              <td><s>{{ signup.team.display_name }}</s></td>
+              <td><s>{{ signup.positions_display }}</s></td>
+              <td><s>{{ signup.parent_full_name }}</s></td>
+              <td><s>{{ signup.parent_phone }}</s></td>
+              <td><s>{{ signup.submitted_at|date:"M j, Y" }}</s></td>
+              <td><s>{{ signup.season_label }}</s></td>
+              <td><s>{{ signup.get_coach_decision_display }}</s></td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+            </tr>
+          {% else %}
           <tr>
-            <td><a href="{% url 'accounts:admin_tryout_detail' signup.pk %}">{{ signup.player_full_name }}</a></td>
+            <td><a href="{% url 'accounts:admin_tryout_detail' signup.pk %}">{{ signup.player_full_name }}</a>{% if signup.family_edited_at %} <span class="form-field__help" title="The family changed this sign-up on {{ signup.family_edited_at|date:'M j' }}">(edited)</span>{% endif %}</td>
             <td>{{ signup.team.display_name }}</td>
             <td>{{ signup.positions_display }}</td>
             <td>{{ signup.parent_full_name }}</td>
@@ -54,6 +68,7 @@
             <td>{{ signup.get_family_response_display }}</td>
             <td>{{ signup.promoted_player|yesno:"Promoted,—" }}</td>
           </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>

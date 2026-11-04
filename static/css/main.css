@@ -859,6 +859,11 @@ body .form-field input[type="file"].file-input--empty::file-selector-button {
   margin-top: 1rem;
 }
 
+/* A sign-up the family withdrew after the try-out: kept on the list, crossed out (templates add <s>). */
+.is-withdrawn td {
+  color: #777777;
+}
+
 .roster-table {
   width: 100%;
   border-collapse: collapse;

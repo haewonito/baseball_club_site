@@ -23,9 +23,11 @@
     <p>
       We'll email you a confirmation and updates about this sign-up, including the try-out result.
       Please look into your spam folder if you don't see our confirmation email in your inbox after registering.
-      To also get club news and future try-out announcements, <a href="{% url 'accounts:register' %}">create an account</a>
-      and opt in.
-      Contact us for any questions.
+      {% if not user.is_authenticated %}
+        <a href="{% url 'accounts:register' %}">Create an account</a> to save your kids' information and
+        skip retyping it, or <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">log in</a>.
+        You can also sign up without one.
+      {% endif %}
     </p>
   </section>
 
@@ -48,12 +50,6 @@
             {% endfor %}
           </p>
         {% endif %}
-      {% else %}
-        <p>
-          <a href="{% url 'accounts:register' %}">Create an account</a> to save your kids' information and
-          skip retyping it, or <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">log in</a>.
-          You can also sign up without one.
-        </p>
       {% endif %}
 
       <form method="post" class="signup-form" novalidate>

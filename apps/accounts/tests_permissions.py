@@ -291,3 +291,94 @@ class HomeBannerTests(ScopingTestCase):
             poster.full_clean(exclude=["image", "uploaded_by"])
             poster.save()
         self.assertEqual(TryoutPoster.objects.filter(is_active=True).count(), 2)
+
+
+@PLAIN_STORAGE
+class FamilySignupChangeTests(ScopingTestCase):
+    def setUp(self):
+        self.client.force_login(self.parent)
+        self.signup = make_signup(self.team_a, user=self.parent, parent_email=self.parent.email)
+
+    def edit_data(self, **extra):
+        data = {
+            "team": self.team_a.pk,
+            "player_first_name": "Annie",
+            "player_last_name": "Kid",
+            "date_of_birth": "2016-05-05",
+            "positions": ["SS"],
+            "parent_first_name": "Pat",
+            "parent_last_name": "Kid",
+            "parent_phone": "555-0100",
+            "parent_email": self.parent.email,
+        }
+        data.update(extra)
+        return data
+
+    def edit(self, **extra):
+        return self.client.post(reverse("accounts:prospect_signup_edit", args=[self.signup.pk]), self.edit_data(**extra))
+
+    def withdraw(self):
+        return self.client.post(reverse("accounts:prospect_signup_withdraw", args=[self.signup.pk]))
+
+    def test_edit_updates_the_signup_and_positions(self):
+        self.edit()
+        self.signup.refresh_from_db()
+        self.assertEqual(self.signup.player_first_name, "Annie")
+        self.assertEqual(self.signup.positions_display, "Shortstop")
+        self.assertIsNotNone(self.signup.family_edited_at)
+
+    def test_changing_team_moves_it_to_the_new_teams_list_and_resets_the_decision(self):
+        self.team_b.accepting_tryouts = True
+        self.team_b.save()
+        self.signup.coach_decision = TryoutDecision.INVITE
+        self.signup.save()
+        self.edit(team=self.team_b.pk)
+        self.signup.refresh_from_db()
+        self.assertEqual((self.signup.team, self.signup.coach_decision), (self.team_b, TryoutDecision.UNDECIDED))
+        self.assertTrue(TryoutDecisionChange.objects.filter(signup=self.signup, changed_by=self.parent).exists())
+
+    def test_locked_once_decision_email_sent(self):
+        from django.utils import timezone
+
+        self.signup.decision_emailed_at = timezone.now()
+        self.signup.save()
+        self.edit()
+        self.assertEqual(self.withdraw().status_code, 302)
+        self.signup.refresh_from_db()
+        self.assertEqual(self.signup.player_first_name, "Ann")
+        self.assertIsNone(self.signup.withdrawn_at)
+
+    def test_other_familys_signup_is_not_reachable(self):
+        other = make_user("other@example.com", Role.PARENT)
+        self.client.force_login(other)
+        self.assertEqual(self.withdraw().status_code, 404)
+
+    def test_withdraw_before_the_tryout_deletes_the_row(self):
+        self.withdraw()
+        self.assertFalse(TryoutSignup.objects.filter(pk=self.signup.pk).exists())
+
+    def test_withdraw_after_a_decision_keeps_the_row_crossed_out_at_the_end(self):
+        self.signup.coach_decision = TryoutDecision.NOT_SELECTED
+        self.signup.save()
+        self.withdraw()
+        self.signup.refresh_from_db()
+        self.assertIsNotNone(self.signup.withdrawn_at)
+        make_signup(self.team_a, player_first_name="Zed", player_last_name="Zulu")
+        make_signup(self.team_a, player_first_name="Abe", player_last_name="Aaa")
+        self.client.force_login(self.coach)
+        shown = list(self.client.get(reverse("accounts:coach_tryouts")).context["signups"])
+        self.assertEqual([s.player_last_name for s in shown], ["Aaa", "Zulu", "Kid"])
+        self.assertTrue(shown[-1].is_withdrawn)
+
+    def test_withdrawn_signups_cannot_be_decided_or_emailed(self):
+        from django.utils import timezone
+
+        self.signup.withdrawn_at = timezone.now()
+        self.signup.save()
+        self.client.force_login(self.coach)
+        decide = self.client.post(
+            reverse("accounts:coach_tryout_decision_change", args=[self.signup.pk]), {"coach_decision": "invite"}
+        )
+        self.assertEqual(decide.status_code, 400)
+        recipients = self.client.get(reverse("accounts:tryout_mass_email") + "?audience=tryouts").context["recipients"]
+        self.assertEqual(recipients, [])
