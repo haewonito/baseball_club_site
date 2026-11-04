@@ -73,11 +73,15 @@ class EventForm(forms.ModelForm):
     # not just rendering the initial value.
     start_datetime = forms.DateTimeField(
         input_formats=["%Y-%m-%dT%H:%M"],
-        widget=forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
+        widget=forms.DateTimeInput(
+            format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+        ),
     )
     end_datetime = forms.DateTimeField(
         input_formats=["%Y-%m-%dT%H:%M"],
-        widget=forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
+        widget=forms.DateTimeInput(
+            format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}
+        ),
         required=False,
     )
 
@@ -88,7 +92,7 @@ class EventForm(forms.ModelForm):
         if self.instance.event_type == EventType.EVENT:
             self.fields["title"].required = True
             self.fields["title"].label = "Description"
-            self.fields["title"].help_text = "What's happening, e.g. \"Team picnic\"."
+            self.fields["title"].help_text = 'What\'s happening, e.g. "Team picnic".'
 
     class Meta:
         model = Event
@@ -135,7 +139,9 @@ class FeeForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["player"].queryset = Player.objects.order_by("last_name", "first_name")
+        self.fields["player"].queryset = Player.objects.order_by(
+            "last_name", "first_name"
+        )
         self.fields["player"].required = True
 
 
@@ -155,7 +161,9 @@ class FeeAddForm(forms.Form):
         # step="any": arrows move by $1, but cents like 12.50 still validate.
         widget=forms.NumberInput(attrs={"step": "any"}),
     )
-    due_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    due_date = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={"type": "date"})
+    )
     players = forms.ModelMultipleChoiceField(
         queryset=Player.objects.all(),
         error_messages={"required": "Select at least one player."},
@@ -176,7 +184,9 @@ class PaymentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["method"].initial = PaymentMethod.CASH
-        self.fields["method"].choices = [c for c in PaymentMethod.choices if c[0] != PaymentMethod.CREDIT]
+        self.fields["method"].choices = [
+            c for c in PaymentMethod.choices if c[0] != PaymentMethod.CREDIT
+        ]
         # Today, by default; the admin changes it when entering an older payment.
         self.fields["paid_at"].initial = timezone.localdate
 
@@ -203,9 +213,11 @@ class InvoiceGenerateForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["team"].queryset = Team.objects.filter(
-            is_deleted_placeholder=False, players__isnull=False
-        ).distinct().order_by("-season_year", "division")
+        self.fields["team"].queryset = (
+            Team.objects.filter(is_deleted_placeholder=False, players__isnull=False)
+            .distinct()
+            .order_by("-season_year", "division")
+        )
         self.fields["team"].label_from_instance = lambda team: team.short_label
 
 
@@ -216,8 +228,12 @@ class InvoiceDueDateForm(forms.Form):
 class InvoicePaidForm(forms.Form):
     """Marking an invoice paid records a Payment on each of its fees with these details."""
 
-    method = forms.ChoiceField(choices=PaymentMethod.choices, initial=PaymentMethod.CASH)
-    paid_at = forms.DateField(label="Date paid", widget=forms.DateInput(attrs={"type": "date"}))
+    method = forms.ChoiceField(
+        choices=PaymentMethod.choices, initial=PaymentMethod.CASH
+    )
+    paid_at = forms.DateField(
+        label="Date paid", widget=forms.DateInput(attrs={"type": "date"})
+    )
 
 
 class CoachProfileForm(forms.ModelForm):
@@ -332,7 +348,9 @@ class PlayerGalleryPhotoForm(forms.Form):
         images = self.cleaned_data["images"]
         for image in images:
             if image.size > GALLERY_MAX_UPLOAD_BYTES:
-                raise forms.ValidationError(f"\"{image.name}\" is too large (20 MB max per photo).")
+                raise forms.ValidationError(
+                    f'"{image.name}" is too large (20 MB max per photo).'
+                )
         remaining = GALLERY_MAX_PHOTOS - self.player.gallery_photos.count()
         if len(images) > remaining:
             raise forms.ValidationError(
@@ -356,7 +374,9 @@ class TeamPhotoForm(forms.Form):
         images = self.cleaned_data["images"]
         for image in images:
             if image.size > GALLERY_MAX_UPLOAD_BYTES:
-                raise forms.ValidationError(f"\"{image.name}\" is too large (20 MB max per photo).")
+                raise forms.ValidationError(
+                    f'"{image.name}" is too large (20 MB max per photo).'
+                )
         remaining = TEAM_PHOTOS_MAX - self.team.photos.count()
         if len(images) > remaining:
             raise forms.ValidationError(
@@ -425,10 +445,7 @@ class RegistrationForm(InviteClaimSignupForm):
     info_emails_opt_in = forms.BooleanField(
         required=False,
         label="Email me about try-outs and club news",
-        help_text=(
-            "Optional. We'll send information about upcoming try-outs and the club. "
-            "Every email has a link to unsubscribe, and you can opt out at any time."
-        ),
+        help_text=(),
     )
 
     def save(self):
@@ -439,7 +456,12 @@ class RegistrationForm(InviteClaimSignupForm):
         if user.info_emails_opt_in:
             user.info_emails_opt_in_at = timezone.now()
         user.save(
-            update_fields=["phone", "email_verified", "info_emails_opt_in", "info_emails_opt_in_at"]
+            update_fields=[
+                "phone",
+                "email_verified",
+                "info_emails_opt_in",
+                "info_emails_opt_in_at",
+            ]
         )
         return user
 
@@ -449,10 +471,14 @@ class RegistrationKidForm(forms.Form):
 
     first_name = forms.CharField(max_length=100, label="First name")
     last_name = forms.CharField(max_length=100, label="Last name")
-    date_of_birth = forms.DateField(label="Date of birth", widget=forms.DateInput(attrs={"type": "date"}))
+    date_of_birth = forms.DateField(
+        label="Date of birth", widget=forms.DateInput(attrs={"type": "date"})
+    )
 
 
-RegistrationKidFormSet = forms.formset_factory(RegistrationKidForm, extra=3, max_num=10, validate_max=True)
+RegistrationKidFormSet = forms.formset_factory(
+    RegistrationKidForm, extra=1, max_num=10, validate_max=True
+)
 
 
 class ResendVerificationForm(forms.Form):
