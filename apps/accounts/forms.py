@@ -8,6 +8,7 @@ from PIL import Image, ImageOps
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
+from config.fields import BirthDateField
 from apps.fees.models import Fee, Payment, PaymentMethod
 from apps.schedule.models import Event, EventType
 from apps.teams.models import CoachProfile, PlayerPosition, Position, Team
@@ -36,9 +37,7 @@ class PlayerRosterForm(forms.ModelForm):
     class Meta:
         model = Player
         fields = ["first_name", "last_name", "date_of_birth", "jersey_number"]
-        widgets = {
-            "date_of_birth": forms.DateInput(attrs={"type": "date"}),
-        }
+        field_classes = {"date_of_birth": BirthDateField}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -471,9 +470,7 @@ class RegistrationKidForm(forms.Form):
 
     first_name = forms.CharField(max_length=100, label="First name")
     last_name = forms.CharField(max_length=100, label="Last name")
-    date_of_birth = forms.DateField(
-        label="Date of birth", widget=forms.DateInput(attrs={"type": "date"})
-    )
+    date_of_birth = BirthDateField(label="Date of birth")
 
 
 RegistrationKidFormSet = forms.formset_factory(

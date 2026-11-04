@@ -2,6 +2,7 @@ from django import forms
 from django.db.models import Q
 
 from apps.teams.models import Position, Team
+from config.fields import BirthDateField
 
 from .models import (
     ProspectivePlayer,
@@ -79,8 +80,8 @@ class TryoutSignupForm(forms.ModelForm):
                 "so please check there if you don't see it."
             ),
         }
+        field_classes = {"date_of_birth": BirthDateField}
         widgets = {
-            "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "previous_team": forms.TextInput(attrs={"placeholder": "e.g. Rockies 12U"}),
             "years_experience": forms.NumberInput(attrs={"min": 0}),
             "notes": forms.Textarea(attrs={"rows": 4}),
@@ -222,8 +223,8 @@ class ProspectivePlayerForm(forms.ModelForm):
             "previous_team": "Previous team (if any)",
             "notes": "Anything else we should know?",
         }
+        field_classes = {"date_of_birth": BirthDateField}
         widgets = {
-            "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "previous_team": forms.TextInput(attrs={"placeholder": "e.g. Rockies 12U"}),
             "years_experience": forms.NumberInput(attrs={"min": 0}),
             "notes": forms.Textarea(attrs={"rows": 4}),
